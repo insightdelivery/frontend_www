@@ -6,7 +6,8 @@
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
-    "lint": "next lint"
+    "lint": "next lint",
+    "figma:export": "node scripts/export-figma-images.mjs"
   },
   "dependencies": {
     "next": "^14.2.0",
@@ -23,7 +24,10 @@
     "zod": "^3.22.4",
     "@hookform/resolvers": "^3.3.4",
     "@radix-ui/react-slot": "^1.0.2",
-    "@radix-ui/react-label": "^2.0.2"
+    "@radix-ui/react-label": "^2.0.2",
+    "@tiptap/react": "^2.1.0",
+    "@tiptap/starter-kit": "^2.1.0",
+    "@tiptap/extension-image": "^2.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

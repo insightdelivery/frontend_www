@@ -12,25 +12,27 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Middle Column - Site Menu */}
+          {/* Middle Column - Site Menu (Figma: 메인, 이용약관, 비디오, 개인정보처리방침, 세미나, 공지사항, FAQ) */}
           <div>
             <p className="text-[12px] font-extrabold text-gray-700">사이트 메뉴</p>
             <ul className="mt-4 sm:mt-5 space-y-2 text-[12px] text-gray-600">
-              <li>아티클</li>
-              <li>비디오</li>
-              <li>세미나</li>
+              <li><a href="/" className="hover:text-gray-900 transition-colors">HOME</a></li>
+              <li><a href="/terms" className="hover:text-gray-900 transition-colors">이용약관</a></li>
+              <li><a href="/privacy" className="hover:text-gray-900 transition-colors">개인정보처리방침</a></li>
+              <li><a href="/notice" className="hover:text-gray-900 transition-colors">공지사항</a></li>
+              <li><a href="/faq" className="hover:text-gray-900 transition-colors">FAQ</a></li>
+              <li><a href="/inquiry" className="hover:text-gray-900 transition-colors">1:1 문의</a></li>
             </ul>
           </div>
 
-          {/* Right Column - Customer Support */}
+          {/* Right Column - Customer Support (Figma: 고객지원 + Facebook, Instagram, YouTube) */}
           <div>
             <p className="text-[12px] font-extrabold text-gray-700">고객지원</p>
-            <ul className="mt-4 sm:mt-5 space-y-2 text-[12px] text-gray-600">
-              <li>이용약관</li>
-              <li>개인정보처리방침</li>
-              <li>공지사항</li>
-              <li>FAQ</li>
-            </ul>
+            <div className="mt-4 sm:mt-5 flex gap-4 sm:gap-6 text-[12px] font-normal text-gray-700 tracking-wide">
+              <a href="#" className="hover:text-gray-900 transition-colors" aria-label="Facebook">Facebook</a>
+              <a href="#" className="hover:text-gray-900 transition-colors" aria-label="Instagram">Instagram</a>
+              <a href="#" className="hover:text-gray-900 transition-colors" aria-label="YouTube">YouTube</a>
+            </div>
           </div>
         </div>
 
@@ -42,12 +44,12 @@ export default function Footer() {
           {/* Left Side - Company Legal and Contact Information */}
           <div className="space-y-2 text-[12px] sm:text-[14px] text-gray-700">
             <p className="break-words">
-              사업자등록번호 : 110-81-00999 | 통신판매업신고: 2020-서울마포-3802 | 개인정보책임자 : 김성진
+              사업자등록번호 : 203-87-02097| 통신판매업신고: 000000000000 | 개인정보책임자 : xxxxxxxx
             </p>
             <p className="break-words">
-              서울특별시 마포구 상암산로 48-6 | 대표이사 : 박장희 All Rights Reserved
+            서울특별시 성동구 광나루로8길 31, 2동 301호(성수동2가, 성수SKV1센터) I 이메일: indemgz@gmail.com | 대표이사 : 조광식 
             </p>
-            <p className="mt-3 sm:mt-4">© 2024 InDe. All rights reserved.</p>
+            <p className="mt-3 sm:mt-4">Copyright ⓒ 2024. InDe All Rights Reserved</p>
           </div>
 
           {/* Right Side - Social Media Links */}

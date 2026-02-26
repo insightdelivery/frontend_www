@@ -1,20 +1,34 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import { Card } from '@/components/ui/card'
 import Footer from '@/components/layout/Footer'
 
 export default function Home() {
+  const [heroImageError, setHeroImageError] = useState(false)
+
   return (
     <main className="bg-white text-black">
       {/* content width matches screenshot (lots of whitespace) */}
       <div className="mx-auto max-w-[1220px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
-        {/* Hero banner */}
+        {/* Hero banner - Figma export: /figma/hero.png (scripts/export-figma-images.mjs) */}
         <section className="flex justify-center">
           <div className="w-full max-w-[1200px]">
             <Card className="overflow-hidden rounded-[18px] border border-black/10">
               <div className="relative h-[300px] sm:h-[400px] md:h-[500px]">
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-300 via-slate-400 to-slate-700" />
+                {heroImageError ? (
+                  <div className="absolute inset-0 bg-gradient-to-br from-slate-300 via-slate-400 to-slate-700" />
+                ) : (
+                  <Image
+                    src="/figma/hero.png"
+                    alt=""
+                    fill
+                    className="object-cover"
+                    onError={() => setHeroImageError(true)}
+                    unoptimized
+                  />
+                )}
                 <div className="absolute inset-0 bg-black/25" />
 
                 <div className="absolute left-4 sm:left-6 md:left-10 bottom-6 sm:bottom-8 md:bottom-9 right-4 sm:right-6 md:right-10 text-white">
@@ -47,9 +61,14 @@ export default function Home() {
 
         {/* Upcoming seminar */}
         <section className="mt-8 sm:mt-12">
-          <div className="flex items-center gap-2">
-            <h2 className="text-[18px] sm:text-[21px] font-black text-gray-800">다가오는 세미나</h2>
-            <span className="text-neon-yellow text-[14px] font-black">•</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h2 className="text-[18px] sm:text-[21px] font-black text-gray-800">다가오는 세미나</h2>
+              <span className="text-brand-pink text-[14px] font-black">•</span>
+            </div>
+            <button className="text-[12px] text-gray-400 hover:text-gray-700 transition-colors">
+              더보기 &gt;
+            </button>
           </div>
 
           <Card className="mt-4 overflow-hidden rounded-[18px] border border-gray-200 bg-white">
@@ -57,7 +76,7 @@ export default function Home() {
               <div className="h-[180px] sm:h-[200px] w-full sm:w-[260px] rounded-[14px] bg-gradient-to-br from-amber-100 via-amber-200 to-amber-400 flex-shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2 py-1 rounded text-[10px] font-bold text-white bg-purple-300">
+                  <span className="px-2 py-1 rounded text-[10px] font-bold text-brand-pink bg-brand-pink/15">
                     NEXT SEMINAR
                   </span>
                   <span className="px-2 py-1 rounded text-[10px] font-bold text-gray-700 bg-gray-200">
@@ -68,10 +87,7 @@ export default function Home() {
                   트렌드 쫓다 기회 놓쳐, 2026 브랜딩 필승 전략 3
                 </p>
                 <p className="mt-2 text-[12px] sm:text-[13px] text-gray-700">
-                  권영욱 PRPD(프리패드) 대표
-                </p>
-                <p className="mt-1 text-[12px] sm:text-[13px] text-gray-700">
-                  외 1명 | 2024.01.29 (목) 20:00
+                  진행자 PRPD/커스에드 | 대상 | 2025.07.28 (수) 20:00
                 </p>
               </div>
               <div className="hidden sm:flex items-center pr-1 text-gray-600 text-lg">→</div>
@@ -84,7 +100,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-[20px] sm:text-[22px] md:text-[25px] font-[800]">최신 아티클</h2>
-              <span className="text-neon-yellow text-[14px] font-black">•</span>
+              <span className="text-brand-pink text-[14px] font-black">•</span>
             </div>
             <button className="text-[12px] text-gray-400 hover:text-gray-700 transition-colors">
               더보기 &gt;
@@ -100,13 +116,8 @@ export default function Home() {
               <div key={idx}>
                 <div className="relative overflow-hidden rounded-[18px] border border-black/10 bg-white">
                   <div className="h-[180px] sm:h-[200px] md:h-[240px] bg-gradient-to-br from-stone-400 via-stone-500 to-stone-700" />
-                  <div className="absolute left-4 top-4 rounded-full bg-neon-yellow px-[10px] py-[6px] text-[10px] font-extrabold">
-                    추천컨텐츠
-                  </div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="h-[38px] w-[38px] rounded-full bg-white/25 border border-white/30 flex items-center justify-center text-white text-[11px]">
-                      ▶
-                    </div>
+                  <div className="absolute left-4 top-4 rounded-full bg-neon-yellow px-[10px] py-[6px] text-[10px] font-extrabold text-black">
+                    FREE/무료
                   </div>
                 </div>
                 <p className="mt-3 text-[16px] sm:text-[18px] font-extrabold leading-[1.35] line-clamp-2">
@@ -123,7 +134,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-[20px] sm:text-[22px] md:text-[25px] font-[800]">최신 비디오</h2>
-              <span className="text-neon-yellow text-[14px] font-black">•</span>
+              <span className="text-brand-pink text-[14px] font-black">•</span>
             </div>
             <button className="text-[12px] text-gray-400 hover:text-gray-700 transition-colors">
               더보기 &gt;
@@ -133,14 +144,14 @@ export default function Home() {
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[
               { title: '비디오 제목 (2줄까지 표현 가능) 비디오 제목 (2줄까지 표현 가능)', author: '인디데이 이리' },
-              { title: '디자인 영감, 어디서 얻나요?', author: '인디데이 이리' },
-              { title: '커리어 성장을 위한 조언', author: '인디데이 이리' },
+              { title: '디자인 엉뚱, 어디서 얻나요?', author: '인디데이 이리' },
+              { title: '커리어 성장을 위한 조건', author: '인디데이 이리' },
             ].map((v, idx) => (
               <div key={idx}>
                 <div className="relative overflow-hidden rounded-[18px] border border-black/10 bg-white">
                   <div className="h-[180px] sm:h-[200px] md:h-[240px] bg-gradient-to-br from-emerald-200 via-emerald-400 to-emerald-800" />
-                  <div className="absolute left-4 top-4 rounded-full bg-neon-yellow px-[10px] py-[6px] text-[10px] font-extrabold">
-                    추천컨텐츠
+                  <div className="absolute left-4 top-4 rounded-full bg-neon-yellow px-[10px] py-[6px] text-[10px] font-extrabold text-black">
+                    FREE/무료
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="h-[38px] w-[38px] rounded-full bg-white/25 border border-white/30 flex items-center justify-center text-white text-[11px]">
@@ -162,7 +173,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-[20px] sm:text-[22px] md:text-[25px] font-[800]">세미나 다시보기</h2>
-              <span className="text-neon-yellow text-[14px] font-black">•</span>
+              <span className="text-brand-pink text-[14px] font-black">•</span>
             </div>
             <button className="text-[12px] sm:text-[14px] text-gray-700 hover:text-gray-900 transition-colors">
               더보기 &gt;
@@ -179,7 +190,7 @@ export default function Home() {
                 <div className="relative overflow-hidden rounded-[18px] border border-black/10 bg-white">
                   <div className="h-[180px] sm:h-[200px] md:h-[240px] bg-gradient-to-br from-green-200 via-green-400 to-green-700" />
                   <div className="absolute left-4 top-4 rounded-full bg-neon-yellow px-[10px] py-[6px] text-[10px] font-extrabold text-black">
-                    카테고리명
+                    FREE/무료
                   </div>
                 </div>
                 <p className="mt-3 text-[16px] sm:text-[18px] font-extrabold leading-[1.35] line-clamp-2">
