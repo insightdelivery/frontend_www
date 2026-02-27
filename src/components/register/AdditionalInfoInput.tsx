@@ -58,22 +58,22 @@ export function AdditionalInfoInput({ register, errors, watch, setValue }: Addit
   const regionOptions = isOverseas ? regionForeignOptions : regionDomesticOptions
   const regionPlaceholder = isOverseas ? '해외 지역을 선택하세요' : '국내 지역을 선택하세요'
 
+  const selectClass =
+    'flex h-12 w-full appearance-none rounded-lg border-0 bg-gray-100 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300'
+
   return (
     <section className="space-y-4">
-      <h3 className="text-sm font-bold text-gray-900">
-        <span className="bg-gray-100 px-1.5 py-0.5 rounded">추가 정보 입력</span>
-        <span className="text-gray-500 font-normal ml-1">(선택)</span>
+      <h3 className="text-base font-bold text-gray-900">
+        추가 정보 입력 (선택)
       </h3>
 
       <div>
-        <Label htmlFor="position" className="text-gray-700">
-          직분
-        </Label>
-        <div className="relative mt-1">
+        <Label htmlFor="position" className="text-gray-900">직분</Label>
+        <div className="relative mt-1.5">
           <select
             id="position"
             {...register('position')}
-            className="flex h-10 w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
+            className={selectClass}
           >
             <option value="">직분을 선택하세요</option>
             {positionOptions.map((opt) => (
@@ -82,17 +82,17 @@ export function AdditionalInfoInput({ register, errors, watch, setValue }: Addit
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
         </div>
       </div>
 
       <div>
-        <Label className="text-gray-700">생년월일</Label>
-        <div className="mt-1 flex gap-2">
+        <Label className="text-gray-900">생년월일</Label>
+        <div className="mt-1.5 flex gap-2">
           <div className="relative flex-1">
             <select
               {...register('birth_year', { valueAsNumber: true })}
-              className="flex h-10 w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
+              className={selectClass}
             >
               <option value="">년</option>
               {YEARS.map((y) => (
@@ -101,12 +101,12 @@ export function AdditionalInfoInput({ register, errors, watch, setValue }: Addit
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
           </div>
           <div className="relative flex-1">
             <select
               {...register('birth_month', { valueAsNumber: true })}
-              className="flex h-10 w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
+              className={selectClass}
             >
               <option value="">월</option>
               {MONTHS.map((m) => (
@@ -115,12 +115,12 @@ export function AdditionalInfoInput({ register, errors, watch, setValue }: Addit
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
           </div>
           <div className="relative flex-1">
             <select
               {...register('birth_day', { valueAsNumber: true })}
-              className="flex h-10 w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
+              className={selectClass}
             >
               <option value="">일</option>
               {DAYS.map((d) => (
@@ -129,32 +129,22 @@ export function AdditionalInfoInput({ register, errors, watch, setValue }: Addit
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
           </div>
         </div>
       </div>
 
       <div>
-        <label className="mt-2 flex items-center gap-2 cursor-pointer mb-2">
-          <input
-            type="checkbox"
-            {...register('is_overseas')}
-            className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black/20"
-          />
-          <span className="text-sm text-gray-600">해외거주자라면 체크하세요.</span>
-        </label>
-        <Label htmlFor="region" className="text-gray-700">
-          지역
-        </Label>
-        <div className="relative mt-1">
+        <Label htmlFor="region" className="text-gray-900">지역</Label>
+        <div className="relative mt-1.5">
           <select
             id="region"
             {...register('region')}
             disabled={isOverseas}
-            className="flex h-10 w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/20 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+            className={selectClass + ' disabled:opacity-60 disabled:cursor-not-allowed'}
           >
             <option value="">
-              {isOverseas ? '해외 거주 시 선택 불가' : regionPlaceholder}
+              {isOverseas ? '해외 거주 시 선택 불가' : '지역을 선택하세요'}
             </option>
             {regionOptions.map((opt) => (
               <option key={opt.value || 'empty'} value={opt.value}>
@@ -162,8 +152,16 @@ export function AdditionalInfoInput({ register, errors, watch, setValue }: Addit
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
         </div>
+        <label className="mt-2 flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            {...register('is_overseas')}
+            className="h-4 w-4 rounded border-gray-300 text-gray-700 focus:ring-gray-300"
+          />
+          <span className="text-sm text-gray-600">해외거주자라면 체크하세요.</span>
+        </label>
       </div>
     </section>
   )

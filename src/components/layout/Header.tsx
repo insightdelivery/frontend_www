@@ -100,22 +100,22 @@ export default function Header() {
             )}
           </button>
 
-          {/* Logo - 메인 페이지에서만 표시 (Figma 1-1044: 그 외 페이지는 로고 없음) */}
-          {isMainPage && (
+          {/* Logo - 중앙 (메인: 큰 사이즈, 서브: 툴바에 맞춘 작은 사이즈) */}
+          <div className="flex-1 flex justify-center items-center min-w-0">
             <Link
               href="/"
-              className="flex items-center select-none mx-auto lg:mx-0"
+              className="flex items-center select-none"
             >
               <Image
                 src="/inde_logo.png"
                 alt="InDe"
-                width={150}
-                height={60}
-                className="h-30 w-140"
+                width={isMainPage ? 120 : 88}
+                height={isMainPage ? 60 : 36}
+                className={isMainPage ? 'h-[60px] w-[120px] object-contain' : 'h-9 w-[88px] object-contain'}
                 priority
               />
             </Link>
-          )}
+          </div>
 
           {/* Desktop Actions - Right */}
           <div
@@ -164,11 +164,6 @@ export default function Header() {
             </button>
           </div>
 
-          {/* Mobile: 서브 페이지에서 로고 영역 비움 */}
-          {!isMainPage && (
-            <div className="flex-1 lg:hidden" aria-hidden />
-          )}
-
           {/* Mobile Actions - Right */}
           <div className="lg:hidden flex items-center gap-4">
             <button
@@ -184,7 +179,9 @@ export default function Header() {
         {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-black/10 bg-neon-yellow">
-            <nav className={`flex flex-col py-4 px-4 space-y-4 ${!isMainPage ? 'text-[15px] font-bold' : 'text-[25px] font-[800]'}`}>
+            <nav
+              className={`flex flex-col py-4 px-4 space-y-4 ${!isMainPage ? 'text-[15px] font-bold' : 'text-[25px] font-[800]'}`}
+            >
               {!isMainPage && (
                 <Link
                   href="/"

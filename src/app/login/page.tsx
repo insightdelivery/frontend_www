@@ -1,17 +1,21 @@
 'use client'
 
 import { useState, Suspense } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { Eye, EyeOff } from 'lucide-react'
 import { getApiBaseURL } from '@/lib/axios'
 import { login, resendVerificationEmail } from '@/services/auth'
 import { loadSysCodeOnLogin, SYSCODE_PARENT_IDS } from '@/lib/syscode'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { IconKakao, IconNaver, IconGoogle } from '@/components/login/SocialLoginIcons'
 import Footer from '@/components/layout/Footer'
+import { cn } from '@/lib/utils'
 
 const loginSchema = z.object({
   email: z.string().email('올바른 이메일 형식이 아닙니다.'),
@@ -27,6 +31,8 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null)
   const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const [resendMessage, setResendMessage] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [autoLogin, setAutoLogin] = useState(false)
 
   const {
     register,
@@ -44,16 +50,14 @@ function LoginForm() {
     try {
       const response = await login(data)
 
-      // 로그인 성공 시 시스템 코드 하위 레벨을 localStorage에 저장
       try {
         for (const parentId of SYSCODE_PARENT_IDS) {
           await loadSysCodeOnLogin(parentId)
         }
       } catch {
-        // 시스템 코드 로드 실패해도 로그인은 계속 진행
+        // ignore
       }
 
-      // 프로필 완성 여부 확인
       if (response.user.profile_completed) {
         router.push('/')
       } else {
@@ -105,18 +109,25 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <main className="flex-1 flex items-center justify-center px-4 py-10">
-        <div className="w-full max-w-md space-y-8">
-          <div>
-            <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-              로그인
-            </h2>
+    <div className="min-h-screen flex flex-col bg-white">
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-[400px] flex flex-col items-center">
+          {/* 로고 & 슬로건 (Figma) */}
+          <div className="text-center mb-10">
+            <Image
+              src="/inde_logo.png"
+              alt="InDe"
+              width={140}
+              height={40}
+              className="mx-auto object-contain"
+              priority
+            />
+            <p className="mt-2 text-sm text-gray-500">기독교 인사이트 콘텐츠 플랫폼</p>
           </div>
 
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <form className="w-full space-y-4" onSubmit={handleSubmit(onSubmit)}>
             {displayError && (
-              <div className="rounded-md bg-red-50 p-4 space-y-2">
+              <div className="rounded-lg bg-red-50 p-4 space-y-2">
                 <p className="text-sm text-red-800">{displayError}</p>
                 {isEmailNotVerified && (
                   <div className="pt-2">
@@ -139,89 +150,116 @@ function LoginForm() {
               </div>
             )}
 
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="email">이메일</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  {...register('email')}
-                  className="mt-1"
-                />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="password">비밀번호</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  {...register('password')}
-                  className="mt-1"
-                />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-                )}
-              </div>
-            </div>
-
             <div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? '로그인 중...' : '로그인'}
-              </Button>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="이메일 주소"
+                {...register('email')}
+                className={cn(
+                  'h-12 rounded-lg border-0 bg-gray-100 text-gray-900 placeholder:text-gray-400',
+                  'focus-visible:ring-2 focus-visible:ring-gray-300'
+                )}
+              />
+              {errors.email && (
+                <p className="mt-1.5 text-sm text-red-600">{errors.email.message}</p>
+              )}
             </div>
+
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                placeholder="비밀번호"
+                {...register('password')}
+                className={cn(
+                  'h-12 rounded-lg border-0 bg-gray-100 text-gray-900 placeholder:text-gray-400 pr-12',
+                  'focus-visible:ring-2 focus-visible:ring-gray-300'
+                )}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((p) => !p)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1"
+                aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+              {errors.password && (
+                <p className="mt-1.5 text-sm text-red-600">{errors.password.message}</p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className={cn(
+                'w-full h-12 rounded-lg font-bold text-black',
+                'bg-[#D4F74C] hover:bg-[#c5e845] focus-visible:ring-gray-400'
+              )}
+            >
+              {isLoading ? '로그인 중...' : '로그인'}
+            </Button>
           </form>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-50 text-gray-500">또는</span>
-              </div>
+          {/* 자동로그인 | 아이디/비밀번호 찾기 */}
+          <div className="w-full mt-5 flex items-center justify-between">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={autoLogin}
+                onChange={(e) => setAutoLogin(e.target.checked)}
+                className="w-4 h-4 rounded-full border border-gray-300 text-gray-700 focus:ring-gray-400"
+              />
+              <span className="text-sm text-gray-600">자동로그인</span>
+            </label>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Link href="/find-id" className="hover:text-gray-700">아이디 찾기</Link>
+              <span aria-hidden>|</span>
+              <Link href="/find-password" className="hover:text-gray-700">비밀번호 찾기</Link>
             </div>
+          </div>
 
-            <div className="mt-6 grid grid-cols-3 gap-3">
-              <Button
+          {/* 소셜 로그인/회원가입 */}
+          <div className="w-full mt-10 text-center">
+            <p className="text-sm text-gray-600 mb-5">소셜 로그인/회원가입</p>
+            <div className="flex items-center justify-center gap-4">
+              <button
                 type="button"
-                variant="outline"
                 onClick={() => handleSNSLogin('kakao')}
-                className="w-full"
+                className="focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 rounded-full"
+                aria-label="카카오 로그인"
               >
-                카카오
-              </Button>
-              <Button
+                <IconKakao />
+              </button>
+              <button
                 type="button"
-                variant="outline"
                 onClick={() => handleSNSLogin('naver')}
-                className="w-full"
+                className="focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 rounded-full"
+                aria-label="네이버 로그인"
               >
-                네이버
-              </Button>
-              <Button
+                <IconNaver />
+              </button>
+              <button
                 type="button"
-                variant="outline"
                 onClick={() => handleSNSLogin('google')}
-                className="w-full"
+                className="focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 rounded-full"
+                aria-label="구글 로그인"
               >
-                구글
-              </Button>
+                <IconGoogle />
+              </button>
             </div>
           </div>
 
-          <div className="text-center">
-            <a
-              href="/register"
-              className="text-sm text-primary hover:text-primary/80"
-            >
-              계정이 없으신가요? 회원가입
-            </a>
-          </div>
+          {/* 회원가입 유도 */}
+          <p className="mt-10 text-sm text-gray-600">
+            아직 회원이 아니신가요?{' '}
+            <Link href="/register" className="text-blue-600 hover:underline font-medium">
+              회원가입하기
+            </Link>
+          </p>
         </div>
       </main>
       <Footer />
@@ -232,9 +270,9 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 border-t-gray-600 mx-auto" />
           <p className="mt-4 text-gray-600">로딩 중...</p>
         </div>
       </div>
@@ -243,4 +281,3 @@ export default function LoginPage() {
     </Suspense>
   )
 }
-

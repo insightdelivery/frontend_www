@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { UseFormRegister, FieldErrors, UseFormWatch, UseFormSetValue } from 'react-hook-form'
 import { Label } from '@/components/ui/label'
+import { ChevronDown } from 'lucide-react'
 
 const TERMS_ITEMS = [
   { name: 'age_agree', required: true, label: '만 14세 이상입니다' },
@@ -21,7 +22,6 @@ interface TermsAgreementProps {
 export function TermsAgreement({ register, errors, watch, setValue }: TermsAgreementProps) {
   const termsAllAgree = watch('terms_all_agree')
 
-  // 전체 동의 체크 시 필수 3개 동의
   useEffect(() => {
     if (!setValue) return
     if (termsAllAgree) {
@@ -33,26 +33,27 @@ export function TermsAgreement({ register, errors, watch, setValue }: TermsAgree
 
   return (
     <section className="space-y-4">
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-3">
         <input
           type="checkbox"
           id="terms_all_agree"
           {...register('terms_all_agree')}
-          className="mt-1 h-5 w-5 rounded border-gray-300 text-black focus:ring-black/20"
+          className="h-5 w-5 rounded border-gray-300 text-gray-700 focus:ring-gray-300 flex-shrink-0"
         />
-        <Label htmlFor="terms_all_agree" className="text-base font-bold text-gray-900 cursor-pointer flex-1">
+        <Label htmlFor="terms_all_agree" className="text-base font-bold text-gray-900 cursor-pointer flex-1 flex items-center gap-1">
           이용약관 전체 동의합니다.
+          <ChevronDown className="h-5 w-5 text-gray-400" aria-hidden />
         </Label>
       </div>
 
-      <div className="rounded-md border border-gray-200 bg-gray-50/50 p-4 space-y-3">
+      <div className="rounded-lg bg-gray-50 p-4 space-y-3 pl-8">
         {TERMS_ITEMS.map((item) => (
           <div key={item.name} className="flex items-center justify-between gap-2">
             <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
               <input
                 type="checkbox"
                 {...register(item.name)}
-                className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black/20 flex-shrink-0"
+                className="h-4 w-4 rounded border-gray-300 text-gray-700 focus:ring-gray-300 flex-shrink-0"
               />
               <span className="text-sm text-gray-800">
                 {item.required ? (
@@ -71,11 +72,11 @@ export function TermsAgreement({ register, errors, watch, setValue }: TermsAgree
             </button>
           </div>
         ))}
+        <p className="text-xs text-gray-500 pl-6">
+          뉴스레터를 구독하면 콘텐츠 큐레이션을 받을 수 있습니다.
+        </p>
       </div>
 
-      <p className="text-xs text-gray-500">
-        뉴스레터를 구독하면 콘텐츠 큐레이션을 받을 수 있습니다.
-      </p>
 
       {(errors.age_agree || errors.terms_agree || errors.privacy_agree) && (
         <p className="text-sm text-red-600">

@@ -1,14 +1,14 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Footer from '@/components/layout/Footer'
 
 /**
- * 회원가입 완료 안내 페이지
- * - 이메일로 인증 메일을 보냈으며, 메일의 인증 링크를 클릭한 후에만 로그인할 수 있음을 안내
+ * 회원가입 완료 안내 페이지 (useSearchParams 사용 → Suspense 내부)
  */
-export default function SignupCompletePage() {
+function SignupCompleteContent() {
   const searchParams = useSearchParams()
   const email = searchParams.get('email') || ''
 
@@ -47,5 +47,20 @@ export default function SignupCompletePage() {
       </main>
       <Footer />
     </div>
+  )
+}
+
+export default function SignupCompletePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex flex-col bg-white items-center justify-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-gray-300 border-t-gray-600" />
+          <p className="mt-4 text-gray-500 text-sm">로딩 중...</p>
+        </div>
+      }
+    >
+      <SignupCompleteContent />
+    </Suspense>
   )
 }

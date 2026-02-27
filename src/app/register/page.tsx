@@ -13,7 +13,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Footer from '@/components/layout/Footer'
 import { RegisterFormLower } from '@/components/register/RegisterFormLower'
-import { Eye, EyeOff } from 'lucide-react'
+import { IconKakao, IconNaver, IconGoogle } from '@/components/login/SocialLoginIcons'
+import { Eye, EyeOff, Check } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const registerSchema = z
   .object({
@@ -109,171 +111,209 @@ export default function RegisterPage() {
     window.location.href = urls[provider] || `${base}/auth/${provider}/redirect/`
   }
 
+  const inputClass = cn(
+    'h-12 rounded-lg border-0 bg-gray-100 text-gray-900 placeholder:text-gray-400',
+    'focus-visible:ring-2 focus-visible:ring-gray-300'
+  )
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <main className="flex-1 w-full max-w-md mx-auto px-4 py-10">
+      <main className="flex-1 w-full max-w-[450px] mx-auto px-4 py-10">
         <p className="text-center text-sm text-gray-600 mb-2">
-          이미 인디 회원이라면{' '}
+          이미 엔디 회원이라면{' '}
           <Link href="/login" className="text-black font-medium underline hover:no-underline">
             로그인
           </Link>
         </p>
-        <h1 className="text-center text-2xl font-bold text-gray-900 mb-8">
+        <h1 className="text-center text-2xl font-bold text-gray-900 mb-6">
           소셜 회원가입
         </h1>
 
-        {/* 소셜 로그인 버튼 */}
-        <div className="grid grid-cols-3 gap-3 mb-8">
-          <Button
+        {/* 소셜 아이콘 (Figma) */}
+        <div className="flex items-center justify-center gap-4 mb-8">
+          <button
             type="button"
-            variant="outline"
             onClick={() => handleSNSRegister('kakao')}
-            className="w-full border-gray-300 hover:bg-gray-50"
+            className="focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 rounded-full"
+            aria-label="카카오 회원가입"
           >
-            카카오
-          </Button>
-          <Button
+            <IconKakao />
+          </button>
+          <button
             type="button"
-            variant="outline"
             onClick={() => handleSNSRegister('naver')}
-            className="w-full border-gray-300 hover:bg-gray-50"
+            className="focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 rounded-full"
+            aria-label="네이버 회원가입"
           >
-            네이버
-          </Button>
-          <Button
+            <IconNaver />
+          </button>
+          <button
             type="button"
-            variant="outline"
             onClick={() => handleSNSRegister('google')}
-            className="w-full border-gray-300 hover:bg-gray-50"
+            className="focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 rounded-full"
+            aria-label="구글 회원가입"
           >
-            구글
-          </Button>
+            <IconGoogle />
+          </button>
+        </div>
+
+        {/* 또는 이메일로 가입 */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-3 bg-white text-gray-500">또는 이메일로 가입</span>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
+            <div className="rounded-lg bg-red-50 p-4">
               <p className="text-sm text-red-800">{error}</p>
             </div>
           )}
 
           <div>
-            <Label htmlFor="email" className="text-gray-900">이메일(ID) *</Label>
+            <Label htmlFor="email" className="text-gray-900">
+              이메일(ID) <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="email"
               type="email"
               placeholder="이메일 주소"
               autoComplete="email"
               {...register('email')}
-              className="mt-1"
+              className={cn(inputClass, 'mt-1.5')}
             />
             {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+              <p className="mt-1.5 text-sm text-red-600">{errors.email.message}</p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="password" className="text-gray-900">비밀번호 *</Label>
-            <div className="relative mt-1">
+            <Label htmlFor="password" className="text-gray-900">
+              비밀번호 <span className="text-red-500">*</span>
+            </Label>
+            <div className="relative mt-1.5">
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="8자 이상 영문자, 숫자 조합"
                 autoComplete="new-password"
                 {...register('password')}
-                className="pr-10"
+                className={cn(inputClass, 'pr-12')}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700"
                 aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
             {errors.password && (
-              <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+              <p className="mt-1.5 text-sm text-red-600">{errors.password.message}</p>
             )}
           </div>
 
           <div>
             <Label htmlFor="password2" className="text-gray-900">비밀번호 확인</Label>
-            <div className="relative mt-1">
+            <div className="relative mt-1.5">
               <Input
                 id="password2"
                 type={showPassword2 ? 'text' : 'password'}
                 placeholder="비밀번호 확인"
                 autoComplete="new-password"
                 {...register('password2')}
-                className="pr-10"
+                className={cn(inputClass, 'pr-12')}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword2(!showPassword2)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700"
                 aria-label={showPassword2 ? '비밀번호 숨기기' : '비밀번호 보기'}
               >
-                {showPassword2 ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword2 ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
             {errors.password2 && (
-              <p className="mt-1 text-sm text-red-600">{errors.password2.message}</p>
+              <p className="mt-1.5 text-sm text-red-600">{errors.password2.message}</p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="name" className="text-gray-900">이름 *</Label>
+            <Label htmlFor="name" className="text-gray-900">
+              이름 <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="name"
               type="text"
               placeholder="이름"
               {...register('name')}
-              className="mt-1"
+              className={cn(inputClass, 'mt-1.5')}
             />
             {errors.name && (
-              <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+              <p className="mt-1.5 text-sm text-red-600">{errors.name.message}</p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="nickname" className="text-gray-900">닉네임 *</Label>
+            <Label htmlFor="nickname" className="text-gray-900">
+              닉네임 <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="nickname"
               type="text"
               placeholder="닉네임"
               {...register('nickname')}
-              className="mt-1"
+              className={cn(inputClass, 'mt-1.5')}
             />
             {errors.nickname && (
-              <p className="mt-1 text-sm text-red-600">{errors.nickname.message}</p>
+              <p className="mt-1.5 text-sm text-red-600">{errors.nickname.message}</p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="phone" className="text-gray-900">휴대폰 번호 *</Label>
-            <div className="flex gap-2 mt-1">
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="- 생략하고 입력"
-                {...register('phone')}
-                className="flex-1"
-              />
-              <Button type="button" variant="outline" className="flex-shrink-0 border-gray-300">
+            <Label htmlFor="phone" className="text-gray-900">
+              휴대폰 번호 <span className="text-red-500">*</span>
+            </Label>
+            <div className="flex gap-2 mt-1.5">
+              <div className="relative flex-1 flex items-center">
+                <Check className="absolute left-3 w-5 h-5 text-gray-400 pointer-events-none" />
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="생략하고 입력"
+                  {...register('phone')}
+                  className={cn(inputClass, 'pl-10')}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-shrink-0 h-12 px-4 rounded-lg border-0 bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
                 인증번호 전송
               </Button>
             </div>
             {errors.phone && (
-              <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+              <p className="mt-1.5 text-sm text-red-600">{errors.phone.message}</p>
             )}
           </div>
 
-          {/* 페이지 분할 하단: 추가 정보 입력 + 이용약관 전체 동의 */}
           <RegisterFormLower register={register} errors={errors} watch={watch} setValue={setValue} />
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? '가입 중...' : '회원가입'}
+          <Button
+            type="submit"
+            className={cn(
+              'w-full h-16 rounded-lg font-bold text-black text-xl',
+              'bg-[#D4F74C] hover:bg-[#c5e845] focus-visible:ring-gray-400'
+            )}
+            disabled={isLoading}
+          >
+            {isLoading ? '가입 중...' : '회원가입 완료'}
           </Button>
         </form>
       </main>

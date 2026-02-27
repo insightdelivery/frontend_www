@@ -121,17 +121,20 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
  * 회원가입 (이메일 인증 필요: 토큰 없이 success/email 반환, 인증 메일 발송됨)
  * API 응답: IndeAPIResponse(Result 내부에 success, email, user) 또는 raw { success, email, user }
  */
+/** 회원가입 API 응답: IndeAPIResponse 래핑 또는 raw 또는 직접 성공 객체 */
+type RegisterApiRaw =
+  | { IndeAPIResponse?: { Result?: RegisterSuccessResponse }; Result?: RegisterSuccessResponse }
+  | (RegisterSuccessResponse & { access_token?: string })
+
 export const register = async (data: RegisterRequest): Promise<RegisterSuccessResponse> => {
   try {
-    const response = await apiClient.post<
-      | { IndeAPIResponse: { ErrorCode: string; Message?: string; Result?: RegisterSuccessResponse } }
-      | { ErrorCode: string; Message?: string; Result?: RegisterSuccessResponse }
-      | (RegisterSuccessResponse & { access_token?: string })
-    >('/auth/register/', data)
+    const response = await apiClient.post<RegisterApiRaw>('/auth/register/', data)
 
-    const raw = response.data
+    const raw = response.data as RegisterApiRaw
     const result =
-      raw?.IndeAPIResponse?.Result ?? (raw && 'Result' in raw ? (raw as { Result?: RegisterSuccessResponse }).Result : null) ?? raw
+      (raw && 'IndeAPIResponse' in raw && raw.IndeAPIResponse?.Result) ??
+      (raw && typeof raw === 'object' && 'Result' in raw ? (raw as { Result?: RegisterSuccessResponse }).Result : null) ??
+      raw
     const body = result as RegisterSuccessResponse & { access_token?: string }
 
     if (body?.success && body?.email) {
@@ -141,8 +144,10 @@ export const register = async (data: RegisterRequest): Promise<RegisterSuccessRe
       saveTokens(body.access_token, (body as any).refresh_token || '', body.user)
       return { success: true, message: '', email: data.email, user: body.user }
     }
-    const errMsg =
-      (raw as any)?.IndeAPIResponse?.Message ?? (raw as any)?.Message ?? '응답 형식이 올바르지 않습니다.'
+    const errMsg: string =
+      (raw && 'IndeAPIResponse' in raw ? (raw as { IndeAPIResponse?: { Message?: string } }).IndeAPIResponse?.Message : null) ??
+      (raw && typeof raw === 'object' && 'Message' in raw ? (raw as { Message?: string }).Message : null) ??
+      '응답 형식이 올바르지 않습니다.'
     throw new Error(errMsg)
   } catch (error: unknown) {
     console.error('회원가입 API 오류:', error)
@@ -265,21 +270,25 @@ export const getUserInfo = (): UserInfo | null => {
   return null
 }
 
+/** verifyEmail API 응답: IndeAPIResponse 래핑 또는 raw */
+type VerifyEmailRaw = {
+  IndeAPIResponse?: { Result?: { success?: boolean; message?: string; error?: string } }
+  Result?: { success?: boolean; message?: string; error?: string }
+} | { success?: boolean; message?: string; error?: string }
+
 /**
  * 이메일 인증 (메일 링크의 토큰으로 인증 완료)
  * API 응답: IndeAPIResponse(Result 내부에 success, message) 또는 raw { success, message }
  */
 export const verifyEmail = async (token: string): Promise<{ success: boolean; message?: string; error?: string }> => {
   try {
-    const response = await apiClient.post<
-      | { IndeAPIResponse?: { Result?: { success?: boolean; message?: string; error?: string } } }
-      | { Result?: { success?: boolean; message?: string; error?: string } }
-      | { success?: boolean; message?: string; error?: string }
-    >('/auth/verify-email/', { token })
+    const response = await apiClient.post<VerifyEmailRaw>('/auth/verify-email/', { token })
 
-    const raw = response.data
+    const raw = response.data as VerifyEmailRaw
     const data =
-      raw?.IndeAPIResponse?.Result ?? (raw && 'Result' in raw ? (raw as { Result?: typeof raw }).Result : null) ?? raw
+      (raw && 'IndeAPIResponse' in raw ? (raw as { IndeAPIResponse?: { Result?: { success?: boolean; message?: string; error?: string } } }).IndeAPIResponse?.Result : null) ??
+      (raw && typeof raw === 'object' && 'Result' in raw ? (raw as { Result?: { success?: boolean; message?: string; error?: string } }).Result : null) ??
+      raw
 
     if (data && (data as { success?: boolean }).success) {
       return { success: true, message: (data as { message?: string }).message }

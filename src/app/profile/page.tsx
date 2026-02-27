@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 const profileSchema = z.object({
   phone: z.string().min(1, '핸드폰 번호를 입력해주세요.'),
   name: z.string().min(1, '이름을 입력해주세요.'),
+  nickname: z.string().min(1, '닉네임을 입력해주세요.'),
   position: z.string().min(1, '직분을 입력해주세요.'),
   birth_year: z.number().min(1900).max(new Date().getFullYear()),
   birth_month: z.number().min(1).max(12),
@@ -82,6 +83,7 @@ export default function ProfilePage() {
         reset({
           phone: user.phone || '',
           name: user.name || '',
+          nickname: user.nickname || '',
           position: user.position || '',
           birth_year: user.birth_year || new Date().getFullYear() - 30,
           birth_month: user.birth_month || 1,
@@ -111,6 +113,7 @@ export default function ProfilePage() {
         email: userEmail,
         phone: data.phone,
         name: data.name,
+        nickname: data.nickname,
         position: data.position,
         birth_year: data.birth_year,
         birth_month: data.birth_month,
@@ -226,6 +229,19 @@ export default function ProfilePage() {
               />
               {errors.name && (
                 <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="nickname">닉네임</Label>
+              <Input
+                id="nickname"
+                type="text"
+                {...register('nickname')}
+                className="mt-1"
+              />
+              {errors.nickname && (
+                <p className="mt-1 text-sm text-red-600">{errors.nickname.message}</p>
               )}
             </div>
 

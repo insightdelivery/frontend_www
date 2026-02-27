@@ -107,7 +107,9 @@ export function RichTextEditor({
     if (!editor) return
     const h = () => onChange?.(editor.getHTML())
     editor.on('update', h)
-    return () => editor.off('update', h)
+    return () => {
+      editor.off('update', h)
+    }
   }, [editor, onChange])
 
   useEffect(() => {

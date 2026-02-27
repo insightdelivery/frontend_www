@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 
 interface AccordionContextValue {
   openItem: string | null
-  setOpenItem: (value: string | null) => void
+  setOpenItem: React.Dispatch<React.SetStateAction<string | null>>
   type: 'single' | 'multiple'
 }
 
@@ -17,7 +17,7 @@ function useAccordion() {
   return ctx
 }
 
-interface AccordionProps extends React.HTMLAttributes<HTMLDivElement> {
+interface AccordionProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'defaultValue'> {
   type?: 'single' | 'multiple'
   defaultValue?: string | null
 }
