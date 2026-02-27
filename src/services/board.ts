@@ -50,26 +50,6 @@ export async function fetchNotice(id: number): Promise<NoticeDetail> {
   return unwrapResult<NoticeDetail>(data)
 }
 
-/** 공지 생성 (관리자) */
-export async function createNotice(body: { title: string; content: string; is_pinned?: boolean }): Promise<NoticeDetail> {
-  const { data } = await api.post(BASE.notices + '/', body, authHeaders())
-  return unwrapResult<NoticeDetail>(data)
-}
-
-/** 공지 수정 (관리자) */
-export async function updateNotice(
-  id: number,
-  body: { title?: string; content?: string; is_pinned?: boolean }
-): Promise<NoticeDetail> {
-  const { data } = await api.patch(`${BASE.notices}/${id}/`, body, authHeaders())
-  return unwrapResult<NoticeDetail>(data)
-}
-
-/** 공지 삭제 (관리자) */
-export async function deleteNotice(id: number): Promise<void> {
-  await api.delete(`${BASE.notices}/${id}/`, authHeaders())
-}
-
 /** FAQ 목록 */
 export async function fetchFAQs(params?: { page?: number; page_size?: number }): Promise<FAQListResponse> {
   const { data } = await api.get(BASE.faqs + '/', { params })

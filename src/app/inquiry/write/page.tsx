@@ -22,6 +22,16 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+/** 403/401 시 API Message 또는 친절한 문구 반환 (raw status 메시지 노출 방지) */
+function inquiryErrorMessage(e: unknown, fallback: string): string {
+  const err = e as { response?: { status: number; data?: { Message?: string } }; message?: string }
+  if (err?.response?.status === 401 || err?.response?.status === 403) {
+    const msg = err?.response?.data?.Message?.trim()
+    return msg || '로그인이 필요하거나 권한이 없습니다. 다시 로그인해 주세요.'
+  }
+  return err?.message ?? fallback
+}
+
 export default function InquiryWritePage() {
   const router = useRouter()
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -48,13 +58,13 @@ export default function InquiryWritePage() {
     } catch (e: unknown) {
       const err = e as { response?: { status: number }; message?: string }
       if (err.response?.status === 401) router.replace('/login?next=/inquiry/write')
-      else setSubmitError(err?.message ?? '문의 등록에 실패했습니다.')
+      else setSubmitError(inquiryErrorMessage(e, '문의 등록에 실패했습니다.'))
     }
   }
 
   return (
     <main className="min-h-screen bg-white">
-      <div className="mx-auto max-w-[640px] px-4 sm:px-6 py-8 sm:py-12">
+      <div className="mx-auto max-w-[1220px] px-4 sm:px-6 py-8 sm:py-12">
         <div className="mb-4">
           <Link href="/inquiry" className="text-sm text-gray-500 hover:text-gray-900">
             ← 문의 목록

@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function Footer() {
   return (
     <footer className="mt-8 sm:mt-10 bg-[#F8F8F8]">
@@ -12,16 +14,16 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Middle Column - Site Menu (Figma: 메인, 이용약관, 비디오, 개인정보처리방침, 세미나, 공지사항, FAQ) */}
+          {/* Middle Column - Site Menu: Link로 클라이언트 라우팅 (실서버에서 정적 호스팅 시 메인으로 가는 문제 방지) */}
           <div>
             <p className="text-[12px] font-extrabold text-gray-700">사이트 메뉴</p>
             <ul className="mt-4 sm:mt-5 space-y-2 text-[12px] text-gray-600">
-              <li><a href="/" className="hover:text-gray-900 transition-colors">HOME</a></li>
-              <li><a href="/terms" className="hover:text-gray-900 transition-colors">이용약관</a></li>
-              <li><a href="/privacy" className="hover:text-gray-900 transition-colors">개인정보처리방침</a></li>
-              <li><a href="/notice" className="hover:text-gray-900 transition-colors">공지사항</a></li>
-              <li><a href="/faq" className="hover:text-gray-900 transition-colors">FAQ</a></li>
-              <li><a href="/inquiry" className="hover:text-gray-900 transition-colors">1:1 문의</a></li>
+              <li><Link href="/" className="hover:text-gray-900 transition-colors">HOME</Link></li>
+              <li><Link href="/terms" className="hover:text-gray-900 transition-colors">이용약관</Link></li>
+              <li><Link href="/privacy" className="hover:text-gray-900 transition-colors">개인정보처리방침</Link></li>
+              <li><Link href="/notice" className="hover:text-gray-900 transition-colors">공지사항</Link></li>
+              <li><Link href="/faq" className="hover:text-gray-900 transition-colors">FAQ</Link></li>
+              <li><Link href="/inquiry" className="hover:text-gray-900 transition-colors">1:1 문의</Link></li>
             </ul>
           </div>
 

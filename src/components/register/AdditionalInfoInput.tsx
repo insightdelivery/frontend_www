@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { UseFormRegister, FieldErrors, UseFormWatch, UseFormSetValue } from 'react-hook-form'
 import { Label } from '@/components/ui/label'
 import { ChevronDown } from 'lucide-react'
-import { getSysCode, type SysCodeItem } from '@/lib/syscode'
+import { getSysCodeFromCache, type SysCodeItem } from '@/lib/syscode'
 import { REGION_DOMESTIC_PARENT, REGION_FOREIGN_PARENT, POSITION_PARENT } from '@/lib/syscode'
 
 const YEARS = Array.from({ length: 80 }, (_, i) => 2025 - i)
@@ -49,10 +49,14 @@ export function AdditionalInfoInput({ register, errors, watch, setValue }: Addit
     if (setValue) setValue('region', '')
   }, [isOverseas, setValue])
 
+  // sysCodeData(localStorage)에서만 로드, API 호출 없음
   useEffect(() => {
-    getSysCode(POSITION_PARENT).then((list) => setPositionOptions(toOptions(list)))
-    getSysCode(REGION_DOMESTIC_PARENT).then((list) => setRegionDomesticOptions(toOptions(list)))
-    getSysCode(REGION_FOREIGN_PARENT).then((list) => setRegionForeignOptions(toOptions(list)))
+    const positionList = getSysCodeFromCache(POSITION_PARENT) ?? []
+    const domesticList = getSysCodeFromCache(REGION_DOMESTIC_PARENT) ?? []
+    const foreignList = getSysCodeFromCache(REGION_FOREIGN_PARENT) ?? []
+    setPositionOptions(toOptions(positionList))
+    setRegionDomesticOptions(toOptions(domesticList))
+    setRegionForeignOptions(toOptions(foreignList))
   }, [])
 
   const regionOptions = isOverseas ? regionForeignOptions : regionDomesticOptions

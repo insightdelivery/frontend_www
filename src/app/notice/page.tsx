@@ -7,6 +7,7 @@ import { fetchNotices, fetchNotice } from '@/services/board'
 import type { NoticeListItem, NoticeDetail } from '@/types/board'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   Table,
   TableBody,
@@ -17,7 +18,6 @@ import {
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import Footer from '@/components/layout/Footer'
-import { getUserInfo } from '@/services/auth'
 
 function formatDate(s: string) {
   try {
@@ -50,8 +50,6 @@ function NoticeInner() {
   const idParam = searchParams.get('id')
   const detailId = idParam ? Number(idParam) : null
 
-  const userInfo = typeof window !== 'undefined' ? getUserInfo() : null
-  const isStaff = Boolean(userInfo?.is_staff)
   const [list, setList] = useState<NoticeListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -111,7 +109,7 @@ function NoticeInner() {
     if (detailError) {
       return (
         <main className="min-h-screen bg-white">
-          <div className="mx-auto max-w-[720px] px-4 py-12">
+          <div className="mx-auto max-w-[1220px] px-4 py-12">
             <div className="rounded-md bg-red-50 p-4 text-red-800">{detailError}</div>
             <Button variant="outline" className="mt-4" asChild>
               <Link href="/notice">목록으로</Link>
@@ -123,7 +121,7 @@ function NoticeInner() {
     }
     return (
       <main className="min-h-screen bg-white">
-        <div className="mx-auto max-w-[720px] px-4 sm:px-6 py-8 sm:py-12">
+        <div className="mx-auto max-w-[1220px] px-4 sm:px-6 py-8 sm:py-12">
           <div className="mb-4">
             <Link href="/notice" className="text-sm text-gray-500 hover:text-gray-900">
               ← 공지사항 목록
@@ -136,23 +134,23 @@ function NoticeInner() {
               <Skeleton className="h-64 w-full" />
             </div>
           ) : detail ? (
-            <Card>
-              <CardHeader className="space-y-1">
-                <div className="flex items-center gap-2">
-                  {detail.is_pinned && (
-                    <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                      고정
-                    </span>
-                  )}
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{detail.title}</h1>
+            <Card className="overflow-hidden">
+              <CardHeader className="space-y-3 pb-4">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 leading-tight">
+                  {detail.title}
+                </h1>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" className="font-normal">
+                    조회 {detail.view_count}
+                  </Badge>
+                  <Badge variant="outline" className="font-normal text-muted-foreground">
+                    {formatDateTime(detail.created_at)}
+                  </Badge>
                 </div>
-                <p className="text-sm text-gray-500">
-                  조회수 {detail.view_count} · {formatDateTime(detail.created_at)}
-                </p>
               </CardHeader>
-              <CardContent>
+              <CardContent className="border-t border-border pt-6">
                 <div
-                  className="prose prose-gray max-w-none text-gray-700"
+                  className="prose prose-gray max-w-none text-gray-700 whitespace-pre-line break-keep text-[15px] leading-[1.7] prose-p:my-3 first:prose-p:mt-0 last:prose-p:mb-0"
                   dangerouslySetInnerHTML={{ __html: detail.content }}
                 />
               </CardContent>
@@ -166,23 +164,13 @@ function NoticeInner() {
 
   return (
     <main className="min-h-screen bg-white">
-      <div className="mx-auto max-w-[1000px] px-4 sm:px-6 py-8 sm:py-12">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-gray-900">공지사항</h1>
-            <p className="mt-1 text-sm text-gray-500">InDe 공지사항을 확인하세요.</p>
-          </div>
-          {isStaff && (
-            <Button asChild>
-              <Link href="/notice/write">공지 작성</Link>
-            </Button>
-          )}
+      <div className="mx-auto max-w-[1220px] px-4 sm:px-6 py-8 sm:py-12">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900">공지사항</h1>
+          <p className="mt-1 text-sm text-gray-500">InDe 공지사항을 확인하세요.</p>
         </div>
 
         <Card className="mt-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">목록</CardTitle>
-          </CardHeader>
           <CardContent>
             {error && (
               <div className="rounded-md bg-red-50 p-4 text-sm text-red-800">
@@ -200,10 +188,10 @@ function NoticeInner() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[60px]">고정</TableHead>
+                      <TableHead className="w-[70px] text-center">번호</TableHead>
                       <TableHead>제목</TableHead>
                       <TableHead className="w-[90px] text-center">조회수</TableHead>
-                      <TableHead className="w-[100px]">날짜</TableHead>
+                      <TableHead className="w-[120px] min-w-[120px] text-right whitespace-nowrap">날짜</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -214,31 +202,30 @@ function NoticeInner() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      (list ?? []).map((row) => (
-                        <TableRow key={row.id}>
-                          <TableCell>
-                            {row.is_pinned && (
-                              <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                                고정
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Link
-                              href={`/notice?id=${row.id}`}
-                              className="font-medium text-gray-900 hover:underline"
-                            >
-                              {row.title}
-                            </Link>
-                          </TableCell>
-                          <TableCell className="text-center text-gray-500">
-                            {row.view_count}
-                          </TableCell>
-                          <TableCell className="text-gray-500 text-sm">
-                            {formatDate(row.created_at)}
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      (list ?? []).map((row, index) => {
+                        const rowNum = totalCount - (page - 1) * pageSize - index
+                        return (
+                          <TableRow key={row.id}>
+                            <TableCell className="text-center text-gray-500">
+                              {rowNum}
+                            </TableCell>
+                            <TableCell>
+                              <Link
+                                href={`/notice?id=${row.id}`}
+                                className="font-medium text-gray-900 hover:underline"
+                              >
+                                {row.title}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="text-center text-gray-500">
+                              {row.view_count}
+                            </TableCell>
+                            <TableCell className="text-gray-500 text-sm text-right whitespace-nowrap w-[120px] min-w-[120px]">
+                              {formatDate(row.created_at)}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
                     )}
                   </TableBody>
                 </Table>

@@ -18,6 +18,9 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Pretendard", "system-ui", "-apple-system", "sans-serif"],
+      },
       colors: {
         // 룩엔필 브랜드 컬러 (이미지 디자인 기반)
         'neon-yellow': '#E1F800',

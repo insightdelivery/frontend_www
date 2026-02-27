@@ -48,6 +48,17 @@ function formatDateTime(s: string) {
   }
 }
 
+/** 403/401 시 API Message 또는 친절한 문구 반환, raw "Request failed with status code 403" 등 노출 방지 */
+function inquiryErrorMessage(e: unknown, fallback: string): string {
+  const err = e as { response?: { status: number; data?: { Message?: string } }; message?: string }
+  const status = err?.response?.status
+  if (status === 401 || status === 403) {
+    const msg = err?.response?.data?.Message?.trim()
+    return msg || '로그인이 필요하거나 권한이 없습니다. 다시 로그인해 주세요.'
+  }
+  return err?.message ?? fallback
+}
+
 function InquiryListInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -92,7 +103,7 @@ function InquiryListInner() {
       .catch((e) => {
         if (!cancelled) {
           if (e?.response?.status === 401) router.replace('/login?next=/inquiry')
-          else setError(e?.message ?? '목록을 불러오지 못했습니다.')
+          else setError(inquiryErrorMessage(e, '목록을 불러오지 못했습니다.'))
         }
       })
       .finally(() => {
@@ -120,7 +131,7 @@ function InquiryListInner() {
       .catch((e) => {
         if (!cancelled) {
           if (e?.response?.status === 401) router.replace('/login?next=/inquiry')
-          else setDetailError(e?.message ?? '문의를 불러오지 못했습니다.')
+          else setDetailError(inquiryErrorMessage(e, '문의를 불러오지 못했습니다.'))
         }
       })
       .finally(() => {
@@ -139,7 +150,7 @@ function InquiryListInner() {
     } catch (e: unknown) {
       const err = e as { response?: { status: number }; message?: string }
       if (err.response?.status === 401) router.replace('/login')
-      else setAnswerError((err?.message as string) ?? '답변 저장에 실패했습니다.')
+      else setAnswerError(inquiryErrorMessage(e, '답변 저장에 실패했습니다.'))
     } finally {
       setSubmitting(false)
     }
@@ -149,7 +160,7 @@ function InquiryListInner() {
     if (detailError) {
       return (
         <main className="min-h-screen bg-white">
-          <div className="mx-auto max-w-[720px] px-4 py-12">
+          <div className="mx-auto max-w-[1220px] px-4 py-12">
             <div className="rounded-md bg-red-50 p-4 text-red-800">{detailError}</div>
             <Button variant="outline" className="mt-4" asChild>
               <Link href="/inquiry">목록으로</Link>
@@ -161,7 +172,7 @@ function InquiryListInner() {
     }
     return (
       <main className="min-h-screen bg-white">
-        <div className="mx-auto max-w-[720px] px-4 sm:px-6 py-8 sm:py-12">
+        <div className="mx-auto max-w-[1220px] px-4 sm:px-6 py-8 sm:py-12">
           <div className="mb-4">
             <Link href="/inquiry" className="text-sm text-gray-500 hover:text-gray-900">
               ← 문의 목록
@@ -238,7 +249,7 @@ function InquiryListInner() {
 
   return (
     <main className="min-h-screen bg-white">
-      <div className="mx-auto max-w-[1000px] px-4 sm:px-6 py-8 sm:py-12">
+      <div className="mx-auto max-w-[1220px] px-4 sm:px-6 py-8 sm:py-12">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-gray-900">1:1 문의</h1>

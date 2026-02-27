@@ -19,15 +19,21 @@ const apiClient = axios.create({
   withCredentials: true, // CURSOR_loginRules.md에 따라 true로 설정
 })
 
-// Request Interceptor: 토큰 자동 첨부
+// 공개 게시판(인증 불필요): 토큰을 붙이지 않음 — 만료된 토큰 전송 방지
+const isPublicBoard = (url?: string) => {
+  if (!url) return false
+  const path = url.replace(getApiBaseURL(), '').split('?')[0].replace(/^https?:\/\/[^/]+/, '') || url
+  return /^\/api\/(notices|faqs)(\/|$)/.test(path)
+}
+
+// Request Interceptor: 토큰 자동 첨부 (공지/FAQ 등 공개 API는 제외)
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    if (isPublicBoard(config.url)) return config
     const token = Cookies.get('accessToken')
-    
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
-    
     return config
   },
   (error: AxiosError) => {

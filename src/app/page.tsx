@@ -1,64 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import Image from 'next/image'
 import { Card } from '@/components/ui/card'
 import Footer from '@/components/layout/Footer'
 
 export default function Home() {
-  const [heroImageError, setHeroImageError] = useState(false)
-
   return (
     <main className="bg-white text-black">
       {/* content width matches screenshot (lots of whitespace) */}
       <div className="mx-auto max-w-[1220px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
-        {/* Hero banner - Figma export: /figma/hero.png (scripts/export-figma-images.mjs) */}
-        <section className="flex justify-center">
-          <div className="w-full max-w-[1200px]">
-            <Card className="overflow-hidden rounded-[18px] border border-black/10">
-              <div className="relative h-[300px] sm:h-[400px] md:h-[500px]">
-                {heroImageError ? (
-                  <div className="absolute inset-0 bg-gradient-to-br from-slate-300 via-slate-400 to-slate-700" />
-                ) : (
-                  <Image
-                    src="/figma/hero.png"
-                    alt=""
-                    fill
-                    className="object-cover"
-                    onError={() => setHeroImageError(true)}
-                    unoptimized
-                  />
-                )}
-                <div className="absolute inset-0 bg-black/25" />
-
-                <div className="absolute left-4 sm:left-6 md:left-10 bottom-6 sm:bottom-8 md:bottom-9 right-4 sm:right-6 md:right-10 text-white">
-                  <div className="inline-flex items-center rounded-full bg-neon-yellow px-[10px] py-[6px] text-[10px] font-extrabold tracking-wide text-black">
-                    DIRECTOR&apos;S PICK
-                  </div>
-                  <h1 className="mt-3 text-[20px] sm:text-[24px] md:text-[30px] leading-[1.2] font-black">
-                    소망의 시작, 파격적이고 명료한 복음이 바꾸는 당신의 일상
-                  </h1>
-                  <p className="mt-2 text-[12px] sm:text-[13px] leading-[1.45] text-white/90">
-                    디렉터 추천 콘텐츠 - 아티클, 비디오 등 디렉터가 엄선한 5개의 콘텐츠를 만나보세요.
-                  </p>
-
-                  <div className="mt-4 flex gap-2">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <span
-                        key={i}
-                        className={[
-                          'h-[6px] w-[6px] rounded-full',
-                          i === 0 ? 'bg-white' : 'bg-white/35',
-                        ].join(' ')}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </section>
-
         {/* Upcoming seminar */}
         <section className="mt-8 sm:mt-12">
           <div className="flex items-center justify-between">
