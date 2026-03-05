@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Play, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
-import Footer from '@/components/layout/Footer'
 
 const FILTERS = ['All', 'Marketing', 'Design', 'Tech']
 const SORT_OPTIONS = ['Latest', 'Popular', 'Longest']
@@ -98,13 +97,13 @@ export default function VideoPage() {
             <p className="relative mt-2 text-[12px] sm:text-[14px] text-white/90 max-w-xl line-clamp-2">
               떠오르는 기술과 소비자 행동이 마케팅의 미래를 어떻게 만들어가는지, 업계 리더들과 깊이 있는 대담을 나눕니다.
             </p>
-            <button
-              type="button"
-              className="relative mt-4 inline-flex items-center gap-2 rounded-lg bg-black px-5 py-2.5 text-[13px] font-bold text-white hover:bg-gray-800 transition-colors"
+            <Link
+              href="/video/detail?id=1"
+              className="relative mt-4 inline-flex items-center gap-2 rounded-lg bg-black px-5 py-2.5 text-[13px] font-bold text-white hover:bg-gray-800 transition-colors w-fit"
             >
               <Play className="h-4 w-4 fill-current" />
               지금 보기
-            </button>
+            </Link>
           </div>
         </section>
 
@@ -161,7 +160,7 @@ export default function VideoPage() {
         <section>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {VIDEO_ITEMS.map((item, idx) => (
-              <Link key={idx} href="#" className="block group">
+              <Link key={idx} href={`/video/detail?id=${idx + 1}`} className="block group">
                 <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
                   <div className={`aspect-video ${item.imageGradient}`} />
                   {item.tag && (
@@ -232,8 +231,6 @@ export default function VideoPage() {
           </button>
         </div>
       </div>
-
-      <Footer />
     </main>
   )
 }

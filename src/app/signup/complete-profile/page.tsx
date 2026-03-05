@@ -9,7 +9,6 @@ import { getMe, completeProfile } from '@/services/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import Footer from '@/components/layout/Footer'
 import { RegisterFormLower } from '@/components/register/RegisterFormLower'
 
 const optionalNumber = z.union([z.number(), z.nan()]).transform((v) => (v != null && !Number.isNaN(v) ? v : undefined))
@@ -208,7 +207,6 @@ export default function CompleteProfilePage() {
           </Button>
         </form>
       </main>
-      <Footer />
     </div>
   )
 }

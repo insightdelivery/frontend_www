@@ -3,7 +3,6 @@
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import Footer from '@/components/layout/Footer'
 
 /**
  * 회원가입 완료 안내 페이지 (useSearchParams 사용 → Suspense 내부)
@@ -45,7 +44,6 @@ function SignupCompleteContent() {
           </Link>
         </div>
       </main>
-      <Footer />
     </div>
   )
 }

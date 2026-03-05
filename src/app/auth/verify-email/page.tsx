@@ -4,7 +4,6 @@ import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { verifyEmail } from '@/services/auth'
-import Footer from '@/components/layout/Footer'
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams()
@@ -41,7 +40,6 @@ function VerifyEmailContent() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto" />
           <p className="mt-4 text-gray-600">이메일 인증을 처리하고 있습니다...</p>
         </main>
-        <Footer />
       </div>
     )
   }
@@ -66,7 +64,6 @@ function VerifyEmailContent() {
           </Link>
         </div>
       </main>
-      <Footer />
     </div>
   )
 }

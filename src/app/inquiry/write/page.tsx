@@ -11,7 +11,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import Footer from '@/components/layout/Footer'
 import { getAccessToken } from '@/services/auth'
 import { useEffect } from 'react'
 
@@ -122,7 +121,6 @@ export default function InquiryWritePage() {
           </CardContent>
         </Card>
       </div>
-      <Footer />
     </main>
   )
 }

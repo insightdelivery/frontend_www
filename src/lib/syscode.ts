@@ -14,9 +14,12 @@ export interface SysCodeItem {
 const CACHE_DURATION = 24 * 60 * 60 * 1000 // 24시간 (밀리초)
 const CACHE_KEY = 'sysCodeData'
 
+/** 아티클 카테고리 부모 코드 (localStorage sysCodeData 키, list.me §5) */
+export const ARTICLE_CATEGORY_PARENT = 'SYS26209B002'
+
 /** 로그인 시 및 접속 시 공통으로 로드하는 부모 코드 ID 목록 */
 export const SYSCODE_PARENT_IDS = [
-  'SYS26209B002', // 아티클 카테고리
+  ARTICLE_CATEGORY_PARENT, // 아티클 카테고리
   'SYS26127B017', // 회원가입 지역
   'SYS26127B018', // 회원 가입 지역 국내
   'SYS26127B019', // 회원 가입 지역 해외

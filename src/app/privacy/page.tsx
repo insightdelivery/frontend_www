@@ -1,7 +1,5 @@
 import { readFileSync } from 'fs'
 import path from 'path'
-import Footer from '@/components/layout/Footer'
-
 export const metadata = {
   title: '개인정보처리방침 | InDe',
   description: 'InDe 개인정보처리방침',
@@ -52,7 +50,6 @@ export default function PrivacyPage() {
           })}
         </div>
       </div>
-      <Footer />
     </main>
   )
 }

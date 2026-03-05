@@ -23,7 +23,7 @@ const apiClient = axios.create({
 const isPublicBoard = (url?: string) => {
   if (!url) return false
   const path = url.replace(getApiBaseURL(), '').split('?')[0].replace(/^https?:\/\/[^/]+/, '') || url
-  return /^\/api\/(notices|faqs)(\/|$)/.test(path)
+  return /^\/api\/(notices|faqs|articles)(\/|$)/.test(path)
 }
 
 // Request Interceptor: 토큰 자동 첨부 (공지/FAQ 등 공개 API는 제외)

@@ -14,7 +14,6 @@ import { loadSysCodeOnLogin, SYSCODE_PARENT_IDS } from '@/lib/syscode'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { IconKakao, IconNaver, IconGoogle } from '@/components/login/SocialLoginIcons'
-import Footer from '@/components/layout/Footer'
 import { cn } from '@/lib/utils'
 
 const loginSchema = z.object({
@@ -262,7 +261,6 @@ function LoginForm() {
           </p>
         </div>
       </main>
-      <Footer />
     </div>
   )
 }

@@ -1,4 +1,12 @@
 import Link from 'next/link'
+import { Facebook, Instagram, Youtube, BookOpen } from 'lucide-react'
+
+const SNS_LINKS = [
+  { href: 'https://www.facebook.com/indemgz/?locale=ko_KR', label: 'Facebook', Icon: Facebook },
+  { href: 'https://www.instagram.com/inde_magazine/', label: 'Instagram', Icon: Instagram },
+  { href: 'https://www.youtube.com/channel/UCqgFRdCTkW12o9IZGPXgq8A', label: 'YouTube', Icon: Youtube },
+  { href: 'https://blog.naver.com/indemgz', label: 'Blog', Icon: BookOpen },
+] as const
 
 export default function Footer() {
   return (
@@ -14,27 +22,24 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Middle Column - Site Menu: Link로 클라이언트 라우팅 (실서버에서 정적 호스팅 시 메인으로 가는 문제 방지) */}
+          {/* Middle Column - Site Menu */}
           <div>
             <p className="text-[12px] font-extrabold text-gray-700">사이트 메뉴</p>
             <ul className="mt-4 sm:mt-5 space-y-2 text-[12px] text-gray-600">
               <li><Link href="/" className="hover:text-gray-900 transition-colors">HOME</Link></li>
               <li><Link href="/terms" className="hover:text-gray-900 transition-colors">이용약관</Link></li>
               <li><Link href="/privacy" className="hover:text-gray-900 transition-colors">개인정보처리방침</Link></li>
+            </ul>
+          </div>
+
+          {/* Right Column - Customer Support (공지사항, FAQ, 1:1 문의 + SNS) */}
+          <div>
+            <p className="text-[12px] font-extrabold text-gray-700">고객지원</p>
+            <ul className="mt-4 sm:mt-5 flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-2 text-[12px] text-gray-600">
               <li><Link href="/notice" className="hover:text-gray-900 transition-colors">공지사항</Link></li>
               <li><Link href="/faq" className="hover:text-gray-900 transition-colors">FAQ</Link></li>
               <li><Link href="/inquiry" className="hover:text-gray-900 transition-colors">1:1 문의</Link></li>
             </ul>
-          </div>
-
-          {/* Right Column - Customer Support (Figma: 고객지원 + Facebook, Instagram, YouTube) */}
-          <div>
-            <p className="text-[12px] font-extrabold text-gray-700">고객지원</p>
-            <div className="mt-4 sm:mt-5 flex gap-4 sm:gap-6 text-[12px] font-normal text-gray-700 tracking-wide">
-              <a href="#" className="hover:text-gray-900 transition-colors" aria-label="Facebook">Facebook</a>
-              <a href="#" className="hover:text-gray-900 transition-colors" aria-label="Instagram">Instagram</a>
-              <a href="#" className="hover:text-gray-900 transition-colors" aria-label="YouTube">YouTube</a>
-            </div>
           </div>
         </div>
 
@@ -46,7 +51,7 @@ export default function Footer() {
           {/* Left Side - Company Legal and Contact Information */}
           <div className="space-y-2 text-[12px] sm:text-[14px] text-gray-700">
             <p className="break-words">
-              사업자등록번호 : 203-87-02097| 통신판매업신고: 000000000000 | 개인정보책임자 : xxxxxxxx
+              사업자등록번호 : 203-87-02097 | 통신판매업신고 : 제2025-서울성동-1533호 | 개인정보책임자 : xxxxxxxx
             </p>
             <p className="break-words">
             서울특별시 성동구 광나루로8길 31, 2동 301호(성수동2가, 성수SKV1센터) I 이메일: indemgz@gmail.com | 대표이사 : 조광식 
@@ -55,10 +60,13 @@ export default function Footer() {
           </div>
 
           {/* Right Side - Social Media Links */}
-          <div className="flex gap-4 sm:gap-6 text-[12px] sm:text-[14px] font-normal text-gray-700 tracking-wide flex-shrink-0">
-            <span>FACEBOOK</span>
-            <span>INSTAGRAM</span>
-            <span>YOUTUBE</span>
+          <div className="flex flex-wrap gap-4 sm:gap-6 text-[12px] sm:text-[14px] font-normal text-gray-700 tracking-wide flex-shrink-0 items-center">
+            {SNS_LINKS.map(({ href, label, Icon }) => (
+              <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-gray-900 transition-colors" aria-label={label}>
+                <Icon className="h-4 w-4 sm:h-[18px] sm:w-[18px] flex-shrink-0" />
+                <span>{label}</span>
+              </a>
+            ))}
           </div>
         </div>
       </div>

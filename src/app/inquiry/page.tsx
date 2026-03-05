@@ -19,7 +19,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import Footer from '@/components/layout/Footer'
 import { getAccessToken } from '@/services/auth'
 
 function formatDate(s: string) {
@@ -166,7 +165,6 @@ function InquiryListInner() {
               <Link href="/inquiry">목록으로</Link>
             </Button>
           </div>
-          <Footer />
         </main>
       )
     }
@@ -242,7 +240,6 @@ function InquiryListInner() {
             </>
           ) : null}
         </div>
-        <Footer />
       </main>
     )
   }
@@ -345,7 +342,6 @@ function InquiryListInner() {
           </CardContent>
         </Card>
       </div>
-      <Footer />
     </main>
   )
 }

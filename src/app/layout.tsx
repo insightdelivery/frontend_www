@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import "./globals.css"
 import Header from "@/components/layout/Header"
+import Footer from "@/components/layout/Footer"
 import SysCodeLoader from "@/components/SysCodeLoader"
 
 export const metadata: Metadata = {
@@ -29,6 +30,7 @@ export default function RootLayout({
         <SysCodeLoader />
         <Header />
         {children}
+        <Footer />
       </body>
     </html>
   )

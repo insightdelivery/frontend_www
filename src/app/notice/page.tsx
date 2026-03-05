@@ -17,7 +17,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import Footer from '@/components/layout/Footer'
 
 function formatDate(s: string) {
   try {
@@ -115,7 +114,6 @@ function NoticeInner() {
               <Link href="/notice">목록으로</Link>
             </Button>
           </div>
-          <Footer />
         </main>
       )
     }
@@ -157,7 +155,6 @@ function NoticeInner() {
             </Card>
           ) : null}
         </div>
-        <Footer />
       </main>
     )
   }
@@ -257,7 +254,6 @@ function NoticeInner() {
           </CardContent>
         </Card>
       </div>
-      <Footer />
     </main>
   )
 }

@@ -12,7 +12,6 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import Footer from '@/components/layout/Footer'
 
 export default function FAQPage() {
   const [items, setItems] = useState<FAQItem[]>([])
@@ -90,7 +89,6 @@ export default function FAQPage() {
           </CardContent>
         </Card>
       </div>
-      <Footer />
     </main>
   )
 }
