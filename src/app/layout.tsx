@@ -8,8 +8,15 @@ export const metadata: Metadata = {
   title: "InDe",
   description: "InDe 웹사이트",
   icons: {
-    icon: "/inde_logo.png",
-    apple: "/inde_logo.png",
+    icon: [
+      { url: "/ms-icon-144x144.png", sizes: "144x144", type: "image/png" },
+      { url: "/ms-icon-150x150.png", sizes: "150x150", type: "image/png" },
+      { url: "/ms-icon-310x310.png", sizes: "310x310", type: "image/png" },
+    ],
+    apple: [
+      { url: "/ms-icon-150x150.png", sizes: "150x150", type: "image/png" },
+      { url: "/ms-icon-310x310.png", sizes: "310x310", type: "image/png" },
+    ],
   },
 }
 
@@ -21,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
+        <meta name="msapplication-TileImage" content="/ms-icon-144x144.png" />
         <link
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
           rel="stylesheet"
