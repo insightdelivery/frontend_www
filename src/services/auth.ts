@@ -81,6 +81,15 @@ export interface ProfileCompleteRequest {
   region_domestic?: string
   region_foreign?: string
   newsletter_agree?: boolean
+  /** 비밀번호 변경 시에만 전송 (write_only) */
+  password?: string
+}
+
+/** 회원 탈퇴 요청 (publicUserWithdrawRules §6) */
+export interface WithdrawRequest {
+  reason?: string
+  detail_reason?: string
+  password?: string
 }
 
 export interface ProfileCompleteResponse {
@@ -232,6 +241,27 @@ export const logout = async (): Promise<void> => {
     if (typeof window !== 'undefined') {
       window.location.href = '/login'
     }
+  }
+}
+
+/**
+ * 회원 탈퇴 요청 (POST /auth/withdraw/request/, publicUserWithdrawRules §6)
+ * @returns { success: true } 성공 시 로그아웃 처리 후 호출 측에서 이동 처리. { success: false, notImplemented: true } API 미구현.
+ */
+export const requestWithdraw = async (data: WithdrawRequest): Promise<{ success: boolean; notImplemented?: boolean; error?: string }> => {
+  try {
+    await apiClient.post('/auth/withdraw/request/', data)
+    return { success: true }
+  } catch (error: unknown) {
+    const err = error as { response?: { status?: number; data?: { message?: string; detail?: string } } }
+    if (err.response?.status === 404 || err.response?.status === 501) {
+      return { success: false, notImplemented: true }
+    }
+    const msg =
+      err.response?.data?.message ??
+      err.response?.data?.detail ??
+      (error instanceof Error ? error.message : '탈퇴 요청에 실패했습니다.')
+    return { success: false, error: msg }
   }
 }
 

@@ -149,6 +149,12 @@ export default function Header() {
                     {userName}님
                   </span>
                 )}
+                <Link
+                  href="/mypage"
+                  className="hover:opacity-70 transition-opacity"
+                >
+                  마이페이지
+                </Link>
                 <button
                   type="button"
                   className="hover:opacity-70 transition-opacity"
@@ -242,6 +248,13 @@ export default function Header() {
                         {userName}님
                       </p>
                     )}
+                    <Link
+                      href="/mypage"
+                      className="block w-full text-left text-[14px] font-bold hover:opacity-70 transition-opacity"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      마이페이지
+                    </Link>
                     <button
                       type="button"
                       className="block w-full text-left text-[14px] font-bold hover:opacity-70 transition-opacity"
