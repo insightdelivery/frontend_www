@@ -23,3 +23,25 @@ export interface ArticleListResponse {
   page: number
   pageSize: number
 }
+
+/** 아티클 상세 (공개 API 상세 조회 응답) */
+export interface ArticleDetail {
+  id: number
+  title: string
+  subtitle: string | null
+  content: string
+  thumbnail: string | null
+  category: string
+  author: string
+  authorAffiliation: string | null
+  isEditorPick: boolean
+  viewCount: number
+  rating: number | null
+  commentCount: number
+  highlightCount: number
+  questionCount: number
+  tags: string[]
+  questions: string[]
+  createdAt: string
+  updatedAt: string
+}

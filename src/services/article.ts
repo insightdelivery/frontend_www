@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import type { ArticleListResponse } from '@/types/article'
+import type { ArticleListResponse, ArticleDetail } from '@/types/article'
 
 const BASE = '/api/articles'
 
@@ -12,6 +12,16 @@ function unwrapResult<T>(data: unknown): T {
   }
   if (d?.Result !== undefined) return d.Result as T
   return data as T
+}
+
+/** 공개 아티클 상세 조회 (인증 불필요) */
+export async function fetchArticleDetail(id: number | string): Promise<ArticleDetail> {
+  const numId = typeof id === 'string' ? parseInt(id, 10) : id
+  if (Number.isNaN(numId)) {
+    throw new Error('유효하지 않은 아티클 ID입니다.')
+  }
+  const { data } = await api.get(`${BASE}/${numId}/`)
+  return unwrapResult<ArticleDetail>(data)
 }
 
 export interface FetchArticleListParams {
