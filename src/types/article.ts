@@ -41,7 +41,6 @@ export interface ArticleDetail {
   highlightCount: number
   questionCount: number
   tags: string[]
-  questions: string[]
   createdAt: string
   updatedAt: string
 }
