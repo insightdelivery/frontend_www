@@ -238,7 +238,7 @@ function ArticleDetailContent({ id }: ArticleDetailContentProps) {
       )}
 
       <div
-        className={`prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:!block [&_p]:!mb-2 [&_br]:block`}
+        className={`prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:!block [&_p]:!mb-2 [&_br]:block [&_blockquote]:border-l-[5px] [&_blockquote]:border-l-[#03c75a] [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:my-5 [&_blockquote]:bg-[#f6fff8] [&_blockquote]:text-[#222] [&_blockquote]:text-[15px]`}
         style={{ whiteSpace: 'pre-wrap' } as React.CSSProperties}
         dangerouslySetInnerHTML={{
           __html: contentWithLineBreaks(article.content || ''),
