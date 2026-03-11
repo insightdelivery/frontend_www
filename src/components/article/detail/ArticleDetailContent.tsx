@@ -50,6 +50,18 @@ function getCategoryName(categorySid: string): string {
   return categorySid
 }
 
+/**
+ * 본문 HTML을 상세보기에서 에디터처럼 줄바꿈이 보이도록 변환.
+ * - \r\n, \r, \n → <br />
+ * - TipTap은 Enter 시 새 <p>를 만들므로, </p><p> 사이에도 <br /> 삽입
+ */
+function contentWithLineBreaks(html: string): string {
+  if (!html || typeof html !== 'string') return html
+  return html
+    .replace(/\r\n|\r|\n/g, '<br />')
+    .replace(/<\/p>\s*<p>/gi, '</p><br /><p>')
+}
+
 export interface ArticleDetailContentProps {
   id: string
 }
@@ -226,8 +238,11 @@ function ArticleDetailContent({ id }: ArticleDetailContentProps) {
       )}
 
       <div
-        className={`prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4`}
-        dangerouslySetInnerHTML={{ __html: article.content || '' }}
+        className={`prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:block [&_p]:mb-1 [&_br]:block`}
+        style={{ whiteSpace: 'pre-wrap' } as React.CSSProperties}
+        dangerouslySetInnerHTML={{
+          __html: contentWithLineBreaks(article.content || ''),
+        }}
       />
 
       <section className="my-10 p-6 rounded-xl bg-blue-50/50 border-2 border-blue-200">
