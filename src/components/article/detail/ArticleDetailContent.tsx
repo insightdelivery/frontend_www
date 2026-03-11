@@ -51,9 +51,9 @@ function getCategoryName(categorySid: string): string {
 }
 
 /**
- * 본문 HTML을 상세보기에서 에디터처럼 줄바꿈이 보이도록 변환.
+ * 본문 HTML을 관리자 상세 모달과 동일하게 줄바꿈이 보이도록 변환.
  * - \r\n, \r, \n → <br />
- * - TipTap은 Enter 시 새 <p>를 만들므로, </p><p> 사이에도 <br /> 삽입
+ * - </p><p> (TipTap 단락) 사이에 <br /> 삽입 → 웹 상세에서도 단락 구분 표시
  */
 function contentWithLineBreaks(html: string): string {
   if (!html || typeof html !== 'string') return html
@@ -238,7 +238,7 @@ function ArticleDetailContent({ id }: ArticleDetailContentProps) {
       )}
 
       <div
-        className={`prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:block [&_p]:mb-1 [&_br]:block`}
+        className={`prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:!block [&_p]:!mb-2 [&_br]:block`}
         style={{ whiteSpace: 'pre-wrap' } as React.CSSProperties}
         dangerouslySetInnerHTML={{
           __html: contentWithLineBreaks(article.content || ''),
