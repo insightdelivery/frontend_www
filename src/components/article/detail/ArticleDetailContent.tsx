@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { ChevronRight, Bookmark, Share2, Star } from 'lucide-react'
 import { fetchArticleDetail } from '@/services/article'
 import { fetchContentQuestions, submitQuestionAnswer, type ContentQuestionItem } from '@/services/contentQuestion'
@@ -222,20 +221,6 @@ function ArticleDetailContent({ id }: ArticleDetailContentProps) {
           </div>
         </div>
       </header>
-
-      {article.thumbnail ? (
-        <div className="aspect-[4/3] rounded-[12px] overflow-hidden mb-10 relative bg-[#e2e8f0]">
-          <Image
-            src={article.thumbnail}
-            alt=""
-            fill
-            className="object-cover"
-            sizes="(max-width: 1220px) 100vw, 1220px"
-          />
-        </div>
-      ) : (
-        <div className="aspect-[4/3] rounded-[12px] overflow-hidden bg-gradient-to-br from-slate-200 to-slate-500 mb-10" />
-      )}
 
       <div
         className={`prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:!block [&_p]:!mb-2 [&_br]:block [&_blockquote]:border-l-[5px] [&_blockquote]:border-l-[#03c75a] [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:my-5 [&_blockquote]:bg-[#f6fff8] [&_blockquote]:text-[#222] [&_blockquote]:text-[15px]`}

@@ -18,7 +18,7 @@ export default function Footer() {
           <div className="md:col-span-1">
             <h3 className="text-xl sm:text-2xl font-black text-gray-800">InDe</h3>
             <p className="mt-4 sm:mt-5 text-[11px] sm:text-[12px] leading-[1.6] text-gray-600 max-w-full md:max-w-[360px]">
-              InDe는 (들어오는) 말씀과 (드러나는) 삶을 연결하는 크리스천 인사이트 플랫폼으로, 정기적인 콘텐츠를 통해 세상의 개념과 정의를 복음으로 조명하고, 매주 듣는 말씀을 일상의 언어와 시각으로 적용할 수 있도록 돕습니다.
+            InDe는 말씀과 삶을 연결하는 크리스천 인사이트 플랫폼으로, 정기적인 콘텐츠를 통해 세상의 개념과 정의를 복음으로 조명하고, 매주 듣는 말씀을 일상의 언어와 시각으로 적용할 수 있도록 돕습니다.
             </p>
           </div>
 

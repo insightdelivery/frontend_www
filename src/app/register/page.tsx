@@ -119,7 +119,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex flex-col bg-white">
       <main className="flex-1 w-full max-w-[450px] mx-auto px-4 py-10">
         <p className="text-center text-sm text-gray-600 mb-2">
-          이미 엔디 회원이라면{' '}
+          이미 인디 회원이라면{' '}
           <Link href="/login" className="text-black font-medium underline hover:no-underline">
             로그인
           </Link>
@@ -218,7 +218,9 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <Label htmlFor="password2" className="text-gray-900">비밀번호 확인</Label>
+            <Label htmlFor="password2" className="text-gray-900">
+              비밀번호 확인 <span className="text-red-500">*</span>
+            </Label>
             <div className="relative mt-1.5">
               <Input
                 id="password2"

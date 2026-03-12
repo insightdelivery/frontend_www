@@ -9,7 +9,7 @@ const TERMS_ITEMS = [
   { name: 'age_agree', required: true, label: '만 14세 이상입니다' },
   { name: 'terms_agree', required: true, label: '이용약관' },
   { name: 'privacy_agree', required: true, label: '개인정보 수집 및 이용' },
-  { name: 'newsletter_agree', required: false, label: '무료 뉴스레터 및 이벤트/혜택 정보 수신 동의' },
+  { name: 'newsletter_agree', required: false, label: '뉴스레터 및 이벤트/혜택 정보 수신 동의'},
 ] as const
 
 interface TermsAgreementProps {
@@ -28,6 +28,7 @@ export function TermsAgreement({ register, errors, watch, setValue }: TermsAgree
       setValue('age_agree', true)
       setValue('terms_agree', true)
       setValue('privacy_agree', true)
+      setValue('newsletter_agree', true)
     }
   }, [termsAllAgree, setValue])
 
