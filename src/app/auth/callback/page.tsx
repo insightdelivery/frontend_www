@@ -21,9 +21,14 @@ function AuthCallbackContent() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      const accessToken = searchParams.get('access_token')
-      const refreshToken = searchParams.get('refresh_token')
-      const error = searchParams.get('error')
+      // 리다이렉트 직후 useSearchParams()가 아직 반영되지 않을 수 있으므로 URL에서 직접 읽기
+      const params =
+        typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search)
+          : new URLSearchParams(searchParams?.toString() ?? '')
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token')
+      const error = params.get('error')
 
       if (error) {
         setErrorMessage(ERROR_MESSAGES[error] || '소셜 로그인에 실패했습니다.')
@@ -39,7 +44,7 @@ function AuthCallbackContent() {
           saveTokens(accessToken, refreshToken)
           const user = await getMe()
           saveTokens(accessToken, refreshToken, user)
-          const fromSignup = searchParams.get('from') === 'signup'
+          const fromSignup = params.get('from') === 'signup'
           if (user.profile_completed) {
             router.replace(fromSignup ? '/?welcome=1' : '/')
           } else if (user.joined_via === 'GOOGLE') {
