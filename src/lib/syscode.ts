@@ -17,6 +17,9 @@ const CACHE_KEY = 'sysCodeData'
 /** 아티클 카테고리 부모 코드 (localStorage sysCodeData 키, list.me §5) */
 export const ARTICLE_CATEGORY_PARENT = 'SYS26209B002'
 
+/** 아티클 하이라이트 상수 부모 코드 (localStorage sysCodeData, articleHightlightPlan 15.13) */
+export const ARTICLE_HIGHLIGHT_PARENT = 'SYS26312B001'
+
 /** 로그인 시 및 접속 시 공통으로 로드하는 부모 코드 ID 목록 */
 export const SYSCODE_PARENT_IDS = [
   ARTICLE_CATEGORY_PARENT, // 아티클 카테고리
@@ -26,6 +29,7 @@ export const SYSCODE_PARENT_IDS = [
   'SYS26127B006', // 직분 코드
   'SYS26209B020', // 아티클 발행정보
   'SYS26209B015', // 아티클 공개범위설정
+  'SYS26312B001', // 아티클 하이라이트
 ] as const
 
 /** 지역: 국내 = SYS26127B018, 해외 = SYS26127B019 */

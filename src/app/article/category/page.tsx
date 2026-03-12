@@ -8,6 +8,7 @@ import { getSysCode, getSysCodeName, ARTICLE_CATEGORY_PARENT } from '@/lib/sysco
 import type { SysCodeItem } from '@/lib/syscode'
 import { fetchArticleList } from '@/services/article'
 import type { ArticleListItem } from '@/types/article'
+import { getCategoryPillClass } from '@/components/article/ArticleCard'
 
 const SORT_OPTIONS = [
   { value: 'latest' as const, label: '최신순' },
@@ -31,14 +32,12 @@ function CategoryCard({
   id,
   title,
   categoryTag,
-  author,
   thumbnail,
   imageGradient,
 }: {
   id: string
   title: string
   categoryTag: string
-  author: string
   thumbnail?: string | null
   imageGradient: string
 }) {
@@ -55,11 +54,14 @@ function CategoryCard({
           <div className={`aspect-[4/3] ${imageGradient}`} />
         )}
       </div>
-      <p className="mt-2 text-[11px] sm:text-[12px] text-gray-500">{categoryTag}</p>
-      <p className="mt-0.5 text-[15px] sm:text-[17px] font-extrabold leading-snug line-clamp-2 group-hover:text-gray-600 transition-colors">
+      {categoryTag ? (
+        <span className={`mt-2 inline-block ${getCategoryPillClass(categoryTag)}`}>
+          {categoryTag}
+        </span>
+      ) : null}
+      <p className="mt-2 text-[15px] sm:text-[17px] font-extrabold leading-snug line-clamp-2 group-hover:text-gray-600 transition-colors">
         {title}
       </p>
-      <p className="mt-1 text-[11px] sm:text-[12px] text-gray-500">BY: {author}</p>
     </Link>
   )
 }
@@ -215,7 +217,6 @@ function ArticleCategoryContent() {
                   id={String(article.id)}
                   title={article.title}
                   categoryTag={getSysCodeName(categories, article.category)}
-                  author={article.author}
                   thumbnail={article.thumbnail}
                   imageGradient={getGradient(idx)}
                 />

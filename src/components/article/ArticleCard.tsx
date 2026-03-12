@@ -6,7 +6,6 @@ export interface ArticleCardProps {
   id: string
   title: string
   categoryName?: string
-  editorName?: string
   tag?: 'NEW' | 'BEST'
   /** S3 또는 Presigned URL. 있으면 img 사용, 없으면 imageGradient 사용 */
   thumbnail?: string | null
@@ -16,11 +15,29 @@ export interface ArticleCardProps {
 
 const DEFAULT_GRADIENT = 'bg-gradient-to-br from-gray-200 via-gray-300 to-gray-500'
 
+/** 카테고리명으로 pill 스타일 클래스 반환 (시인성·컬러) */
+const CATEGORY_PILL_STYLES = [
+  'bg-white border border-emerald-300 text-emerald-800',
+  'bg-white border border-amber-300 text-amber-800',
+  'bg-white border border-sky-300 text-sky-800',
+  'bg-white border border-violet-300 text-violet-800',
+  'bg-white border border-rose-300 text-rose-800',
+  'bg-white border border-teal-300 text-teal-800',
+  'bg-white border border-orange-200 text-orange-800',
+  'bg-white border border-slate-300 text-slate-700',
+] as const
+
+export function getCategoryPillClass(name: string): string {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (h << 5) - h + name.charCodeAt(i)
+  const i = Math.abs(h) % CATEGORY_PILL_STYLES.length
+  return `inline-flex items-center rounded-full px-3 py-1.5 text-[12px] sm:text-[13px] font-semibold ${CATEGORY_PILL_STYLES[i]}`
+}
+
 export function ArticleCard({
   id,
   title,
-  categoryName = '카테고리명',
-  editorName = '에디터 이름',
+  categoryName = '카테고리',
   tag,
   thumbnail,
   imageGradient = DEFAULT_GRADIENT,
@@ -49,11 +66,14 @@ export function ArticleCard({
           </span>
         )}
       </div>
-      <p className="mt-2 text-[11px] sm:text-[12px] text-gray-500">{categoryName}</p>
-      <p className="mt-0.5 text-[15px] sm:text-[17px] font-extrabold leading-snug line-clamp-2 group-hover:text-gray-600 transition-colors">
+      {categoryName ? (
+        <span className={`mt-2 inline-block ${getCategoryPillClass(categoryName)}`}>
+          {categoryName}
+        </span>
+      ) : null}
+      <p className="mt-2 text-[15px] sm:text-[17px] font-extrabold leading-snug line-clamp-2 group-hover:text-gray-600 transition-colors">
         {title}
       </p>
-      <p className="mt-1 text-[11px] sm:text-[12px] text-gray-500">{editorName}</p>
     </Link>
   )
 }

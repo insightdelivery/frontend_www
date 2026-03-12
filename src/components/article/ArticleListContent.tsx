@@ -125,7 +125,6 @@ export function ArticleListContent() {
               id={String(article.id)}
               title={article.title}
               categoryName={getSysCodeName(categories, article.category)}
-              editorName={article.author}
               tag={getTag(article)}
               thumbnail={article.thumbnail}
               imageGradient={getGradient(i)}
@@ -141,7 +140,7 @@ export function ArticleListContent() {
         <h2 className="text-[18px] sm:text-[20px] font-black text-gray-800 mb-4">
           아티클 카테고리
         </h2>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 justify-center">
           {categories.map((cat) => (
             <Link
               key={cat.sysCodeSid}
@@ -169,7 +168,6 @@ export function ArticleListContent() {
                 id={String(article.id)}
                 title={article.title}
                 categoryName={getSysCodeName(categories, article.category)}
-                editorName={article.author}
                 thumbnail={article.thumbnail}
                 imageGradient={getGradient(6 + i)}
               />
@@ -193,7 +191,6 @@ export function ArticleListContent() {
                 id={String(article.id)}
                 title={article.title}
                 categoryName={getSysCodeName(categories, article.category)}
-                editorName={article.author}
                 tag="BEST"
                 thumbnail={article.thumbnail}
                 imageGradient={getGradient(9 + i)}
@@ -219,7 +216,6 @@ export function ArticleListContent() {
                 key={article.id}
                 id={String(article.id)}
                 title={article.title}
-                subText={article.author}
                 thumbnail={article.thumbnail}
                 imageGradient={getGradient(12 + i)}
                 imageShape={i % 2 === 0 ? 'circle' : 'square'}

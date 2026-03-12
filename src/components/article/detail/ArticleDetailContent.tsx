@@ -1,14 +1,16 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Bookmark, Share2, Star } from 'lucide-react'
 import { fetchArticleDetail } from '@/services/article'
 import { fetchContentQuestions, submitQuestionAnswer, type ContentQuestionItem } from '@/services/contentQuestion'
 import type { ArticleDetail } from '@/types/article'
 import { getSysCodeName, getSysCodeFromCache } from '@/lib/syscode'
+import { HighlightProvider, useHighlight, HighlightRenderer, HighlightButton, selectionToPayloads } from '@/components/highlight'
 
-const CONTENT_MAX = 'max-w-[1220px] mx-auto'
+/** 아티클 상세 페이지 전체(GNB 제외) 가로 폭 */
+const DETAIL_MAX = 'max-w-[720px] mx-auto'
 const COLORS = {
   text: 'text-[#0f172a]',
   textSecondary: 'text-[#64748b]',
@@ -65,7 +67,9 @@ export interface ArticleDetailContentProps {
   id: string
 }
 
-function ArticleDetailContent({ id }: ArticleDetailContentProps) {
+const ARTICLE_DETAIL_PROSE_CLASS = `prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:!block [&_p]:!mb-2 [&_br]:block [&_blockquote]:border-l-[5px] [&_blockquote]:border-l-[#03c75a] [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:my-5 [&_blockquote]:bg-[#f6fff8] [&_blockquote]:text-[#222] [&_blockquote]:text-[15px]`
+
+function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
   const [article, setArticle] = useState<ArticleDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -73,6 +77,8 @@ function ArticleDetailContent({ id }: ArticleDetailContentProps) {
   const [answers, setAnswers] = useState<Record<number, string>>({})
   const [submitting, setSubmitting] = useState<number | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const contentRootRef = useRef<HTMLDivElement>(null)
+  const highlightContext = useHighlight()
 
   useEffect(() => {
     let cancelled = false
@@ -142,7 +148,7 @@ function ArticleDetailContent({ id }: ArticleDetailContentProps) {
 
   if (loading) {
     return (
-      <div className={`${CONTENT_MAX} px-4 sm:px-6 md:px-[54px] pt-6 pb-20 flex items-center justify-center min-h-[320px]`}>
+      <div className={`${DETAIL_MAX} px-4 sm:px-6 md:px-[54px] pt-6 pb-20 flex items-center justify-center min-h-[320px]`}>
         <p className={COLORS.textSecondary}>로딩 중...</p>
       </div>
     )
@@ -150,7 +156,7 @@ function ArticleDetailContent({ id }: ArticleDetailContentProps) {
 
   if (error || !article) {
     return (
-      <div className={`${CONTENT_MAX} px-4 sm:px-6 md:px-[54px] pt-6 pb-20`}>
+      <div className={`${DETAIL_MAX} px-4 sm:px-6 md:px-[54px] pt-6 pb-20`}>
         <nav className="flex items-center gap-2 mb-6" aria-label="Breadcrumb">
           <Link href="/article" className={`text-[14px] leading-5 ${COLORS.textSecondary} hover:underline`}>
             아티클
@@ -170,7 +176,7 @@ function ArticleDetailContent({ id }: ArticleDetailContentProps) {
   const displayTags = Array.isArray(article.tags) ? article.tags : []
 
   return (
-    <div className={`${CONTENT_MAX} px-4 sm:px-6 md:px-[54px] pt-6 pb-20`}>
+    <div className={`${DETAIL_MAX} px-4 sm:px-6 md:px-[54px] pt-6 pb-20`}>
       <nav className="flex items-center gap-2 mb-6" aria-label="Breadcrumb">
         <Link href="/article" className={`text-[14px] leading-5 ${COLORS.textSecondary} hover:underline`}>
           아티클
@@ -180,7 +186,7 @@ function ArticleDetailContent({ id }: ArticleDetailContentProps) {
       </nav>
 
       <header className="mb-8">
-        <h1 className={`font-extrabold text-[32px] sm:text-[40px] md:text-[48px] leading-[1.1] tracking-[-0.025em] ${COLORS.text} mb-4`}>
+        <h1 className={`font-extrabold text-[32px] sm:text-[32px] md:text-[40px] leading-[1.1] tracking-[-0.025em] ${COLORS.text} mb-4`}>
           {article.title}
         </h1>
         {article.subtitle ? (
@@ -222,13 +228,28 @@ function ArticleDetailContent({ id }: ArticleDetailContentProps) {
         </div>
       </header>
 
-      <div
-        className={`prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:!block [&_p]:!mb-2 [&_br]:block [&_blockquote]:border-l-[5px] [&_blockquote]:border-l-[#03c75a] [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:my-5 [&_blockquote]:bg-[#f6fff8] [&_blockquote]:text-[#222] [&_blockquote]:text-[15px]`}
-        style={{ whiteSpace: 'pre-wrap' } as React.CSSProperties}
-        dangerouslySetInnerHTML={{
-          __html: contentWithLineBreaks(article.content || ''),
-        }}
-      />
+      <div ref={contentRootRef} className="relative">
+        <HighlightRenderer
+          contentHtml={contentWithLineBreaks(article.content || '')}
+          className={ARTICLE_DETAIL_PROSE_CLASS}
+        />
+        <HighlightButton
+          contentRootRef={contentRootRef}
+          onSave={async () => {
+            if (!highlightContext) return
+            const sel = typeof window !== 'undefined' ? window.getSelection() : null
+            const root = contentRootRef.current?.firstElementChild as HTMLElement | null
+            if (!sel || !root || !article?.id) return
+            const payloads = selectionToPayloads(
+              root,
+              Number(article.id),
+              sel,
+              highlightContext.constants.colors[0] ?? 'yellow'
+            )
+            if (payloads.length) await highlightContext.create(payloads)
+          }}
+        />
+      </div>
 
       <section className="my-10 p-6 rounded-xl bg-blue-50/50 border-2 border-blue-200">
         <p className="font-bold text-[12px] text-[#0f172a] mb-1">© InDe Content Policy</p>
@@ -344,4 +365,10 @@ function ArticleDetailContent({ id }: ArticleDetailContentProps) {
   )
 }
 
-export default ArticleDetailContent
+export default function ArticleDetailContent(props: ArticleDetailContentProps) {
+  return (
+    <HighlightProvider articleId={props.id}>
+      <ArticleDetailContentInner id={props.id} />
+    </HighlightProvider>
+  )
+}
