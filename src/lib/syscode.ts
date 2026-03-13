@@ -138,13 +138,12 @@ const fetchSysCodeByParent = async (parentId: string): Promise<SysCodeItem[]> =>
 
 /**
  * 로그인 시 특정 부모 코드의 하위 레벨을 가져와서 localStorage에 저장
+ * API가 빈 배열을 줘도 저장함(하위가 없는 부모는 []로 저장해 "로드 완료"로 둠)
  */
 export const loadSysCodeOnLogin = async (parentId: string): Promise<void> => {
   try {
     const sysCodeData = await fetchSysCodeByParent(parentId)
-    if (sysCodeData.length > 0) {
-      setSysCodeToCache(parentId, sysCodeData)
-    }
+    setSysCodeToCache(parentId, sysCodeData)
   } catch (error) {
     console.error(`로그인 시 시스템 코드 로드 실패 (${parentId}):`, error)
   }
@@ -152,13 +151,16 @@ export const loadSysCodeOnLogin = async (parentId: string): Promise<void> => {
 
 /**
  * localStorage에 sysCodeData가 없거나 만료되었으면 전체 syscode 로드 (접속 시 호출)
+ * "로드 완료"는 캐시에 키가 있는지로 판단 (빈 배열도 저장하므로 SYS26127B019 등 하위 없는 부모 포함)
  * 클라이언트에서만 호출 (typeof window !== 'undefined')
  */
 export const ensureSysCodeLoaded = async (): Promise<void> => {
   if (typeof window === 'undefined') return
   try {
-    const cached = getSysCodeFromCache(SYSCODE_PARENT_IDS[0])
-    if (cached && cached.length > 0) return // 이미 유효한 캐시 있음
+    const allCached = SYSCODE_PARENT_IDS.every(
+      (id) => getSysCodeFromCache(id) !== null
+    )
+    if (allCached) return
     for (const parentId of SYSCODE_PARENT_IDS) {
       await loadSysCodeOnLogin(parentId)
     }

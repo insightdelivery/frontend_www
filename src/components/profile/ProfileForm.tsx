@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Eye, EyeOff } from 'lucide-react'
 import { getMe, updateProfile, logout, isAuthenticated } from '@/services/auth'
-import { getSysCodeFromCache, type SysCodeItem } from '@/lib/syscode'
+import { loadSysCodeOnLogin, getSysCodeFromCache, type SysCodeItem } from '@/lib/syscode'
 import { POSITION_PARENT, REGION_DOMESTIC_PARENT, REGION_FOREIGN_PARENT } from '@/lib/syscode'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -80,6 +80,7 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
     region_domestic?: string
     region_foreign?: string
   } | null>(null)
+  const sysCodeLoadStartedRef = useRef(false)
 
   const {
     register,
@@ -134,13 +135,42 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
     fetchUserInfo()
   }, [router, reset])
 
+  // 직분·지역 옵션: 캐시에 키가 있으면(빈 배열이어도) 캐시만 사용, 없을 때만 API 호출. 중복 호출 방지(Strict Mode 등).
   useEffect(() => {
-    const positionList = getSysCodeFromCache(POSITION_PARENT) ?? []
-    const domesticList = getSysCodeFromCache(REGION_DOMESTIC_PARENT) ?? []
-    const foreignList = getSysCodeFromCache(REGION_FOREIGN_PARENT) ?? []
-    setPositionOptions(toSysCodeOptions(positionList))
-    setRegionDomesticOptions(toSysCodeOptions(domesticList, '국내 지역을 선택하세요'))
-    setRegionForeignOptions(toSysCodeOptions(foreignList, '해외 지역을 선택하세요'))
+    let cancelled = false
+    const load = async () => {
+      if (sysCodeLoadStartedRef.current) return
+      const cachedPos = getSysCodeFromCache(POSITION_PARENT)
+      const cachedDom = getSysCodeFromCache(REGION_DOMESTIC_PARENT)
+      const cachedFor = getSysCodeFromCache(REGION_FOREIGN_PARENT)
+      if (cachedPos !== null && cachedDom !== null && cachedFor !== null) {
+        setPositionOptions(toSysCodeOptions(cachedPos))
+        setRegionDomesticOptions(toSysCodeOptions(cachedDom, '국내 지역을 선택하세요'))
+        setRegionForeignOptions(toSysCodeOptions(cachedFor, '해외 지역을 선택하세요'))
+        return
+      }
+      sysCodeLoadStartedRef.current = true
+      try {
+        const toLoad = []
+        if (cachedPos === null) toLoad.push(loadSysCodeOnLogin(POSITION_PARENT))
+        if (cachedDom === null) toLoad.push(loadSysCodeOnLogin(REGION_DOMESTIC_PARENT))
+        if (cachedFor === null) toLoad.push(loadSysCodeOnLogin(REGION_FOREIGN_PARENT))
+        if (toLoad.length) await Promise.all(toLoad)
+        if (cancelled) return
+        const positionList = getSysCodeFromCache(POSITION_PARENT) ?? []
+        const domesticList = getSysCodeFromCache(REGION_DOMESTIC_PARENT) ?? []
+        const foreignList = getSysCodeFromCache(REGION_FOREIGN_PARENT) ?? []
+        setPositionOptions(toSysCodeOptions(positionList))
+        setRegionDomesticOptions(toSysCodeOptions(domesticList, '국내 지역을 선택하세요'))
+        setRegionForeignOptions(toSysCodeOptions(foreignList, '해외 지역을 선택하세요'))
+      } finally {
+        sysCodeLoadStartedRef.current = false
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // 직분·지역 옵션 로드 후 API에서 가져온 값으로 select 선택 상태 동기화 (SID/명칭 모두 대응)
