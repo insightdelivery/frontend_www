@@ -10,7 +10,7 @@ import * as z from 'zod'
 import { Eye, EyeOff } from 'lucide-react'
 import { getApiBaseURL } from '@/lib/axios'
 import { login, resendVerificationEmail } from '@/services/auth'
-import { loadSysCodeOnLogin, SYSCODE_PARENT_IDS } from '@/lib/syscode'
+import { loadAllSysCodesOnLogin } from '@/lib/syscode'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { IconKakao, IconNaver, IconGoogle } from '@/components/login/SocialLoginIcons'
@@ -50,9 +50,7 @@ function LoginForm() {
       const response = await login(data)
 
       try {
-        for (const parentId of SYSCODE_PARENT_IDS) {
-          await loadSysCodeOnLogin(parentId)
-        }
+        await loadAllSysCodesOnLogin()
       } catch {
         // ignore
       }

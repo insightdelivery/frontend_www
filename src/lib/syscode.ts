@@ -78,6 +78,16 @@ export const setSysCodeToCache = (sysCodeGubn: string, data: SysCodeItem[]): voi
   }
 }
 
+function mapRawToSysCodeItem(item: Record<string, unknown>): SysCodeItem {
+  return {
+    sysCodeSid: String(item.sysCodeSid ?? ''),
+    sysCodeName: String(item.sysCodeName ?? ''),
+    sysCodeValue: String(item.sysCodeVal ?? item.sysCodeValue ?? item.sysCodeSid ?? ''),
+    sysCodeSort: Number(item.sysCodeSort ?? 0),
+    sysCodeUseFlag: String(item.sysCodeUse ?? item.sysCodeUseFlag ?? 'Y'),
+  }
+}
+
 // syscode API 호출 (공개 API 또는 관리자 API syscode 엔드포인트 사용)
 const fetchSysCodeFromAPI = async (sysCodeGubn: string): Promise<SysCodeItem[]> => {
   try {
@@ -94,13 +104,9 @@ const fetchSysCodeFromAPI = async (sysCodeGubn: string): Promise<SysCodeItem[]> 
     } else {
       return []
     }
-    return (syscodeList as Record<string, unknown>[]).map((item: Record<string, unknown>) => ({
-      sysCodeSid: String(item.sysCodeSid ?? ''),
-      sysCodeName: String(item.sysCodeName ?? ''),
-      sysCodeValue: String(item.sysCodeVal ?? item.sysCodeValue ?? item.sysCodeSid ?? ''),
-      sysCodeSort: Number(item.sysCodeSort ?? 0),
-      sysCodeUseFlag: String(item.sysCodeUse ?? item.sysCodeUseFlag ?? 'Y'),
-    }))
+    return (syscodeList as Record<string, unknown>[]).map((item: Record<string, unknown>) =>
+      mapRawToSysCodeItem(item)
+    )
   } catch (error) {
     console.error(`syscode API 호출 오류 (${sysCodeGubn}):`, error)
     return []
@@ -123,16 +129,43 @@ const fetchSysCodeByParent = async (parentId: string): Promise<SysCodeItem[]> =>
     } else {
       return []
     }
-    return (syscodeList as Record<string, unknown>[]).map((item: Record<string, unknown>) => ({
-      sysCodeSid: String(item.sysCodeSid ?? ''),
-      sysCodeName: String(item.sysCodeName ?? ''),
-      sysCodeValue: String(item.sysCodeVal ?? item.sysCodeValue ?? item.sysCodeSid ?? ''),
-      sysCodeSort: Number(item.sysCodeSort ?? 0),
-      sysCodeUseFlag: String(item.sysCodeUse ?? item.sysCodeUseFlag ?? 'Y'),
-    }))
+    return (syscodeList as Record<string, unknown>[]).map((item: Record<string, unknown>) =>
+      mapRawToSysCodeItem(item)
+    )
   } catch (error) {
     console.error(`syscode by_parent API 오류 (${parentId}):`, error)
     return []
+  }
+}
+
+/**
+ * bulk API로 여러 부모 코드의 직계 자식을 한 번에 조회 (API 1회)
+ */
+const fetchSysCodeBulk = async (
+  parentIds: readonly string[]
+): Promise<Record<string, SysCodeItem[]>> => {
+  if (parentIds.length === 0) return {}
+  try {
+    const response = await apiClient.get('/systemmanage/syscode/bulk/', {
+      params: { parent_ids: parentIds.join(',') },
+    })
+    let data: Record<string, unknown[]> = {}
+    if (response.data?.IndeAPIResponse?.ErrorCode === '00' && response.data?.IndeAPIResponse?.Result != null) {
+      data = response.data.IndeAPIResponse.Result as Record<string, unknown[]>
+    } else if (response.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
+      data = response.data as Record<string, unknown[]>
+    }
+    const result: Record<string, SysCodeItem[]> = {}
+    for (const pid of parentIds) {
+      const rawList = data[pid]
+      result[pid] = Array.isArray(rawList)
+        ? (rawList as Record<string, unknown>[]).map(mapRawToSysCodeItem)
+        : []
+    }
+    return result
+  } catch (error) {
+    console.error('syscode bulk API 오류:', error)
+    return {}
   }
 }
 
@@ -150,8 +183,23 @@ export const loadSysCodeOnLogin = async (parentId: string): Promise<void> => {
 }
 
 /**
+ * SYSCODE_PARENT_IDS 전체를 bulk API 1회로 로드하여 localStorage에 저장
+ * 로그인 성공 후·ensureSysCodeLoaded에서 사용
+ */
+export const loadAllSysCodesOnLogin = async (): Promise<void> => {
+  try {
+    const data = await fetchSysCodeBulk(SYSCODE_PARENT_IDS)
+    for (const parentId of SYSCODE_PARENT_IDS) {
+      setSysCodeToCache(parentId, data[parentId] ?? [])
+    }
+  } catch (error) {
+    console.error('sysCode 일괄 로드 실패:', error)
+  }
+}
+
+/**
  * localStorage에 sysCodeData가 없거나 만료되었으면 전체 syscode 로드 (접속 시 호출)
- * "로드 완료"는 캐시에 키가 있는지로 판단 (빈 배열도 저장하므로 SYS26127B019 등 하위 없는 부모 포함)
+ * bulk API 1회로 로드. "로드 완료"는 캐시에 키가 있는지로 판단 (빈 배열도 저장)
  * 클라이언트에서만 호출 (typeof window !== 'undefined')
  */
 export const ensureSysCodeLoaded = async (): Promise<void> => {
@@ -161,9 +209,7 @@ export const ensureSysCodeLoaded = async (): Promise<void> => {
       (id) => getSysCodeFromCache(id) !== null
     )
     if (allCached) return
-    for (const parentId of SYSCODE_PARENT_IDS) {
-      await loadSysCodeOnLogin(parentId)
-    }
+    await loadAllSysCodesOnLogin()
   } catch (error) {
     console.error('sysCode 초기 로드 실패:', error)
   }
