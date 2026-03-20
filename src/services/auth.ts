@@ -36,6 +36,7 @@ export interface UserInfo {
   region_domestic?: string
   region_foreign?: string
   profile_completed: boolean
+  email_verified?: boolean
   joined_via?: 'LOCAL' | 'KAKAO' | 'NAVER' | 'GOOGLE'
   is_staff?: boolean
   created_at?: string
@@ -95,6 +96,8 @@ export interface WithdrawRequest {
 export interface ProfileCompleteResponse {
   message: string
   user: UserInfo
+  /** 카카오 등 이메일 미인증 상태에서 부가정보 저장 시 인증 메일 발송 여부 */
+  verification_email_sent?: boolean
 }
 
 /**

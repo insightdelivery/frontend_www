@@ -13,7 +13,8 @@ export default function Header() {
   const router = useRouter()
   const { status, user, logout } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const userName = user?.name ?? null
+  /** GNB 인사말: 닉네임 우선, 없으면 이름(레거시·데이터 누락 대비) */
+  const greetLabel = (user?.nickname?.trim() || user?.name?.trim() || null)
 
   const handleLogout = async () => {
     if (confirm('로그아웃 하시겠습니까?')) {
@@ -109,9 +110,9 @@ export default function Header() {
           <div className="hidden lg:flex flex-1 items-center justify-end gap-6 text-[14px] font-bold">
             {status === 'authenticated' ? (
               <>
-                {userName && (
+                {greetLabel && (
                   <span className="text-[13px] font-medium">
-                    {userName}님
+                    {greetLabel}님
                   </span>
                 )}
                 <Link
@@ -206,9 +207,9 @@ export default function Header() {
               <div className="pt-4 border-t border-black/10 space-y-3">
                 {status === 'authenticated' ? (
                   <>
-                    {userName && (
+                    {greetLabel && (
                       <p className="text-[14px] font-medium text-gray-700">
-                        {userName}님
+                        {greetLabel}님
                       </p>
                     )}
                     <Link

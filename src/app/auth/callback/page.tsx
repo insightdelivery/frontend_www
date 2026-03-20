@@ -6,11 +6,11 @@ import { getMe, saveTokens } from '@/services/auth'
 import { useAuth } from '@/contexts/AuthContext'
 
 const ERROR_MESSAGES: Record<string, string> = {
-  OAUTH_DENIED: 'Google 로그인이 취소되었습니다.',
+  OAUTH_DENIED: '소셜 로그인이 취소되었습니다.',
   OAUTH_NO_CODE: '인증 정보를 받지 못했습니다.',
-  OAUTH_CONFIG: 'Google 로그인 설정이 되어 있지 않습니다.',
-  OAUTH_FAILED: 'Google 로그인에 실패했습니다.',
-  OAUTH_NO_EMAIL: '이메일 정보를 받지 못했습니다.',
+  OAUTH_CONFIG: '소셜 로그인 설정이 되어 있지 않습니다.',
+  OAUTH_FAILED: '소셜 로그인에 실패했습니다.',
+  OAUTH_NO_EMAIL: '이메일 정보를 받지 못했습니다. 네이버·구글 등에서 이메일 제공에 동의했는지 확인해 주세요.',
   EMAIL_ALREADY_REGISTERED: '이미 같은 이메일로 가입된 계정이 있습니다. 비밀번호 로그인을 이용해 주세요.',
 }
 
@@ -50,10 +50,9 @@ function AuthCallbackContent() {
           const fromSignup = params.get('from') === 'signup'
           if (user.profile_completed) {
             router.replace(fromSignup ? '/?welcome=1' : '/')
-          } else if (user.joined_via === 'GOOGLE') {
-            router.replace('/signup/complete-profile')
           } else {
-            router.replace('/signup/complete')
+            // LOCAL 이메일 가입 완료 안내(/signup/complete)가 아닌 부가정보 입력(소셜 공통)
+            router.replace('/signup/complete-profile')
           }
           return
         } catch (e) {
@@ -70,10 +69,8 @@ function AuthCallbackContent() {
         setUser(user)
         if (user.profile_completed) {
           router.replace('/')
-        } else if (user.joined_via === 'GOOGLE') {
-          router.replace('/signup/complete-profile')
         } else {
-          router.replace('/signup/complete')
+          router.replace('/signup/complete-profile')
         }
       } catch (error) {
         console.error('콜백 처리 오류:', error)

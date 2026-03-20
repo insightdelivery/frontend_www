@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -13,7 +13,7 @@ import { RegisterFormLower } from '@/components/register/RegisterFormLower'
 
 const optionalNumber = z.union([z.number(), z.nan()]).transform((v) => (v != null && !Number.isNaN(v) ? v : undefined))
 
-const completeProfileSchema = z.object({
+const baseProfileFields = {
   name: z.string().min(1, '이름을 입력해 주세요.'),
   nickname: z.string().min(1, '닉네임을 입력해 주세요.'),
   phone: z.string().min(1, '휴대폰 번호를 입력해 주세요.'),
@@ -28,21 +28,54 @@ const completeProfileSchema = z.object({
   birth_day: optionalNumber,
   region: z.string().optional(),
   is_overseas: z.boolean().optional(),
-})
+}
 
-type CompleteProfileFormData = z.infer<typeof completeProfileSchema>
+function buildCompleteProfileSchema(kakaoNeedsEmail: boolean) {
+  if (kakaoNeedsEmail) {
+    return z.object({
+      email: z.string().min(1, '이메일을 입력해 주세요.').email('올바른 이메일 형식이 아닙니다.'),
+      ...baseProfileFields,
+    })
+  }
+  return z.object({
+    ...baseProfileFields,
+  })
+}
+
+type CompleteProfileFormData = z.infer<ReturnType<typeof buildCompleteProfileSchema>>
+
+type CompleteProfileFormProps = {
+  kakaoNeedsEmail: boolean
+  serverEmail: string
+  initialName?: string
+  initialNickname?: string
+  initialPhone?: string
+}
 
 /**
- * 구글 회원가입 후 부가정보 입력 페이지
- * - 이메일 수정 불가 (구글에서 가져온 값)
- * - 등록 시 이메일 인증 없이 바로 로그인 유지
+ * 소셜(OAuth) 가입 후 부가정보 입력 — 구글·네이버·카카오 공통
+ * - 카카오 + 이메일 미인증(플레이스홀더 등): 이메일 입력·저장 후 인증 메일 발송
+ * - 그 외: 제공된 이메일 표시만(읽기 전용)
  */
-export default function CompleteProfilePage() {
+function CompleteProfileForm({
+  kakaoNeedsEmail,
+  serverEmail,
+  initialName,
+  initialNickname,
+  initialPhone,
+}: CompleteProfileFormProps) {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [userEmail, setUserEmail] = useState<string>('')
+  const [doneNotice, setDoneNotice] = useState<string | null>(null)
+
+  const schema = useMemo(() => buildCompleteProfileSchema(kakaoNeedsEmail), [kakaoNeedsEmail])
+
+  const defaultEmail = useMemo(() => {
+    if (!kakaoNeedsEmail) return ''
+    if (serverEmail.includes('@oauth-noemail.invalid')) return ''
+    return serverEmail
+  }, [kakaoNeedsEmail, serverEmail])
 
   const {
     register,
@@ -51,74 +84,72 @@ export default function CompleteProfilePage() {
     watch,
     setValue,
   } = useForm<CompleteProfileFormData>({
-    resolver: zodResolver(completeProfileSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
+      ...(kakaoNeedsEmail ? { email: defaultEmail } : {}),
       age_agree: false,
       terms_agree: false,
       privacy_agree: false,
       newsletter_agree: false,
       terms_all_agree: false,
       is_overseas: false,
+      name: initialName || '',
+      nickname: initialNickname || '',
+      phone: initialPhone || '',
     },
   })
 
-  useEffect(() => {
-    let mounted = true
-    getMe()
-      .then((user) => {
-        if (!mounted) return
-        if (user.profile_completed) {
-          router.replace('/')
+  const onSubmit = useCallback(
+    async (data: CompleteProfileFormData) => {
+      setSubmitLoading(true)
+      setError(null)
+      try {
+        const birthYear = data.birth_year && Number(data.birth_year) ? Number(data.birth_year) : undefined
+        const birthMonth = data.birth_month && Number(data.birth_month) ? Number(data.birth_month) : undefined
+        const birthDay = data.birth_day && Number(data.birth_day) ? Number(data.birth_day) : undefined
+        const emailForApi = kakaoNeedsEmail && 'email' in data ? String(data.email).trim() : serverEmail
+        const result = await completeProfile({
+          email: emailForApi,
+          name: data.name,
+          nickname: data.nickname,
+          phone: data.phone,
+          position: data.position || '',
+          birth_year: birthYear,
+          birth_month: birthMonth,
+          birth_day: birthDay,
+          region_type: data.is_overseas ? 'FOREIGN' : 'DOMESTIC',
+          region_domestic: data.is_overseas ? undefined : (data.region || ''),
+          region_foreign: data.is_overseas ? (data.region || '') : undefined,
+          newsletter_agree: data.newsletter_agree,
+        })
+        if (result.verification_email_sent) {
+          setDoneNotice(
+            '가입이 완료되었습니다. 입력하신 이메일로 인증 메일을 발송했습니다. 메일함(스팸함 포함)을 확인해 주세요.',
+          )
           return
         }
-        setUserEmail(user.email || '')
-        if (user.name) setValue('name', user.name)
-        if (user.nickname) setValue('nickname', user.nickname)
-        if (user.phone) setValue('phone', user.phone)
-      })
-      .catch(() => {
-        if (mounted) router.replace('/login')
-      })
-      .finally(() => {
-        if (mounted) setLoading(false)
-      })
-    return () => { mounted = false }
-  }, [router, setValue])
+        router.replace('/')
+      } catch (err: unknown) {
+        const e = err as { response?: { data?: { error?: string; message?: string } }; message?: string }
+        setError(e.response?.data?.error ?? e.response?.data?.message ?? (e as Error).message ?? '저장에 실패했습니다.')
+      } finally {
+        setSubmitLoading(false)
+      }
+    },
+    [kakaoNeedsEmail, router, serverEmail],
+  )
 
-  const onSubmit = async (data: CompleteProfileFormData) => {
-    setSubmitLoading(true)
-    setError(null)
-    try {
-      const birthYear = data.birth_year && Number(data.birth_year) ? Number(data.birth_year) : undefined
-      const birthMonth = data.birth_month && Number(data.birth_month) ? Number(data.birth_month) : undefined
-      const birthDay = data.birth_day && Number(data.birth_day) ? Number(data.birth_day) : undefined
-      await completeProfile({
-        email: userEmail,
-        name: data.name,
-        nickname: data.nickname,
-        phone: data.phone,
-        position: data.position || '',
-        birth_year: birthYear,
-        birth_month: birthMonth,
-        birth_day: birthDay,
-        region_type: data.is_overseas ? 'FOREIGN' : 'DOMESTIC',
-        region_domestic: data.is_overseas ? undefined : (data.region || ''),
-        region_foreign: data.is_overseas ? (data.region || '') : undefined,
-        newsletter_agree: data.newsletter_agree,
-      })
-      router.replace('/')
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { error?: string; message?: string } }; message?: string }
-      setError(e.response?.data?.error ?? e.response?.data?.message ?? (e as Error).message ?? '저장에 실패했습니다.')
-    } finally {
-      setSubmitLoading(false)
-    }
-  }
-
-  if (loading) {
+  if (doneNotice) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />
+      <div className="min-h-screen flex flex-col bg-white">
+        <main className="flex-1 w-full max-w-md mx-auto px-4 py-10">
+          <div className="rounded-md bg-green-50 border border-green-200 p-4 mb-6">
+            <p className="text-sm text-green-900">{doneNotice}</p>
+          </div>
+          <Button type="button" className="w-full bg-amber-400 hover:bg-amber-500 text-gray-900" onClick={() => router.replace('/')}>
+            홈으로 이동
+          </Button>
+        </main>
       </div>
     )
   }
@@ -141,16 +172,37 @@ export default function CompleteProfilePage() {
           )}
 
           <div>
-            <Label htmlFor="email" className="text-gray-900">이메일</Label>
-            <Input
-              id="email"
-              type="email"
-              value={userEmail}
-              readOnly
-              disabled
-              className="mt-1 bg-gray-100 text-gray-600"
-            />
-            <p className="mt-1 text-xs text-gray-500">이메일은 수정할 수 없습니다.</p>
+            <Label htmlFor="email" className="text-gray-900">이메일{kakaoNeedsEmail ? ' *' : ''}</Label>
+            {kakaoNeedsEmail ? (
+              <>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="이메일 주소"
+                  autoComplete="email"
+                  {...register('email' as keyof CompleteProfileFormData)}
+                  className="mt-1"
+                />
+                {'email' in errors && errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{(errors as { email?: { message?: string } }).email?.message}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  로그인에 사용할 이메일을 입력해 주세요. 저장 후 인증 메일이 발송됩니다.
+                </p>
+              </>
+            ) : (
+              <>
+                <Input
+                  id="email"
+                  type="email"
+                  value={serverEmail}
+                  readOnly
+                  disabled
+                  className="mt-1 bg-gray-100 text-gray-600"
+                />
+                <p className="mt-1 text-xs text-gray-500">이메일은 수정할 수 없습니다.</p>
+              </>
+            )}
           </div>
 
           <div>
@@ -208,5 +260,61 @@ export default function CompleteProfilePage() {
         </form>
       </main>
     </div>
+  )
+}
+
+export default function CompleteProfilePage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [kakaoNeedsEmail, setKakaoNeedsEmail] = useState(false)
+  const [serverEmail, setServerEmail] = useState('')
+  const [initialName, setInitialName] = useState<string | undefined>()
+  const [initialNickname, setInitialNickname] = useState<string | undefined>()
+  const [initialPhone, setInitialPhone] = useState<string | undefined>()
+
+  useEffect(() => {
+    let mounted = true
+    getMe()
+      .then((user) => {
+        if (!mounted) return
+        if (user.profile_completed) {
+          router.replace('/')
+          return
+        }
+        const needs =
+          user.joined_via === 'KAKAO' && user.email_verified === false
+        setKakaoNeedsEmail(needs)
+        setServerEmail(user.email || '')
+        if (user.name) setInitialName(user.name)
+        if (user.nickname) setInitialNickname(user.nickname)
+        if (user.phone) setInitialPhone(user.phone)
+      })
+      .catch(() => {
+        if (mounted) router.replace('/login')
+      })
+      .finally(() => {
+        if (mounted) setLoading(false)
+      })
+    return () => {
+      mounted = false
+    }
+  }, [router])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />
+      </div>
+    )
+  }
+
+  return (
+    <CompleteProfileForm
+      kakaoNeedsEmail={kakaoNeedsEmail}
+      serverEmail={serverEmail}
+      initialName={initialName}
+      initialNickname={initialNickname}
+      initialPhone={initialPhone}
+    />
   )
 }
