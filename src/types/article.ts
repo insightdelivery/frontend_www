@@ -33,6 +33,8 @@ export interface ArticleDetail {
   thumbnail: string | null
   category: string
   author: string
+  /** 연결 ContentAuthor 프로필(presigned URL). 없으면 null → www는 `/editorDefault.png` */
+  authorProfileImage?: string | null
   authorAffiliation: string | null
   isEditorPick: boolean
   viewCount: number

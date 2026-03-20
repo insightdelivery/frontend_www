@@ -325,6 +325,8 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
 
   const categoryLabel = getCategoryName(article.category)
   const displayTags = Array.isArray(article.tags) ? article.tags : []
+  const authorAvatarSrc =
+    (article.authorProfileImage && article.authorProfileImage.trim()) || '/editorDefault.png'
 
   return (
     <div className={`${DETAIL_MAX} px-4 sm:px-6 md:px-[54px] pt-6 pb-20`}>
@@ -355,7 +357,16 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
         </div>
         <div className={`flex items-center justify-between py-[25px] border-t border-b ${COLORS.border}`}>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-[#cbd5e1] overflow-hidden flex-shrink-0" />
+            <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 ring-1 ring-slate-200/90 bg-slate-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={authorAvatarSrc}
+                alt=""
+                className="h-full w-full object-cover"
+                width={48}
+                height={48}
+              />
+            </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`font-bold text-[16px] leading-6 ${COLORS.text}`}>{article.author}</span>

@@ -241,7 +241,12 @@ function ReducedMotionHero({ slides }: { slides: DisplayEventHeroItem[] }) {
   )
 }
 
-export default function HomeHeroCarousel() {
+export type HomeHeroCarouselProps = {
+  /** 지정 시 `resolveHeroEventTypeCode`를 쓰지 않고 이 코드로만 조회 (비디오 리스트 Hero 전용) */
+  forcedEventTypeCode?: string
+}
+
+export default function HomeHeroCarousel({ forcedEventTypeCode }: HomeHeroCarouselProps = {}) {
   const [resolvedEventTypeCode, setResolvedEventTypeCode] = useState<string | null>(null)
   const [slides, setSlides] = useState<DisplayEventHeroItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -260,8 +265,11 @@ export default function HomeHeroCarousel() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const code = await resolveHeroEventTypeCode()
-      setResolvedEventTypeCode(code)
+      const code =
+        forcedEventTypeCode != null && forcedEventTypeCode.trim() !== ''
+          ? forcedEventTypeCode.trim()
+          : await resolveHeroEventTypeCode()
+      setResolvedEventTypeCode(code || null)
       if (!code) {
         setSlides([])
         return
@@ -279,7 +287,7 @@ export default function HomeHeroCarousel() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [forcedEventTypeCode])
 
   useEffect(() => {
     void load()

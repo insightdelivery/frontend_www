@@ -6,10 +6,18 @@ import VideoSeminarDetailContent from '@/components/content-detail/VideoSeminarD
 
 function SeminarDetailInner() {
   const searchParams = useSearchParams()
-  const id = searchParams.get('id') || '1'
+  const id = searchParams.get('id')
+
+  if (!id) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-white px-4">
+        <p className="text-center text-gray-600">올바른 콘텐츠 id가 필요합니다. (?id=)</p>
+      </main>
+    )
+  }
 
   return (
-    <main className="bg-white min-h-screen">
+    <main className="min-h-screen bg-white">
       <VideoSeminarDetailContent type="seminar" id={id} />
     </main>
   )
