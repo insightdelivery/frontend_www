@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { ChevronRight, Bookmark, Share2, Star } from 'lucide-react'
 import { fetchArticleDetail } from '@/services/article'
 import { fetchContentQuestions, submitQuestionAnswer, type ContentQuestionItem } from '@/services/contentQuestion'
+import { postView, postRating, postBookmark, deleteBookmark } from '@/services/libraryUseractivity'
+import { useAuth } from '@/contexts/AuthContext'
 import type { ArticleDetail } from '@/types/article'
 import { getSysCodeName, getSysCodeFromCache } from '@/lib/syscode'
 import { HighlightProvider, useHighlight, HighlightRenderer, HighlightButton, selectionToPayloads } from '@/components/highlight'
@@ -70,6 +72,8 @@ export interface ArticleDetailContentProps {
 const ARTICLE_DETAIL_PROSE_CLASS = `prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:!block [&_p]:!mb-2 [&_br]:block [&_blockquote]:border-l-[5px] [&_blockquote]:border-l-[#03c75a] [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:my-5 [&_blockquote]:bg-[#f6fff8] [&_blockquote]:text-[#222] [&_blockquote]:text-[15px]`
 
 function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
+  const { status } = useAuth()
+  const authenticated = status === 'authenticated'
   const [article, setArticle] = useState<ArticleDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -77,14 +81,67 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
   const [answers, setAnswers] = useState<Record<number, string>>({})
   const [submitting, setSubmitting] = useState<number | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isBookmarked, setIsBookmarked] = useState(false)
+  const [shareToast, setShareToast] = useState(false)
+  const [ratingValue, setRatingValue] = useState<number | null>(null)
   const contentRootRef = useRef<HTMLDivElement>(null)
+  const lastFetchedId = useRef<string | null>(null)
+  /** Strict Mode 재마운트 시 첫 요청 결과 재사용 (중복 호출 없이 화면 갱신) */
+  const articlePromiseRef = useRef<{ id: string; promise: Promise<ArticleDetail> } | null>(null)
   const highlightContext = useHighlight()
 
+  const numId = id ? parseInt(id, 10) : NaN
+  const idValid = id !== '' && !Number.isNaN(numId) && numId > 0
+
+  // 사용자 활동 로그 VIEW — id 기준 1회, 클라이언트만, fire-and-forget (detail.md §4.1, userAuthPlan)
+  const calledMap = useRef(new Set<string>())
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!id || !idValid) return
+    if (calledMap.current.has(id)) return
+
+    calledMap.current.add(id)
+    postView('ARTICLE', id).catch(() => {})
+  }, [id, idValid])
+
+  useEffect(() => {
+    if (!id) return
+    if (!idValid) {
+      setLoading(false)
+      setError('id가 필요합니다.')
+      setArticle(null)
+      return () => {}
+    }
+
     let cancelled = false
+
+    // 재마운트(Strict Mode) 시 이미 진행 중인 요청이 있으면 그 결과만 사용 (1회 호출 유지)
+    const inFlight = articlePromiseRef.current
+    if (inFlight?.id === id) {
+      inFlight.promise
+        .then((data) => {
+          if (!cancelled) setArticle(data)
+        })
+        .catch((e) => {
+          if (!cancelled) setError(e instanceof Error ? e.message : '아티클을 불러오지 못했습니다.')
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false)
+        })
+      return () => {
+        cancelled = true
+      }
+    }
+
+    // 중복 호출 방지 (Strict Mode 대응, article_detail_duplicate_api_analysis Part II)
+    if (lastFetchedId.current === id) return
+    lastFetchedId.current = id
+
     setLoading(true)
     setError(null)
-    fetchArticleDetail(id)
+    const promise = fetchArticleDetail(id)
+    articlePromiseRef.current = { id, promise }
+    promise
       .then((data) => {
         if (!cancelled) setArticle(data)
       })
@@ -93,9 +150,12 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
+        articlePromiseRef.current = null
       })
-    return () => { cancelled = true }
-  }, [id])
+    return () => {
+      cancelled = true
+    }
+  }, [id, idValid])
 
   useEffect(() => {
     if (!article?.id) return
@@ -109,6 +169,19 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
       })
     return () => { cancelled = true }
   }, [article?.id])
+
+  // §6 SEO: title, description (detail.md)
+  useEffect(() => {
+    if (!article) return
+    const prevTitle = document.title
+    document.title = article.title ? `${article.title} | InDe` : 'InDe'
+    const desc = (article as { summary?: string }).summary ?? article.subtitle ?? ''
+    const metaDesc = document.querySelector('meta[name="description"]')
+    if (metaDesc && desc) metaDesc.setAttribute('content', desc)
+    return () => {
+      document.title = prevTitle
+    }
+  }, [article])
 
   const handleAnswerChange = useCallback((questionId: number, value: string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }))
@@ -146,10 +219,88 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
     [article, answers]
   )
 
+  const handleBookmarkClick = useCallback(async () => {
+    if (!idValid || !article) return
+    if (!authenticated) return
+    try {
+      if (isBookmarked) {
+        await deleteBookmark('ARTICLE', id)
+        setIsBookmarked(false)
+      } else {
+        await postBookmark('ARTICLE', id)
+        setIsBookmarked(true)
+      }
+    } catch {
+      // ignore
+    }
+  }, [id, idValid, article, status, isBookmarked])
+
+  const handleShareClick = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(typeof window !== 'undefined' ? window.location.href : '')
+      setShareToast(true)
+      setTimeout(() => setShareToast(false), 2000)
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  const handleRatingClick = useCallback(
+    async (value: number) => {
+      if (!idValid || !authenticated) return
+      try {
+        await postRating('ARTICLE', id, value)
+        setRatingValue(value)
+      } catch {
+        // ignore
+      }
+    },
+    [id, idValid, status]
+  )
+
+  // §2.2 id 없으면/숫자 검증 실패 시 Not Found (detail.md)
+  if (!idValid) {
+    return (
+      <div className={`${DETAIL_MAX} px-4 sm:px-6 md:px-[54px] pt-6 pb-20`}>
+        <nav className="flex items-center gap-2 mb-6" aria-label="Breadcrumb">
+          <Link href="/article" className={`text-[14px] leading-5 ${COLORS.textSecondary} hover:underline`}>
+            아티클
+          </Link>
+        </nav>
+        <div className="py-12 text-center">
+          <p className={`text-[18px] ${COLORS.text} mb-4`}>잘못된 접근입니다.</p>
+          <Link href="/article" className="text-[16px] font-medium text-[#0f172a] underline hover:no-underline">
+            목록으로 돌아가기
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // §2.3 로딩 상태 → Skeleton UI (detail.md)
   if (loading) {
     return (
-      <div className={`${DETAIL_MAX} px-4 sm:px-6 md:px-[54px] pt-6 pb-20 flex items-center justify-center min-h-[320px]`}>
-        <p className={COLORS.textSecondary}>로딩 중...</p>
+      <div className={`${DETAIL_MAX} px-4 sm:px-6 md:px-[54px] pt-6 pb-20`}>
+        <nav className="flex items-center gap-2 mb-6">
+          <div className="h-5 w-24 bg-[#e2e8f0] rounded animate-pulse" />
+        </nav>
+        <div className="h-10 w-3/4 bg-[#e2e8f0] rounded mb-4 animate-pulse" />
+        <div className="h-5 w-full max-w-[480px] bg-[#e2e8f0] rounded mb-6 animate-pulse" />
+        <div className="flex gap-2 mb-6">
+          <div className="h-6 w-16 bg-[#e2e8f0] rounded-full animate-pulse" />
+          <div className="h-6 w-20 bg-[#e2e8f0] rounded-full animate-pulse" />
+        </div>
+        <div className="flex items-center justify-between py-[25px] border-t border-b border-[#e2e8f0]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-[#e2e8f0] animate-pulse" />
+            <div className="h-5 w-32 bg-[#e2e8f0] rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="mt-8 space-y-3">
+          <div className="h-4 w-full bg-[#e2e8f0] rounded animate-pulse" />
+          <div className="h-4 w-full bg-[#e2e8f0] rounded animate-pulse" />
+          <div className="h-4 w-2/3 bg-[#e2e8f0] rounded animate-pulse" />
+        </div>
       </div>
     )
   }
@@ -218,10 +369,17 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button type="button" className="p-1.5 rounded hover:bg-gray-100" aria-label="북마크">
-              <Bookmark className="h-5 w-5 text-[#0f172a]" />
+            <button
+              type="button"
+              className="p-1.5 rounded hover:bg-gray-100"
+              aria-label="북마크"
+              onClick={handleBookmarkClick}
+            >
+              <Bookmark
+                className={`h-5 w-5 ${isBookmarked ? 'fill-[#0f172a] text-[#0f172a]' : 'text-[#0f172a]'}`}
+              />
             </button>
-            <button type="button" className="p-1.5 rounded hover:bg-gray-100" aria-label="공유">
+            <button type="button" className="p-1.5 rounded hover:bg-gray-100" aria-label="공유" onClick={handleShareClick}>
               <Share2 className="h-5 w-5 text-[#0f172a]" />
             </button>
           </div>
@@ -263,10 +421,22 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
           <h3 className="font-black text-[24px] leading-8 text-black mb-1">인사이트 확장하기!</h3>
           <p className="text-[16px] text-black/70">24시간 공유 링크로 인사이트와 복음을 나눠보세요!</p>
         </div>
-        <button type="button" className="bg-black text-white text-[16px] font-bold px-8 py-3 rounded-xl hover:opacity-90">
+        <button
+          type="button"
+          className="bg-black text-white text-[16px] font-bold px-8 py-3 rounded-xl hover:opacity-90"
+          onClick={handleShareClick}
+        >
           링크 복사하기
         </button>
       </section>
+      {shareToast && (
+        <div
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#0f172a] text-white text-[14px] font-medium px-6 py-3 rounded-xl shadow-lg z-50"
+          role="status"
+        >
+          링크가 복사되었습니다
+        </div>
+      )}
 
       <section className={`${COLORS.bgLight} border ${COLORS.border} rounded-2xl p-8 mb-12`}>
         <h3 className={`font-bold text-[20px] ${COLORS.text} mb-6`}>적용 질문</h3>
@@ -304,8 +474,18 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
           <p className={`font-bold text-[16px] ${COLORS.text} mb-3`}>콘텐츠가 도움이 되었나요?</p>
           <div className="flex justify-center gap-2">
             {[1, 2, 3, 4, 5].map((n) => (
-              <button key={n} type="button" className="p-1 hover:opacity-70" aria-label={`${n}점`}>
-                <Star className="h-6 w-6 text-[#e2e8f0] hover:text-amber-400" />
+              <button
+                key={n}
+                type="button"
+                className="p-1 hover:opacity-70"
+                aria-label={`${n}점`}
+                onClick={() => handleRatingClick(n)}
+              >
+                <Star
+                  className={`h-6 w-6 ${
+                    ratingValue !== null && n <= ratingValue ? 'fill-amber-400 text-amber-400' : 'text-[#e2e8f0] hover:text-amber-400'
+                  }`}
+                />
               </button>
             ))}
           </div>

@@ -20,9 +20,17 @@ export const ARTICLE_CATEGORY_PARENT = 'SYS26209B002'
 /** 아티클 하이라이트 상수 부모 코드 (localStorage sysCodeData, articleHightlightPlan 15.13) */
 export const ARTICLE_HIGHLIGHT_PARENT = 'SYS26312B001'
 
+/** Display Event — eventTypeCode (eventBannerPlan) */
+export const DISPLAY_EVENT_TYPE_PARENT = 'SYS26320B003'
+/** Display Event — contentTypeCode */
+export const DISPLAY_CONTENT_TYPE_PARENT = 'SYS26320B009'
+
 /** 로그인 시 및 접속 시 공통으로 로드하는 부모 코드 ID 목록 */
+
 export const SYSCODE_PARENT_IDS = [
   ARTICLE_CATEGORY_PARENT, // 아티클 카테고리
+  DISPLAY_EVENT_TYPE_PARENT,
+  DISPLAY_CONTENT_TYPE_PARENT,
   'SYS26127B017', // 회원가입 지역
   'SYS26127B018', // 회원 가입 지역 국내
   'SYS26127B019', // 회원 가입 지역 해외
@@ -113,8 +121,8 @@ const fetchSysCodeFromAPI = async (sysCodeGubn: string): Promise<SysCodeItem[]> 
   }
 }
 
-// by_parent API로 하위 시스템 코드 조회
-const fetchSysCodeByParent = async (parentId: string): Promise<SysCodeItem[]> => {
+// by_parent API로 하위 시스템 코드 조회 (공개 API — Hero eventType 자동 해석 등)
+export const fetchSysCodeByParent = async (parentId: string): Promise<SysCodeItem[]> => {
   try {
     const response = await apiClient.get('/systemmanage/syscode/by_parent/', {
       params: { parent_id: parentId },

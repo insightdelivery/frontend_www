@@ -15,23 +15,12 @@ export interface ArticleCardProps {
 
 const DEFAULT_GRADIENT = 'bg-gradient-to-br from-gray-200 via-gray-300 to-gray-500'
 
-/** 카테고리명으로 pill 스타일 클래스 반환 (시인성·컬러) */
-const CATEGORY_PILL_STYLES = [
-  'bg-white border border-emerald-300 text-emerald-800',
-  'bg-white border border-amber-300 text-amber-800',
-  'bg-white border border-sky-300 text-sky-800',
-  'bg-white border border-violet-300 text-violet-800',
-  'bg-white border border-rose-300 text-rose-800',
-  'bg-white border border-teal-300 text-teal-800',
-  'bg-white border border-orange-200 text-orange-800',
-  'bg-white border border-slate-300 text-slate-700',
-] as const
+/** 제목 위 카테고리 라벨 통일 스타일 (list.md §3.2) */
+const CATEGORY_LABEL_CLASS =
+  'inline-flex items-center rounded-[6px] px-3 py-1.5 text-[12px] font-bold text-white font-sans bg-[#8D93FF]'
 
-export function getCategoryPillClass(name: string): string {
-  let h = 0
-  for (let i = 0; i < name.length; i++) h = (h << 5) - h + name.charCodeAt(i)
-  const i = Math.abs(h) % CATEGORY_PILL_STYLES.length
-  return `inline-flex items-center rounded-full px-3 py-1.5 text-[12px] sm:text-[13px] font-semibold ${CATEGORY_PILL_STYLES[i]}`
+export function getCategoryPillClass(_name: string): string {
+  return CATEGORY_LABEL_CLASS
 }
 
 export function ArticleCard({

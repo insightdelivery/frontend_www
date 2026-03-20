@@ -39,6 +39,8 @@ export async function fetchNotices(params?: {
   page_size?: number
   search?: string
   ordering?: string
+  /** true 이면 GNB 표시 공지만 (백엔드 목록 필터) */
+  show_in_gnb?: boolean
 }): Promise<NoticeListResponse> {
   const { data } = await api.get(BASE.notices + '/', { params })
   return unwrapResult<NoticeListResponse>(data)

@@ -3,6 +3,7 @@ import "./globals.css"
 import Header from "@/components/layout/Header"
 import Footer from "@/components/layout/Footer"
 import SysCodeLoader from "@/components/SysCodeLoader"
+import { AuthProvider } from "@/contexts/AuthContext"
 
 export const metadata: Metadata = {
   title: "InDe",
@@ -35,10 +36,12 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <SysCodeLoader />
-        <Header />
-        {children}
-        <Footer />
+        <AuthProvider>
+          <SysCodeLoader />
+          <Header />
+          {children}
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   )

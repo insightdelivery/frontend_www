@@ -10,6 +10,7 @@ import * as z from 'zod'
 import { Eye, EyeOff } from 'lucide-react'
 import { getApiBaseURL } from '@/lib/axios'
 import { login, resendVerificationEmail } from '@/services/auth'
+import { useAuth } from '@/contexts/AuthContext'
 import { loadAllSysCodesOnLogin } from '@/lib/syscode'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,6 +27,7 @@ type LoginFormData = z.infer<typeof loginSchema>
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { setUser } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
@@ -48,6 +50,7 @@ function LoginForm() {
 
     try {
       const response = await login(data)
+      setUser(response.user)
 
       try {
         await loadAllSysCodesOnLogin()

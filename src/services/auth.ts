@@ -190,6 +190,21 @@ export const getMe = async (): Promise<UserInfo> => {
   }
 }
 
+/** 앱 최초 1회만 getMe 호출 (userAuthPlan §2). 이후 호출 시에는 API를 호출하지 않고 null 반환. */
+let initAuthDone = false
+
+export const initAuth = async (): Promise<UserInfo | null> => {
+  if (initAuthDone) return null
+  initAuthDone = true
+  if (!Cookies.get('accessToken')) return null
+  try {
+    return await getMe()
+  } catch {
+    return null
+  }
+}
+
+
 /**
  * 프로필 완성/수정 (구글 부가정보 입력 등)
  */
@@ -224,7 +239,7 @@ export const updateProfile = async (data: ProfileCompleteRequest): Promise<Profi
 }
 
 /**
- * 로그아웃
+ * 로그아웃 (gnb_login_logout_analysis Part V.5)
  */
 export const logout = async (): Promise<void> => {
   try {
@@ -232,14 +247,11 @@ export const logout = async (): Promise<void> => {
   } catch (error: unknown) {
     console.error('로그아웃 API 오류:', error)
   } finally {
-    // 에러가 발생해도 로컬 쿠키는 삭제
     Cookies.remove('accessToken')
     Cookies.remove('refreshToken')
     Cookies.remove('userInfo')
-    
-    // 로그인 페이지로 이동
     if (typeof window !== 'undefined') {
-      window.location.href = '/login'
+      window.location.replace('/login')
     }
   }
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import DOMPurify from 'dompurify'
 import { useHighlight } from './HighlightContext'
 import { applyMarks } from './highlightUtils'
 
@@ -23,7 +24,13 @@ export function HighlightRenderer({ contentHtml, className }: HighlightRendererP
   useEffect(() => {
     const root = rootRef.current
     if (!root) return
-    root.innerHTML = contentHtml
+    const sanitized =
+      typeof window !== 'undefined'
+        ? DOMPurify.sanitize(contentHtml, {
+            ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'a', 'blockquote', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'span', 'div'],
+          })
+        : contentHtml
+    root.innerHTML = sanitized
     applyMarks(root, list)
   }, [contentHtml, list])
 

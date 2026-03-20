@@ -1,62 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import Cookies from 'js-cookie'
-import { isAuthenticated, getMe, logout } from '@/services/auth'
-import { Button } from '@/components/ui/button'
+import { useAuth } from '@/contexts/AuthContext'
 import { Search, Menu, X, Home } from 'lucide-react'
+import MainBar from '@/components/layout/MainBar'
 
 export default function Header() {
   const pathname = usePathname()
   const router = useRouter()
-  const [authenticated, setAuthenticated] = useState(false)
-  const [userName, setUserName] = useState<string | null>(null)
-  const [validating, setValidating] = useState(true) // 초기: 토큰 유효성 검사 전
+  const { status, user, logout } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-
-  // 토큰이 있으면 서버에 유효성 검사(getMe), 없으면 비인증 처리
-  useEffect(() => {
-    if (pathname.startsWith('/auth/callback')) return
-
-    const run = async () => {
-      if (!isAuthenticated()) {
-        setAuthenticated(false)
-        setUserName(null)
-        setValidating(false)
-        return
-      }
-
-      // 쿠키에 토큰이 있으면 반드시 서버로 유효성 검사 (만료/무효 토큰 구분)
-      setValidating(true)
-      try {
-        const user = await getMe()
-        setUserName(user?.name || null)
-        setAuthenticated(true)
-      } catch {
-        setAuthenticated(false)
-        setUserName(null)
-        // 401 시 axios 인터셉터에서 쿠키 삭제 후 /login 리다이렉트
-      } finally {
-        setValidating(false)
-      }
-    }
-
-    run()
-  }, [pathname])
-
-  // 다른 탭/요청에서 쿠키가 삭제된 경우 동기화 (토큰 유효성은 getMe로만 판단, 여기서는 삭제 감지)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (authenticated && !Cookies.get('accessToken')) {
-        setAuthenticated(false)
-        setUserName(null)
-      }
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [authenticated])
+  const userName = user?.name ?? null
 
   const handleLogout = async () => {
     if (confirm('로그아웃 하시겠습니까?')) {
@@ -64,17 +21,27 @@ export default function Header() {
     }
   }
 
-  // OAuth 콜백 등 내부 처리 페이지에서만 헤더 숨김 (로그인/회원가입은 헤더·푸터 표시)
   if (pathname.startsWith('/auth/callback')) {
     return null
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="sticky top-0 z-50">
+        <MainBar />
+        <div className="gnb-placeholder h-[60px] bg-neon-yellow" aria-hidden />
+      </div>
+    )
   }
 
   const isArticleSection = pathname === '/article' || pathname.startsWith('/article/')
   const isMainPage = pathname === '/' // HOME 링크 표시 여부만 사용 (스타일은 메인 구분 없이 동일)
 
   return (
-    <header className="sticky top-0 z-50 bg-neon-yellow text-black">
-      <div className="mx-auto max-w-[1220px] px-4 md:px-8">
+    <div className="sticky top-0 z-50">
+      <MainBar />
+      <header className="bg-neon-yellow text-black">
+        <div className="mx-auto max-w-[1220px] px-4 md:px-8">
         <div className="flex items-center h-[52px] sm:h-[56px]">
           {/* Desktop Navigation - Left */}
           <nav className="hidden lg:flex flex-1 items-center gap-10 text-[14px] font-bold">
@@ -140,9 +107,7 @@ export default function Header() {
 
           {/* Desktop Actions - Right */}
           <div className="hidden lg:flex flex-1 items-center justify-end gap-6 text-[14px] font-bold">
-            {validating ? (
-              <span className="text-[13px] text-gray-500">확인 중...</span>
-            ) : authenticated ? (
+            {status === 'authenticated' ? (
               <>
                 {userName && (
                   <span className="text-[13px] font-medium">
@@ -239,9 +204,7 @@ export default function Header() {
                 세미나
               </Link>
               <div className="pt-4 border-t border-black/10 space-y-3">
-                {validating ? (
-                  <p className="text-[14px] text-gray-500">확인 중...</p>
-                ) : authenticated ? (
+                {status === 'authenticated' ? (
                   <>
                     {userName && (
                       <p className="text-[14px] font-medium text-gray-700">
@@ -295,7 +258,8 @@ export default function Header() {
           </div>
         )}
       </div>
-    </header>
+      </header>
+    </div>
   )
 }
 

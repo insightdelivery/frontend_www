@@ -6,7 +6,8 @@ import ArticleDetailContent from '@/components/article/detail/ArticleDetailConte
 
 function ArticleDetailInner() {
   const searchParams = useSearchParams()
-  const id = searchParams.get('id') || '1'
+  const idParam = searchParams.get('id')
+  const id = idParam ?? ''
 
   return (
     <main className="bg-white min-h-screen">

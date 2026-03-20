@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getMe, saveTokens } from '@/services/auth'
+import { useAuth } from '@/contexts/AuthContext'
 
 const ERROR_MESSAGES: Record<string, string> = {
   OAUTH_DENIED: 'Google 로그인이 취소되었습니다.',
@@ -16,6 +17,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 function AuthCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { setUser } = useAuth()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [errorMessage, setErrorMessage] = useState<string>('')
 
@@ -44,6 +46,7 @@ function AuthCallbackContent() {
           saveTokens(accessToken, refreshToken)
           const user = await getMe()
           saveTokens(accessToken, refreshToken, user)
+          setUser(user)
           const fromSignup = params.get('from') === 'signup'
           if (user.profile_completed) {
             router.replace(fromSignup ? '/?welcome=1' : '/')
@@ -64,6 +67,7 @@ function AuthCallbackContent() {
 
       try {
         const user = await getMe()
+        setUser(user)
         if (user.profile_completed) {
           router.replace('/')
         } else if (user.joined_via === 'GOOGLE') {
