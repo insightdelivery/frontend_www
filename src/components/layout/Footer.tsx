@@ -11,7 +11,7 @@ const SNS_LINKS = [
 export default function Footer() {
   return (
     <footer className="mt-8 sm:mt-10 bg-[#F8F8F8]">
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 md:px-8 py-10 sm:py-16 md:py-20">
+      <div className="mx-auto max-w-[1220px] px-4 sm:px-6 md:px-8 py-10 sm:py-16 md:py-20">
         {/* Top Section - Three Columns */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
           {/* Left Column - Company Introduction */}

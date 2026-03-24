@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { fetchHeroDisplayEvents } from '@/services/displayEvent'
 import type { DisplayEventHeroItem } from '@/types/displayEvent'
 import { heroInternalHref } from '@/lib/heroRoutes'
@@ -84,6 +85,7 @@ function useContainerWidth<T extends HTMLElement>(enabled: boolean) {
 function SlideVisual({ slide }: { slide: DisplayEventHeroItem }) {
   const title = slide.title || '제목 없음'
   const subtitle = slide.subtitle || ''
+  const badge = slide.badgeText?.trim() || ''
   const bg = resolveHeroImageUrl(slide.imageUrl)
 
   return (
@@ -107,11 +109,13 @@ function SlideVisual({ slide }: { slide: DisplayEventHeroItem }) {
         }}
       />
       <div className="absolute inset-0 z-[2] flex flex-col justify-end p-6 sm:p-8 md:p-12 pointer-events-none text-white">
-        <div className="pb-4">
-          <span className="inline-block rounded-full bg-[#e1f800] px-3 py-1 font-bold text-[12px] uppercase tracking-[0.3px] text-black">
-            Director&apos;s Pick
-          </span>
-        </div>
+        {badge ? (
+          <div className="pb-4">
+            <span className="inline-block rounded-full bg-[#e1f800] px-3 py-1 font-bold text-[12px] uppercase tracking-[0.3px] text-black">
+              {badge}
+            </span>
+          </div>
+        ) : null}
         <h1 className="font-black text-white text-[32px] leading-[1.1] sm:text-[40px] md:text-[48px] md:leading-[48px]">
           {title}
         </h1>
@@ -308,6 +312,70 @@ export default function HomeHeroCarousel({ forcedEventTypeCode }: HomeHeroCarous
     return () => window.clearInterval(id)
   }, [carouselEnabled, autoplayPaused, cloneIndex])
 
+  const activeIndexRef = useRef(activeIndex)
+  useEffect(() => {
+    activeIndexRef.current = activeIndex
+  }, [activeIndex])
+
+  /** 수동 이전·다음 후 자동 재생 카운트다운을 다시 잡기 위한 일시 정지 */
+  const resumeAutoplayTimerRef = useRef<number | null>(null)
+  const scheduleAutoplayResume = useCallback(() => {
+    setAutoplayPaused(true)
+    if (resumeAutoplayTimerRef.current != null) {
+      window.clearTimeout(resumeAutoplayTimerRef.current)
+    }
+    resumeAutoplayTimerRef.current = window.setTimeout(() => {
+      resumeAutoplayTimerRef.current = null
+      setAutoplayPaused(false)
+    }, SLIDE_HOLD_MS)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (resumeAutoplayTimerRef.current != null) {
+        window.clearTimeout(resumeAutoplayTimerRef.current)
+      }
+    }
+  }, [])
+
+  const goToNext = useCallback(() => {
+    if (slides.length <= 1) return
+    scheduleAutoplayResume()
+    const i = activeIndexRef.current
+    if (i === cloneIndex - 1) {
+      setTransitionEnabled(true)
+      setActiveIndex(cloneIndex)
+      return
+    }
+    if (i === cloneIndex) {
+      setTransitionEnabled(false)
+      setActiveIndex(1)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setTransitionEnabled(true))
+      })
+      return
+    }
+    setTransitionEnabled(true)
+    setActiveIndex(i + 1)
+  }, [slides.length, cloneIndex, scheduleAutoplayResume])
+
+  const goToPrev = useCallback(() => {
+    if (slides.length <= 1) return
+    scheduleAutoplayResume()
+    const i = activeIndexRef.current
+    const last = slides.length - 1
+    if (i === 0 || i === cloneIndex) {
+      setTransitionEnabled(false)
+      setActiveIndex(last)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setTransitionEnabled(true))
+      })
+      return
+    }
+    setTransitionEnabled(true)
+    setActiveIndex(i - 1)
+  }, [slides.length, cloneIndex, scheduleAutoplayResume])
+
   const handleTrackTransitionEnd = (e: React.TransitionEvent<HTMLDivElement>) => {
     if (e.propertyName !== 'transform') return
     if (slides.length <= 1) return
@@ -390,6 +458,22 @@ export default function HomeHeroCarousel({ forcedEventTypeCode }: HomeHeroCarous
                 <HeroSlideCell key={`${slide.displayEventId}-${i}`} slide={slide} cellWidth={containerW} />
               ))}
             </div>
+            <button
+              type="button"
+              aria-label="이전 이벤트"
+              className="absolute left-2 top-1/2 z-[4] flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e1f800] sm:left-4 sm:h-14 sm:w-14 pointer-events-auto"
+              onClick={goToPrev}
+            >
+              <ChevronLeft className="h-9 w-9 sm:h-11 sm:w-11 shrink-0" strokeWidth={2.25} aria-hidden />
+            </button>
+            <button
+              type="button"
+              aria-label="다음 이벤트"
+              className="absolute right-2 top-1/2 z-[4] flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e1f800] sm:right-4 sm:h-14 sm:w-14 pointer-events-auto"
+              onClick={goToNext}
+            >
+              <ChevronRight className="h-9 w-9 sm:h-11 sm:w-11 shrink-0" strokeWidth={2.25} aria-hidden />
+            </button>
             <div className="absolute bottom-4 left-1/2 z-[3] flex -translate-x-1/2 gap-2 pointer-events-auto">
               {slides.map((s, i) => (
                 <button
@@ -401,6 +485,7 @@ export default function HomeHeroCarousel({ forcedEventTypeCode }: HomeHeroCarous
                     i === activeIndex % slides.length ? 'bg-white' : 'bg-white/40 hover:bg-white/70'
                   }`}
                   onClick={() => {
+                    scheduleAutoplayResume()
                     setTransitionEnabled(true)
                     setActiveIndex(i)
                   }}

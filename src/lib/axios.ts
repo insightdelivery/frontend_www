@@ -23,7 +23,7 @@ const apiClient = axios.create({
 const isPublicBoard = (url?: string) => {
   if (!url) return false
   const path = url.replace(getApiBaseURL(), '').split('?')[0].replace(/^https?:\/\/[^/]+/, '') || url
-  return /^\/api\/(notices|faqs|articles|content|events|videos)(\/|$)/.test(path)
+  return /^\/api\/(notices|faqs|articles|content|events|videos|search)(\/|$)/.test(path)
 }
 
 // 토큰 갱신 중 플래그 및 Promise 공유 (userAuthPlan §9 §16)

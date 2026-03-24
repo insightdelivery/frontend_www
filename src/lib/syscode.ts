@@ -20,6 +20,15 @@ export const ARTICLE_CATEGORY_PARENT = 'SYS26209B002'
 /** 아티클 하이라이트 상수 부모 코드 (localStorage sysCodeData, articleHightlightPlan 15.13) */
 export const ARTICLE_HIGHLIGHT_PARENT = 'SYS26312B001'
 
+/**
+ * 추천 검색어·콘텐츠 저작권 문구 등 (localStorage.md §2.1)
+ * 하위: SYS26324B002 추천 검색어, B003~B005 저작권 문구
+ */
+export const SYSCODE_SITE_COPY_PARENT = 'SYS26324B001'
+
+/** 헤더 검색 추천 키워드 — `SYSCODE_SITE_COPY_PARENT` 배열 내 행 SID */
+export const SYSCODE_SEARCH_KEYWORD_SID = 'SYS26324B002'
+
 /** Display Event — eventTypeCode (eventBannerPlan) */
 export const DISPLAY_EVENT_TYPE_PARENT = 'SYS26320B003'
 /** Display Event — contentTypeCode */
@@ -38,6 +47,7 @@ export const SYSCODE_PARENT_IDS = [
   'SYS26209B020', // 아티클 발행정보
   'SYS26209B015', // 아티클 공개범위설정
   'SYS26312B001', // 아티클 하이라이트
+  SYSCODE_SITE_COPY_PARENT, // 추천 검색어·저작권 문구 (localStorage.md)
 ] as const
 
 /** 지역: 국내 = SYS26127B018, 해외 = SYS26127B019 */
@@ -237,4 +247,23 @@ export const getSysCodeName = (sysCodeList: SysCodeItem[], sysCodeValue: string)
     sysCodeList.find((c) => c.sysCodeSid === sysCodeValue) ??
     sysCodeList.find((c) => c.sysCodeValue === sysCodeValue)
   return item ? item.sysCodeName : sysCodeValue
+}
+
+/**
+ * 헤더 검색 추천 키워드 — `sysCodeData[SYSCODE_SITE_COPY_PARENT]` 중
+ * `sysCodeSid === SYSCODE_SEARCH_KEYWORD_SID` 행의 `sysCodeValue`를 쉼표 분리 (wwwSearchPlan §17, localStorage.md §2.1)
+ */
+export function getRecommendedSearchKeywordsFromCache(): string[] {
+  if (typeof window === 'undefined') return []
+  const list = getSysCodeFromCache(SYSCODE_SITE_COPY_PARENT)
+  if (!list?.length) return []
+  const keywordSource = list.filter((item) => item.sysCodeSid === SYSCODE_SEARCH_KEYWORD_SID)
+  if (!keywordSource.length) return []
+  const keywords = keywordSource
+    .filter((item) => item.sysCodeUseFlag === 'Y')
+    .flatMap((item) => item.sysCodeValue.split(','))
+    .map((v) => v.trim())
+    .filter(Boolean)
+  keywords.sort((a, b) => a.localeCompare(b))
+  return keywords
 }

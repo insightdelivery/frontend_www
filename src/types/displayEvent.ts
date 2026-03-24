@@ -6,6 +6,8 @@ export interface DisplayEventHeroItem {
   contentId: number | null
   title: string | null
   subtitle: string | null
+  /** 히어로 상단 칩. 없거나 공백이면 www에서 칩 미표시 */
+  badgeText?: string | null
   imageUrl: string | null
   linkUrl: string | null
   content: {
