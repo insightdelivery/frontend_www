@@ -6,6 +6,7 @@ export const HOMEPAGE_DOC_TYPES_ORDERED = [
   'article_copyright',
   'video_copyright',
   'seminar_copyright',
+  'recommended_search',
 ] as const
 
 export type HomepageDocType = (typeof HOMEPAGE_DOC_TYPES_ORDERED)[number]
@@ -17,4 +18,5 @@ export const HOMEPAGE_DOC_DEFAULT_TITLES: Record<HomepageDocType, string> = {
   article_copyright: '아티클 저작권',
   video_copyright: '비디오 저작권',
   seminar_copyright: '세미나 저작권',
+  recommended_search: '추천검색어',
 }

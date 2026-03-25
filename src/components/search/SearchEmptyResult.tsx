@@ -1,11 +1,22 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getRecommendedSearchKeywordsFromCache } from '@/lib/syscode'
+import { fetchRecommendedSearchKeywords } from '@/lib/recommendedSearchKeywords'
 
 export default function SearchEmptyResult() {
   const router = useRouter()
-  const keywords = getRecommendedSearchKeywordsFromCache()
+  const [keywords, setKeywords] = useState<string[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    void fetchRecommendedSearchKeywords().then((k) => {
+      if (!cancelled) setKeywords(k)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <div className="mt-10">
