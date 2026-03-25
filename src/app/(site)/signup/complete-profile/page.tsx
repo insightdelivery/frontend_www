@@ -11,8 +11,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RegisterFormLower } from '@/components/register/RegisterFormLower'
 
-const optionalNumber = z.union([z.number(), z.nan()]).transform((v) => (v != null && !Number.isNaN(v) ? v : undefined))
-
 const baseProfileFields = {
   name: z.string().min(1, '이름을 입력해 주세요.'),
   nickname: z.string().min(1, '닉네임을 입력해 주세요.'),
@@ -22,12 +20,6 @@ const baseProfileFields = {
   privacy_agree: z.boolean().refine((v) => v === true, { message: '개인정보 수집·이용 동의가 필요합니다.' }),
   newsletter_agree: z.boolean().optional(),
   terms_all_agree: z.boolean().optional(),
-  position: z.string().optional(),
-  birth_year: optionalNumber,
-  birth_month: optionalNumber,
-  birth_day: optionalNumber,
-  region: z.string().optional(),
-  is_overseas: z.boolean().optional(),
 }
 
 function buildCompleteProfileSchema(kakaoNeedsEmail: boolean) {
@@ -92,7 +84,6 @@ function CompleteProfileForm({
       privacy_agree: false,
       newsletter_agree: false,
       terms_all_agree: false,
-      is_overseas: false,
       name: initialName || '',
       nickname: initialNickname || '',
       phone: initialPhone || '',
@@ -104,22 +95,13 @@ function CompleteProfileForm({
       setSubmitLoading(true)
       setError(null)
       try {
-        const birthYear = data.birth_year && Number(data.birth_year) ? Number(data.birth_year) : undefined
-        const birthMonth = data.birth_month && Number(data.birth_month) ? Number(data.birth_month) : undefined
-        const birthDay = data.birth_day && Number(data.birth_day) ? Number(data.birth_day) : undefined
         const emailForApi = kakaoNeedsEmail && 'email' in data ? String(data.email).trim() : serverEmail
         const result = await completeProfile({
           email: emailForApi,
           name: data.name,
           nickname: data.nickname,
           phone: data.phone,
-          position: data.position || '',
-          birth_year: birthYear,
-          birth_month: birthMonth,
-          birth_day: birthDay,
-          region_type: data.is_overseas ? 'FOREIGN' : 'DOMESTIC',
-          region_domestic: data.is_overseas ? undefined : (data.region || ''),
-          region_foreign: data.is_overseas ? (data.region || '') : undefined,
+          position: '',
           newsletter_agree: data.newsletter_agree,
         })
         if (result.verification_email_sent) {

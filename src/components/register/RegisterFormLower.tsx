@@ -12,8 +12,8 @@ interface RegisterFormLowerProps {
 }
 
 /**
- * 회원가입 페이지 하단 영역 (페이지 분할 라인 아래)
- * - 추가 정보 입력 (선택)
+ * 회원가입·complete-profile 하단 (분할선 아래)
+ * - 추가 정보: snsUserJoin §6 — 직분·생년월일·지역·해외거주 UI 없음 (`AdditionalInfoInput`는 null)
  * - 이용약관 전체 동의
  */
 export function RegisterFormLower({ register, errors, watch, setValue }: RegisterFormLowerProps) {

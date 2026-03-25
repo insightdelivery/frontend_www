@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { getApiBaseURL } from '@/lib/axios'
-import { register as registerAPI } from '@/services/auth'
+import { register as registerAPI, sendSignupSms, verifySignupSms } from '@/services/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,12 +29,6 @@ const registerSchema = z
     privacy_agree: z.boolean().refine((v) => v === true, { message: '개인정보 수집·이용 동의가 필요합니다.' }),
     newsletter_agree: z.boolean().optional(),
     terms_all_agree: z.boolean().optional(),
-    position: z.string().optional(),
-    birth_year: z.number().optional(),
-    birth_month: z.number().optional(),
-    birth_day: z.number().optional(),
-    region: z.string().optional(),
-    is_overseas: z.boolean().optional(),
   })
   .refine((data) => data.password === data.password2, {
     message: '비밀번호가 일치하지 않습니다.',
@@ -49,6 +43,15 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showPassword2, setShowPassword2] = useState(false)
+
+  const [smsCode, setSmsCode] = useState('')
+  const [phoneVerified, setPhoneVerified] = useState(false)
+  const [verifiedForPhone, setVerifiedForPhone] = useState('')
+  const [smsHint, setSmsHint] = useState<string | null>(null)
+  const [smsFieldError, setSmsFieldError] = useState<string | null>(null)
+  const [sendingSms, setSendingSms] = useState(false)
+  const [verifyingSms, setVerifyingSms] = useState(false)
+  const [cooldownSec, setCooldownSec] = useState(0)
 
   const {
     register,
@@ -67,7 +70,87 @@ export default function RegisterPage() {
     },
   })
 
+  const phoneWatch = watch('phone')
+
+  useEffect(() => {
+    if (!phoneVerified || !verifiedForPhone) return
+    if ((phoneWatch || '').trim() !== verifiedForPhone) {
+      setPhoneVerified(false)
+      setSmsCode('')
+      setSmsHint(null)
+      setVerifiedForPhone('')
+    }
+  }, [phoneWatch, phoneVerified, verifiedForPhone])
+
+  useEffect(() => {
+    if (cooldownSec <= 0) return
+    const t = setTimeout(() => setCooldownSec((s) => s - 1), 1000)
+    return () => clearTimeout(t)
+  }, [cooldownSec])
+
+  const handleSendSms = useCallback(async () => {
+    const phone = (phoneWatch || '').trim()
+    setSmsFieldError(null)
+    setSmsHint(null)
+    if (!phone) {
+      setSmsFieldError('휴대폰 번호를 입력해 주세요.')
+      return
+    }
+    setSendingSms(true)
+    try {
+      await sendSignupSms(phone)
+      setCooldownSec(30)
+      setSmsHint('인증번호를 문자로 발송했습니다. 3분 이내에 입력해 주세요.')
+    } catch (e: unknown) {
+      const ax = e as {
+        response?: { data?: { IndeAPIResponse?: { Message?: string }; error?: string } }
+        message?: string
+      }
+      const msg =
+        ax.response?.data?.IndeAPIResponse?.Message ??
+        ax.response?.data?.error ??
+        (e instanceof Error ? e.message : null) ??
+        '인증번호 발송에 실패했습니다.'
+      setSmsFieldError(msg)
+    } finally {
+      setSendingSms(false)
+    }
+  }, [phoneWatch])
+
+  const handleVerifySms = useCallback(async () => {
+    const phone = (phoneWatch || '').trim()
+    setSmsFieldError(null)
+    if (!phone || smsCode.length !== 6) {
+      setSmsFieldError('6자리 인증번호를 입력해 주세요.')
+      return
+    }
+    setVerifyingSms(true)
+    try {
+      await verifySignupSms(phone, smsCode)
+      setPhoneVerified(true)
+      setVerifiedForPhone(phone)
+      setSmsHint('휴대폰 인증이 완료되었습니다.')
+    } catch (e: unknown) {
+      const ax = e as {
+        response?: { data?: { IndeAPIResponse?: { Message?: string }; error?: string } }
+        message?: string
+      }
+      const msg =
+        ax.response?.data?.IndeAPIResponse?.Message ??
+        ax.response?.data?.error ??
+        (e instanceof Error ? e.message : null) ??
+        '인증에 실패했습니다.'
+      setSmsFieldError(msg)
+    } finally {
+      setVerifyingSms(false)
+    }
+  }, [phoneWatch, smsCode])
+
   const onSubmit = async (data: RegisterFormData) => {
+    if (!phoneVerified) {
+      setError('휴대폰 인증을 완료해 주세요.')
+      return
+    }
     setIsLoading(true)
     setError(null)
     try {
@@ -78,12 +161,7 @@ export default function RegisterPage() {
         name: data.name,
         nickname: data.nickname,
         phone: data.phone,
-        position: data.position || undefined,
-        birth_year: data.birth_year,
-        birth_month: data.birth_month,
-        birth_day: data.birth_day,
-        region: data.region || undefined,
-        is_overseas: data.is_overseas,
+        position: '',
         newsletter_agree: data.newsletter_agree,
       })
       const email = 'email' in res ? res.email : data.email
@@ -286,21 +364,51 @@ export default function RegisterPage() {
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="생략하고 입력"
+                  placeholder="01012345678"
                   {...register('phone')}
+                  disabled={phoneVerified}
                   className={cn(inputClass, 'pl-10')}
                 />
               </div>
               <Button
                 type="button"
                 variant="outline"
-                className="flex-shrink-0 h-12 px-4 rounded-lg border-0 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                className="flex-shrink-0 h-12 px-4 rounded-lg border-0 bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+                disabled={phoneVerified || sendingSms || cooldownSec > 0}
+                onClick={handleSendSms}
               >
-                인증번호 전송
+                {cooldownSec > 0 ? `${cooldownSec}초` : sendingSms ? '발송 중…' : '인증번호 전송'}
               </Button>
             </div>
             {errors.phone && (
               <p className="mt-1.5 text-sm text-red-600">{errors.phone.message}</p>
+            )}
+            <div className="mt-3 flex gap-2">
+              <Input
+                id="sms-code"
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                autoComplete="one-time-code"
+                placeholder="인증번호 6자리"
+                value={smsCode}
+                onChange={(e) => setSmsCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                disabled={phoneVerified}
+                className={cn(inputClass, 'flex-1')}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-shrink-0 h-12 px-4 rounded-lg border-0 bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+                disabled={phoneVerified || verifyingSms || smsCode.length !== 6}
+                onClick={handleVerifySms}
+              >
+                {verifyingSms ? '확인 중…' : '인증 확인'}
+              </Button>
+            </div>
+            {smsFieldError && <p className="mt-1.5 text-sm text-red-600">{smsFieldError}</p>}
+            {smsHint && !smsFieldError && (
+              <p className="mt-1.5 text-sm text-green-700">{smsHint}</p>
             )}
           </div>
 
@@ -312,7 +420,7 @@ export default function RegisterPage() {
               'w-full h-16 rounded-lg font-bold text-black text-xl',
               'bg-[#D4F74C] hover:bg-[#c5e845] focus-visible:ring-gray-400'
             )}
-            disabled={isLoading}
+            disabled={isLoading || !phoneVerified}
           >
             {isLoading ? '가입 중...' : '회원가입 완료'}
           </Button>

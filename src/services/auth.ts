@@ -1,6 +1,24 @@
 import apiClient from '@/lib/axios'
 import Cookies from 'js-cookie'
 
+/** 공개 API가 4xx 시 raw `{ error }` 또는 `{ IndeAPIResponse: { Message } }` 둘 다 쓸 수 있음 */
+function messageFromApiError(error: unknown, fallback: string): string {
+  const err = error as {
+    response?: { data?: { IndeAPIResponse?: { Message?: string }; error?: string; message?: string } }
+    message?: string
+  }
+  const fromBody =
+    err.response?.data?.IndeAPIResponse?.Message ??
+    err.response?.data?.error ??
+    err.response?.data?.message
+  if (fromBody) return fromBody
+  if (error instanceof Error) {
+    if (/^Request failed with status code \d+$/.test(error.message)) return fallback
+    return error.message
+  }
+  return fallback
+}
+
 export interface LoginRequest {
   email: string
   password: string
@@ -137,6 +155,50 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
 type RegisterApiRaw =
   | { IndeAPIResponse?: { Result?: RegisterSuccessResponse }; Result?: RegisterSuccessResponse }
   | (RegisterSuccessResponse & { access_token?: string })
+
+/** 회원가입 전 휴대폰 인증 — SMS 발송 (phoneVerificationAligo.md) */
+export const sendSignupSms = async (phone: string): Promise<{ success: boolean; message?: string; expires_in?: number }> => {
+  try {
+    const response = await apiClient.post<{
+      success?: boolean
+      message?: string
+      expires_in?: number
+      error?: string
+      IndeAPIResponse?: { Message?: string; ErrorCode?: string }
+    }>('/auth/send-sms', { phone })
+    const body = response.data
+    if (body?.IndeAPIResponse && body.IndeAPIResponse.ErrorCode && body.IndeAPIResponse.ErrorCode !== '00') {
+      throw new Error(body.IndeAPIResponse.Message || '인증번호 발송에 실패했습니다.')
+    }
+    if (body?.error) throw new Error(body.error)
+    return { success: !!body?.success, message: body?.message, expires_in: body?.expires_in }
+  } catch (error: unknown) {
+    throw new Error(messageFromApiError(error, '인증번호 발송에 실패했습니다.'))
+  }
+}
+
+/** 회원가입 전 휴대폰 인증 — 6자리 코드 검증 */
+export const verifySignupSms = async (
+  phone: string,
+  code: string,
+): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const response = await apiClient.post<{
+      success?: boolean
+      message?: string
+      error?: string
+      IndeAPIResponse?: { Message?: string; ErrorCode?: string }
+    }>('/auth/verify-sms', { phone, code })
+    const body = response.data
+    if (body?.IndeAPIResponse && body.IndeAPIResponse.ErrorCode && body.IndeAPIResponse.ErrorCode !== '00') {
+      throw new Error(body.IndeAPIResponse.Message || '인증에 실패했습니다.')
+    }
+    if (body?.error) throw new Error(body.error)
+    return { success: !!body?.success, message: body?.message }
+  } catch (error: unknown) {
+    throw new Error(messageFromApiError(error, '인증에 실패했습니다.'))
+  }
+}
 
 export const register = async (data: RegisterRequest): Promise<RegisterSuccessResponse> => {
   try {

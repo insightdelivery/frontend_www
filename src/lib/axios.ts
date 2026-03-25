@@ -20,10 +20,20 @@ const apiClient = axios.create({
 })
 
 // 공개 게시판(인증 불필요): 토큰을 붙이지 않음 — 만료된 토큰 전송 방지
+const pathOnly = (url?: string) => {
+  if (!url) return ''
+  return url.replace(getApiBaseURL(), '').split('?')[0].replace(/^https?:\/\/[^/]+/, '') || url
+}
+
 const isPublicBoard = (url?: string) => {
-  if (!url) return false
-  const path = url.replace(getApiBaseURL(), '').split('?')[0].replace(/^https?:\/\/[^/]+/, '') || url
+  const path = pathOnly(url)
   return /^\/api\/(notices|faqs|articles|content|events|videos|search|homepage-docs)(\/|$)/.test(path)
+}
+
+/** 비로그인·가입 단계 API — 만료 토큰으로 refresh 실패 시 리다이렉트 방지 (ensureToken 생략) */
+const isPublicAuthFlow = (url?: string) => {
+  const path = pathOnly(url)
+  return /^\/auth\/(send-sms|verify-sms|register|login)(\/|$)/i.test(path)
 }
 
 // 토큰 갱신 중 플래그 및 Promise 공유 (userAuthPlan §9 §16)
@@ -129,7 +139,7 @@ const refreshAccessToken = async (): Promise<string> => {
 // Request Interceptor: ensureToken 후 토큰 첨부, 실패 시 요청 중단 (userAuthPlan §10 §16)
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    if (isPublicBoard(config.url)) return config
+    if (isPublicBoard(config.url) || isPublicAuthFlow(config.url)) return config
     try {
       await ensureToken()
     } catch (e) {
