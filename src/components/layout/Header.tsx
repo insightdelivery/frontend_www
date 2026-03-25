@@ -130,9 +130,9 @@ export default function Header() {
                 <Image
                   src="/inde_logo.png"
                   alt="InDe"
-                  width={88}
-                  height={36}
-                  className="h-9 w-[88px] object-contain"
+                  width={73}
+                  height={26}
+                  className="h-9 object-contain"
                   priority
                 />
               </Link>
