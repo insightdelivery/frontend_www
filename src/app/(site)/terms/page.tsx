@@ -1,12 +1,9 @@
 import type { Metadata } from 'next'
-import { homepageDocMetadataAtBuild } from '@/components/homepage/homepageDocMetadata'
-import { TermsDocPage } from './TermsDocPage'
+import { HomepageDocClientView } from '@/components/homepage/HomepageDocClientView'
+import { homepageDocMetadataFallback } from '@/components/homepage/homepageDocMetadata'
 
-export const dynamic = 'force-static'
-export const revalidate = false
+export const metadata: Metadata = homepageDocMetadataFallback('terms_of_service')
 
-export async function generateMetadata(): Promise<Metadata> {
-  return homepageDocMetadataAtBuild('terms_of_service')
+export default function TermsPage() {
+  return <HomepageDocClientView docType="terms_of_service" />
 }
-
-export default TermsDocPage
