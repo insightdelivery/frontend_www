@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
-import { HomepageDocView } from '@/components/homepage/HomepageDocView'
-import { homepageDocMetadata } from '@/components/homepage/homepageDocMetadata'
+import { homepageDocMetadataAtBuild } from '@/components/homepage/homepageDocMetadata'
+import { PrivacyDocPage } from './PrivacyDocPage'
+
+export const dynamic = 'force-static'
+export const revalidate = false
 
 export async function generateMetadata(): Promise<Metadata> {
-  return homepageDocMetadata('privacy_policy')
+  return homepageDocMetadataAtBuild('privacy_policy')
 }
 
-export default async function PrivacyPage() {
-  return <HomepageDocView docType="privacy_policy" />
-}
+export default PrivacyDocPage
