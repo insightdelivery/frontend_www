@@ -27,6 +27,11 @@ export default function Footer() {
             <p className="text-[12px] font-extrabold text-gray-700">사이트 메뉴</p>
             <ul className="mt-4 sm:mt-5 space-y-2 text-[12px] text-gray-600">
               <li><Link href="/" className="hover:text-gray-900 transition-colors">HOME</Link></li>
+              <li>
+                <Link href="/about/companyInfo" className="hover:text-gray-900 transition-colors">
+                  회사소개
+                </Link>
+              </li>
               <li><Link href="/terms" className="hover:text-gray-900 transition-colors">이용약관</Link></li>
               <li><Link href="/privacy" className="hover:text-gray-900 transition-colors">개인정보처리방침</Link></li>
             </ul>

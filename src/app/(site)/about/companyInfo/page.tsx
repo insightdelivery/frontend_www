@@ -3,9 +3,9 @@ import { HomepageDocView } from '@/components/homepage/HomepageDocView'
 import { homepageDocMetadata } from '@/components/homepage/homepageDocMetadata'
 
 export async function generateMetadata(): Promise<Metadata> {
-  return homepageDocMetadata('privacy_policy')
+  return homepageDocMetadata('company_intro')
 }
 
-export default async function PrivacyPage() {
-  return <HomepageDocView docType="privacy_policy" />
+export default async function CompanyInfoPage() {
+  return <HomepageDocView docType="company_intro" />
 }
