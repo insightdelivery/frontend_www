@@ -106,7 +106,7 @@ function mapRawToSysCodeItem(item: Record<string, unknown>): SysCodeItem {
 // syscode API 호출 (공개 API 또는 관리자 API syscode 엔드포인트 사용)
 const fetchSysCodeFromAPI = async (sysCodeGubn: string): Promise<SysCodeItem[]> => {
   try {
-    const response = await apiClient.get('/systemmanage/syscode/', {
+    const response = await apiClient.get('/systemmanage/syscode', {
       params: { sysCodeParentsSid: sysCodeGubn },
     })
     let syscodeList: unknown[] = []
@@ -131,7 +131,7 @@ const fetchSysCodeFromAPI = async (sysCodeGubn: string): Promise<SysCodeItem[]> 
 // by_parent API로 하위 시스템 코드 조회 (공개 API — Hero eventType 자동 해석 등)
 export const fetchSysCodeByParent = async (parentId: string): Promise<SysCodeItem[]> => {
   try {
-    const response = await apiClient.get('/systemmanage/syscode/by_parent/', {
+    const response = await apiClient.get('/systemmanage/syscode/by_parent', {
       params: { parent_id: parentId },
     })
     let syscodeList: unknown[] = []
@@ -161,7 +161,7 @@ const fetchSysCodeBulk = async (
 ): Promise<Record<string, SysCodeItem[]>> => {
   if (parentIds.length === 0) return {}
   try {
-    const response = await apiClient.get('/systemmanage/syscode/bulk/', {
+    const response = await apiClient.get('/systemmanage/syscode/bulk', {
       params: { parent_ids: parentIds.join(',') },
     })
     let data: Record<string, unknown[]> = {}

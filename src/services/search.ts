@@ -17,7 +17,7 @@ export async function fetchUnifiedSearch(
   q: string,
   signal?: AbortSignal
 ): Promise<UnifiedSearchResult> {
-  const { data } = await api.get(`${BASE}/`, {
+  const { data } = await api.get(BASE, {
     params: { q },
     signal,
   })

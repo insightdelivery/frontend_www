@@ -20,7 +20,7 @@ export async function fetchArticleDetail(id: number | string): Promise<ArticleDe
   if (Number.isNaN(numId)) {
     throw new Error('유효하지 않은 아티클 ID입니다.')
   }
-  const { data } = await api.get(`${BASE}/${numId}/`)
+  const { data } = await api.get(`${BASE}/${numId}`)
   return unwrapResult<ArticleDetail>(data)
 }
 
@@ -35,7 +35,7 @@ export interface FetchArticleListParams {
 export async function fetchArticleList(
   params?: FetchArticleListParams
 ): Promise<ArticleListResponse> {
-  const { data } = await api.get(BASE + '/', {
+  const { data } = await api.get(BASE, {
     params: {
       page: params?.page ?? 1,
       pageSize: params?.pageSize ?? 20,

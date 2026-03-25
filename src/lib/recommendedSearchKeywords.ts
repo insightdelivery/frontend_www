@@ -1,5 +1,5 @@
 /**
- * 추천 검색어 — `GET /api/homepage-docs/recommended_search/` (wwwDocEtc.md §8.2.1, wwwSearchPlan.md §15)
+ * 추천 검색어 — `GET /api/homepage-docs/recommended_search` (wwwDocEtc.md §8.2.1, wwwSearchPlan.md §15)
  * 시스코드·sysCodeData 경로 없음
  */
 import apiClient from '@/lib/axios'
@@ -30,7 +30,7 @@ export function parseRecommendedSearchBodyHtml(html: string): string[] {
 
 export async function fetchRecommendedSearchKeywords(): Promise<string[]> {
   try {
-    const { data } = await apiClient.get<unknown>('/api/homepage-docs/recommended_search/')
+    const { data } = await apiClient.get<unknown>('/api/homepage-docs/recommended_search')
     const doc = unwrapInde<HomepageDocPayload>(data)
     if (!doc?.isPublished) return []
     return parseRecommendedSearchBodyHtml(doc.bodyHtml ?? '')

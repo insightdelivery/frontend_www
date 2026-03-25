@@ -26,7 +26,7 @@ export interface FetchPublicVideoListParams {
 export async function fetchPublicVideoList(
   params?: FetchPublicVideoListParams
 ): Promise<PublicVideoListResponse> {
-  const { data } = await api.get(BASE + '/', {
+  const { data } = await api.get(BASE, {
     params: {
       page: params?.page ?? 1,
       pageSize: params?.pageSize ?? 20,
@@ -40,6 +40,6 @@ export async function fetchPublicVideoList(
 
 /** 공개 비디오/세미나 상세 (인증 불필요) */
 export async function fetchPublicVideoDetail(id: number | string): Promise<PublicVideoDetail> {
-  const { data } = await api.get(`${BASE}/${id}/`)
+  const { data } = await api.get(`${BASE}/${id}`)
   return unwrapResult<PublicVideoDetail>(data)
 }

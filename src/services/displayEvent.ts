@@ -17,7 +17,7 @@ function unwrapResult<T>(data: unknown): T {
  */
 export async function fetchHeroDisplayEvents(eventTypeCode: string): Promise<DisplayEventHeroItem[]> {
   if (!eventTypeCode.trim()) return []
-  const { data } = await api.get('/api/events/', {
+  const { data } = await api.get('/api/events', {
     params: { eventTypeCode: eventTypeCode.trim() },
   })
   const wrap = data as { IndeAPIResponse?: { ErrorCode?: string } }

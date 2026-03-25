@@ -103,11 +103,11 @@ export default function RegisterPage() {
   const handleSNSRegister = (provider: 'kakao' | 'naver' | 'google') => {
     const base = getApiBaseURL().replace(/\/$/, '')
     const urls: Record<string, string> = {
-      kakao: `${base}/auth/kakao/redirect/?state=signup`,
-      naver: `${base}/auth/naver/redirect/?state=signup`,
-      google: `${base}/auth/google/redirect/?state=signup`,
+      kakao: `${base}/auth/kakao/redirect?state=signup`,
+      naver: `${base}/auth/naver/redirect?state=signup`,
+      google: `${base}/auth/google/redirect?state=signup`,
     }
-    window.location.href = urls[provider] || `${base}/auth/${provider}/redirect/`
+    window.location.href = urls[provider] || `${base}/auth/${provider}/redirect`
   }
 
   const inputClass = cn(

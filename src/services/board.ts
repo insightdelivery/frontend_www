@@ -42,25 +42,25 @@ export async function fetchNotices(params?: {
   /** true 이면 GNB 표시 공지만 (백엔드 목록 필터) */
   show_in_gnb?: boolean
 }): Promise<NoticeListResponse> {
-  const { data } = await api.get(BASE.notices + '/', { params })
+  const { data } = await api.get(BASE.notices, { params })
   return unwrapResult<NoticeListResponse>(data)
 }
 
 /** 공지 상세 (조회수 증가) */
 export async function fetchNotice(id: number): Promise<NoticeDetail> {
-  const { data } = await api.get(`${BASE.notices}/${id}/`)
+  const { data } = await api.get(`${BASE.notices}/${id}`)
   return unwrapResult<NoticeDetail>(data)
 }
 
 /** FAQ 목록 */
 export async function fetchFAQs(params?: { page?: number; page_size?: number }): Promise<FAQListResponse> {
-  const { data } = await api.get(BASE.faqs + '/', { params })
+  const { data } = await api.get(BASE.faqs, { params })
   return unwrapResult<FAQListResponse>(data)
 }
 
 /** FAQ 단일 (선택) */
 export async function fetchFAQ(id: number): Promise<FAQItem> {
-  const { data } = await api.get(`${BASE.faqs}/${id}/`)
+  const { data } = await api.get(`${BASE.faqs}/${id}`)
   return unwrapResult<FAQItem>(data)
 }
 
@@ -69,24 +69,24 @@ export async function fetchInquiries(params?: {
   page?: number
   page_size?: number
 }): Promise<InquiryListResponse> {
-  const { data } = await api.get(BASE.inquiries + '/', { ...authHeaders(), params })
+  const { data } = await api.get(BASE.inquiries, { ...authHeaders(), params })
   return unwrapResult<InquiryListResponse>(data)
 }
 
 /** 문의 상세 */
 export async function fetchInquiry(id: number): Promise<InquiryDetail> {
-  const { data } = await api.get(`${BASE.inquiries}/${id}/`, authHeaders())
+  const { data } = await api.get(`${BASE.inquiries}/${id}`, authHeaders())
   return unwrapResult<InquiryDetail>(data)
 }
 
 /** 문의 작성 (로그인 필수) */
 export async function createInquiry(body: { title: string; content: string }): Promise<InquiryDetail> {
-  const { data } = await api.post(BASE.inquiries + '/', body, authHeaders())
+  const { data } = await api.post(BASE.inquiries, body, authHeaders())
   return unwrapResult<InquiryDetail>(data)
 }
 
 /** 문의 답변 (관리자) */
 export async function answerInquiry(id: number, answer: string): Promise<InquiryDetail> {
-  const { data } = await api.patch(`${BASE.inquiries}/${id}/`, { answer }, authHeaders())
+  const { data } = await api.patch(`${BASE.inquiries}/${id}`, { answer }, authHeaders())
   return unwrapResult<InquiryDetail>(data)
 }

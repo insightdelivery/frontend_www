@@ -93,7 +93,7 @@ const refreshAccessToken = async (): Promise<string> => {
       expires_in?: number
       user?: Record<string, unknown>
     }>(
-      `${baseURL}/auth/tokenrefresh/`,
+      `${baseURL}/auth/tokenrefresh`,
       { refresh_token: refreshToken },
       { headers: { 'Content-Type': 'application/json' } }
     )

@@ -51,7 +51,7 @@ export interface RatingsListResult extends ListResult {
 
 /** 콘텐츠 조회 기록 */
 export async function postView(contentType: ContentType, contentCode: string): Promise<void> {
-  const res = await apiClient.post('/api/library/useractivity/view/', {
+  const res = await apiClient.post('/api/library/useractivity/view', {
     contentType,
     contentCode,
   })
@@ -65,7 +65,7 @@ export async function postRating(
   contentCode: string,
   rating: number
 ): Promise<void> {
-  const res = await apiClient.post('/api/library/useractivity/rating/', {
+  const res = await apiClient.post('/api/library/useractivity/rating', {
     contentType,
     contentCode,
     rating,
@@ -76,7 +76,7 @@ export async function postRating(
 
 /** 북마크 추가 */
 export async function postBookmark(contentType: ContentType, contentCode: string): Promise<void> {
-  const res = await apiClient.post('/api/library/useractivity/bookmark/', {
+  const res = await apiClient.post('/api/library/useractivity/bookmark', {
     contentType,
     contentCode,
   })
@@ -89,7 +89,7 @@ export async function deleteBookmark(
   contentType: ContentType,
   contentCode: string
 ): Promise<void> {
-  const res = await apiClient.delete('/api/library/useractivity/bookmark/', {
+  const res = await apiClient.delete('/api/library/useractivity/bookmark', {
     data: { contentType, contentCode },
   })
   const out = unwrap<{ result?: string }>(res.data)
@@ -101,7 +101,7 @@ export async function getMeViews(params?: {
   page?: number
   page_size?: number
 }): Promise<ListResult> {
-  const res = await apiClient.get('/api/library/useractivity/me/views/', {
+  const res = await apiClient.get('/api/library/useractivity/me/views', {
     params: { page: params?.page ?? 1, page_size: params?.page_size ?? 10 },
   })
   const out = unwrap<ListResult>(res.data)
@@ -114,7 +114,7 @@ export async function getMeBookmarks(params?: {
   page?: number
   page_size?: number
 }): Promise<ListResult> {
-  const res = await apiClient.get('/api/library/useractivity/me/bookmarks/', {
+  const res = await apiClient.get('/api/library/useractivity/me/bookmarks', {
     params: { page: params?.page ?? 1, page_size: params?.page_size ?? 10 },
   })
   const out = unwrap<ListResult>(res.data)
@@ -128,7 +128,7 @@ export async function getMeRatings(params?: {
   page_size?: number
   sort?: 'regDateTime_desc' | 'rating_desc' | 'rating_asc'
 }): Promise<RatingsListResult> {
-  const res = await apiClient.get('/api/library/useractivity/me/ratings/', {
+  const res = await apiClient.get('/api/library/useractivity/me/ratings', {
     params: {
       page: params?.page ?? 1,
       page_size: params?.page_size ?? 10,

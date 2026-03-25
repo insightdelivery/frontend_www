@@ -105,7 +105,7 @@ export interface ProfileCompleteResponse {
  */
 export const login = async (data: LoginRequest): Promise<LoginResponse> => {
   try {
-    const response = await apiClient.post<IndeAPIResponse<LoginResult> & LoginResult>('/auth/login/', data)
+    const response = await apiClient.post<IndeAPIResponse<LoginResult> & LoginResult>('/auth/login', data)
     const body = response.data
 
     const result = body?.IndeAPIResponse?.Result ?? (body?.access_token && body?.user ? body as LoginResult : null)
@@ -140,7 +140,7 @@ type RegisterApiRaw =
 
 export const register = async (data: RegisterRequest): Promise<RegisterSuccessResponse> => {
   try {
-    const response = await apiClient.post<RegisterApiRaw>('/auth/register/', data)
+    const response = await apiClient.post<RegisterApiRaw>('/auth/register', data)
 
     const raw = response.data as RegisterApiRaw
     const result =
@@ -182,7 +182,7 @@ export const register = async (data: RegisterRequest): Promise<RegisterSuccessRe
  */
 export const getMe = async (): Promise<UserInfo> => {
   try {
-    const response = await apiClient.get<UserInfo & { IndeAPIResponse?: { Result?: UserInfo }; Result?: UserInfo }>('/me/')
+    const response = await apiClient.get<UserInfo & { IndeAPIResponse?: { Result?: UserInfo }; Result?: UserInfo }>('/me')
     const raw = response.data
     const user = raw?.IndeAPIResponse?.Result ?? (raw && 'Result' in raw ? (raw as { Result?: UserInfo }).Result : null) ?? raw
     if (!user || typeof user !== 'object') throw new Error('사용자 정보를 불러올 수 없습니다.')
@@ -215,7 +215,7 @@ export const completeProfile = async (data: ProfileCompleteRequest): Promise<Pro
   try {
     const response = await apiClient.put<
       ProfileCompleteResponse & { IndeAPIResponse?: { Result?: ProfileCompleteResponse }; Result?: ProfileCompleteResponse }
-    >('/profile/complete/', data)
+    >('/profile/complete', data)
     const raw = response.data
     const result = raw?.IndeAPIResponse?.Result ?? (raw && 'Result' in raw ? (raw as { Result?: ProfileCompleteResponse }).Result : null) ?? raw
     const out = result as ProfileCompleteResponse
@@ -246,7 +246,7 @@ export const updateProfile = async (data: ProfileCompleteRequest): Promise<Profi
  */
 export const logout = async (): Promise<void> => {
   try {
-    await apiClient.post('/auth/logout/')
+    await apiClient.post('/auth/logout')
   } catch (error: unknown) {
     console.error('로그아웃 API 오류:', error)
   } finally {
@@ -260,12 +260,12 @@ export const logout = async (): Promise<void> => {
 }
 
 /**
- * 회원 탈퇴 요청 (POST /auth/withdraw/request/, publicUserWithdrawRules §6)
+ * 회원 탈퇴 요청 (POST /auth/withdraw/request, publicUserWithdrawRules §6)
  * @returns { success: true } 성공 시 로그아웃 처리 후 호출 측에서 이동 처리. { success: false, notImplemented: true } API 미구현.
  */
 export const requestWithdraw = async (data: WithdrawRequest): Promise<{ success: boolean; notImplemented?: boolean; error?: string }> => {
   try {
-    await apiClient.post('/auth/withdraw/request/', data)
+    await apiClient.post('/auth/withdraw/request', data)
     return { success: true }
   } catch (error: unknown) {
     const err = error as { response?: { status?: number; data?: { message?: string; detail?: string } } }
@@ -327,7 +327,7 @@ type VerifyEmailRaw = {
  */
 export const verifyEmail = async (token: string): Promise<{ success: boolean; message?: string; error?: string }> => {
   try {
-    const response = await apiClient.post<VerifyEmailRaw>('/auth/verify-email/', { token })
+    const response = await apiClient.post<VerifyEmailRaw>('/auth/verify-email', { token })
 
     const raw = response.data as VerifyEmailRaw
     const data =
@@ -361,7 +361,7 @@ export const resendVerificationEmail = async (
 ): Promise<{ success: boolean; message?: string; error?: string }> => {
   try {
     const response = await apiClient.post<{ success?: boolean; message?: string; error?: string }>(
-      '/auth/resend-verification-email/',
+      '/auth/resend-verification-email',
       { email }
     )
     const data = response.data

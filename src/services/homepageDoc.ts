@@ -19,7 +19,7 @@ function unwrapInde<T>(data: unknown): T {
 
 async function fetchPublicHomepageDocImpl(docType: HomepageDocType): Promise<HomepageDocPayload | null> {
   const base = getServerApiBase()
-  const url = `${base}/api/homepage-docs/${docType}/`
+  const url = `${base}/api/homepage-docs/${docType}`
   const res = await fetch(url, { next: { revalidate: 0 } })
   if (res.status === 404) return null
   if (!res.ok) return null

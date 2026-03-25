@@ -52,7 +52,7 @@ export default function Footer() {
             <ul className="mt-4 sm:mt-5 space-y-2 text-[12px] text-gray-600">
               <li><Link href="/notice" className="hover:text-gray-900 transition-colors">공지사항</Link></li>
               <li><Link href="/faq" className="hover:text-gray-900 transition-colors">FAQ</Link></li>
-              <li><Link href="/mypage/support/" className="hover:text-gray-900 transition-colors">1:1 문의</Link></li>
+              <li><Link href="/mypage/support" className="hover:text-gray-900 transition-colors">1:1 문의</Link></li>
               <li><Link href="/terms" className="hover:text-gray-900 transition-colors">이용약관</Link></li>
               <li><Link href="/privacy" className="hover:text-gray-900 transition-colors">개인정보처리방침</Link></li>
             </ul>

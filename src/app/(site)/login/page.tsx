@@ -77,9 +77,9 @@ function LoginForm() {
   const handleSNSLogin = (provider: 'kakao' | 'naver' | 'google') => {
     const base = getApiBaseURL().replace(/\/$/, '')
     const urls = {
-      kakao: `${base}/auth/kakao/redirect/`,
-      naver: `${base}/auth/naver/redirect/`,
-      google: `${base}/auth/google/redirect/`,
+      kakao: `${base}/auth/kakao/redirect`,
+      naver: `${base}/auth/naver/redirect`,
+      google: `${base}/auth/google/redirect`,
     }
     window.location.href = urls[provider]
   }

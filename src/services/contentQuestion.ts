@@ -25,7 +25,7 @@ export async function fetchContentQuestions(
 ): Promise<ContentQuestionItem[]> {
   const id = typeof contentId === 'string' ? parseInt(contentId, 10) : contentId
   if (Number.isNaN(id)) return []
-  const { data } = await api.get(`/api/content/${contentType}/${id}/questions/`)
+  const { data } = await api.get(`/api/content/${contentType}/${id}/questions`)
   const result = unwrapResult<ContentQuestionItem[]>(data)
   return Array.isArray(result) ? result : []
 }
@@ -41,6 +41,6 @@ export interface SubmitQuestionAnswerPayload {
 export async function submitQuestionAnswer(
   payload: SubmitQuestionAnswerPayload
 ): Promise<{ answer_id: number; question_id: number }> {
-  const { data } = await api.post('/api/content/question-answer/', payload)
+  const { data } = await api.post('/api/content/question-answer', payload)
   return unwrapResult(data)
 }
