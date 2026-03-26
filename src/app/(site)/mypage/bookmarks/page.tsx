@@ -103,7 +103,7 @@ export default function MypageBookmarksPage() {
                 className="flex flex-wrap items-center gap-6 py-6 sm:flex-nowrap"
               >
                 <div className="flex min-w-0 flex-1 gap-6">
-                  <div className="aspect-[4/3] h-[144px] w-[192px] shrink-0 overflow-hidden rounded-lg bg-[#e2e8f0]" />
+                  <div className="aspect-[3/2] w-[192px] shrink-0 overflow-hidden rounded-lg bg-[#e2e8f0]" />
                   <div className="flex min-w-0 flex-1 flex-col justify-center">
                     <p className="text-[14px] leading-5 text-[#64748b]">
                       {contentTypeLabel(item.contentType)}

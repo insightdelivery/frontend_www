@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { fetchShareForCopy } from '@/services/contentShare'
-import { postShare } from '@/services/libraryUseractivity'
+import { postShare, type ContentType } from '@/services/libraryUseractivity'
 import { buildShortSharePageUrl } from '@/lib/shareUrl'
 
 const DEBOUNCE_MS = 2000
@@ -16,6 +16,8 @@ export interface ArticleEntitlementShareModalProps {
   open: boolean
   onClose: () => void
   contentCode: string
+  /** 기본 ARTICLE — 비디오·세미나는 VIDEO / SEMINAR */
+  contentType?: ContentType
   onCopied?: () => void
 }
 
@@ -23,6 +25,7 @@ export default function ArticleEntitlementShareModal({
   open,
   onClose,
   contentCode,
+  contentType = 'ARTICLE',
   onCopied,
 }: ArticleEntitlementShareModalProps) {
   const lastLogAt = useRef(0)
@@ -41,7 +44,7 @@ export default function ArticleEntitlementShareModal({
     setLoading(true)
     setEligible(null)
     setShortCode(null)
-    fetchShareForCopy('ARTICLE', contentCode)
+    fetchShareForCopy(contentType, contentCode)
       .then((r) => {
         if (cancelled) return
         if (r.eligible && r.shortCode) {
@@ -61,13 +64,13 @@ export default function ArticleEntitlementShareModal({
     return () => {
       cancelled = true
     }
-  }, [open, contentCode])
+  }, [open, contentCode, contentType])
 
   const fireShareLog = () => {
     const now = Date.now()
     if (now - lastLogAt.current < DEBOUNCE_MS) return
     lastLogAt.current = now
-    postShare('ARTICLE', contentCode).catch(() => {})
+    postShare(contentType, contentCode).catch(() => {})
   }
 
   const handleCopyShort = async () => {

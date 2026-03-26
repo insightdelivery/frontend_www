@@ -56,7 +56,7 @@ export default function HomeLatestArticles() {
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="animate-pulse rounded-[8px] border border-[#e5e7eb] bg-gray-100 aspect-[4/3] min-h-[180px]"
+              className="animate-pulse rounded-[8px] border border-[#e5e7eb] bg-gray-100 aspect-[3/2] min-h-[180px]"
             />
           ))}
         </div>
@@ -75,10 +75,10 @@ export default function HomeLatestArticles() {
                     <img
                       src={thumbSrc}
                       alt=""
-                      className="aspect-[4/3] w-full object-cover"
+                      className="aspect-[3/2] w-full object-cover"
                     />
                   ) : (
-                    <div className={`aspect-[4/3] ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]}`} />
+                    <div className={`aspect-[3/2] ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]}`} />
                   )}
                   <span className="absolute left-3 top-3 rounded-[8px] bg-[#e1f800] px-2 py-1 font-bold text-black text-[10px]">
                     {getSysCodeName(categories, a.category)}

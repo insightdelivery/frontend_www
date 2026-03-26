@@ -188,7 +188,7 @@ function ArticleCategoryContent() {
         {articlesLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-2xl border border-gray-200 bg-gray-100 animate-pulse aspect-[4/3] min-h-[180px]" />
+              <div key={i} className="rounded-2xl border border-gray-200 bg-gray-100 animate-pulse aspect-[3/2] min-h-[180px]" />
             ))}
           </div>
         ) : (

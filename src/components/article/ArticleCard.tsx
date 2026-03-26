@@ -65,10 +65,10 @@ export function ArticleCard({
           <img
             src={thumbSrc}
             alt=""
-            className="aspect-[4/3] w-full object-cover"
+            className="aspect-[3/2] w-full object-cover"
           />
         ) : (
-          <div className={`aspect-[4/3] ${gradient}`} />
+          <div className={`aspect-[3/2] ${gradient}`} />
         )}
         {badgeList.length > 0 ? (
           <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">

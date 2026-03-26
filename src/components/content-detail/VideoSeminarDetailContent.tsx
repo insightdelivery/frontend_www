@@ -1,12 +1,25 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Bookmark, Share2 } from 'lucide-react'
 import VideoPlayer from '@/components/video/VideoPlayer'
 import { fetchPublicVideoDetail, fetchPublicVideoList } from '@/services/video'
 import type { PublicVideoDetail, PublicVideoListItem, VideoAttachment } from '@/types/video'
 import { getApiBaseURL } from '@/lib/axios'
+import { useAuth } from '@/contexts/AuthContext'
+import { postView, postBookmark, deleteBookmark } from '@/services/libraryUseractivity'
+import type { ContentType } from '@/services/libraryUseractivity'
+import ArticleShareModal from '@/components/article/detail/ArticleShareModal'
+import ArticleGuestShareModal from '@/components/article/detail/ArticleGuestShareModal'
+import ArticleEntitlementShareModal from '@/components/article/detail/ArticleEntitlementShareModal'
+import type { SysCodeItem } from '@/lib/syscode'
+import {
+  getSysCode,
+  getSysCodeName,
+  SEMINAR_CATEGORY_PARENT,
+  VIDEO_CATEGORY_PARENT,
+} from '@/lib/syscode'
 
 const CONTAINER = 'max-w-[1220px] mx-auto'
 const COLORS = {
@@ -65,13 +78,52 @@ const RELATED_PLACEHOLDERS = [
 export interface VideoSeminarDetailContentProps {
   type: ContentDetailType
   id: string
+  /** `/s` 만료 후 리다이렉트 시 (contentShareLinkCopy.md §6) */
+  shareExpired?: boolean
 }
 
-export default function VideoSeminarDetailContent({ type, id }: VideoSeminarDetailContentProps) {
+function toApiContentType(t: ContentDetailType): ContentType {
+  return t === 'seminar' ? 'SEMINAR' : 'VIDEO'
+}
+
+export default function VideoSeminarDetailContent({ type, id, shareExpired }: VideoSeminarDetailContentProps) {
+  const { status } = useAuth()
+  const authenticated = status === 'authenticated'
+  const authenticatedMember = authenticated
   const [detail, setDetail] = useState<PublicVideoDetail | null>(null)
   const [related, setRelated] = useState<PublicVideoListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [categoryCodes, setCategoryCodes] = useState<SysCodeItem[]>([])
+  const [shareToast, setShareToast] = useState(false)
+  const [shareModalOpen, setShareModalOpen] = useState(false)
+  const [guestShareModalOpen, setGuestShareModalOpen] = useState(false)
+  const [entitlementShareModalOpen, setEntitlementShareModalOpen] = useState(false)
+  const openShareWhenAuthReady = useRef(false)
+  const [isBookmarked, setIsBookmarked] = useState(false)
+
+  const apiContentType = useMemo(() => toApiContentType(type), [type])
+
+  const categoryParent = useMemo(
+    () => (type === 'seminar' ? SEMINAR_CATEGORY_PARENT : VIDEO_CATEGORY_PARENT),
+    [type],
+  )
+
+  useEffect(() => {
+    void getSysCode(categoryParent).then(setCategoryCodes)
+  }, [categoryParent])
+
+  const shareEntitlementOnly = detail ? !authenticated && detail.shareEntitlement === true : false
+
+  const viewCalled = useRef(new Set<string>())
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const trimmed = id.trim()
+    if (!trimmed) return
+    if (viewCalled.current.has(trimmed)) return
+    viewCalled.current.add(trimmed)
+    void postView(apiContentType, trimmed).catch(() => {})
+  }, [id, apiContentType])
 
   const load = useCallback(async () => {
     const trimmed = id.trim()
@@ -124,16 +176,57 @@ export default function VideoSeminarDetailContent({ type, id }: VideoSeminarDeta
     } finally {
       setLoading(false)
     }
-  }, [id])
+  }, [id, type])
 
   useEffect(() => {
     void load()
   }, [load])
 
-  const copyPageLink = () => {
-    if (typeof window === 'undefined') return
-    void navigator.clipboard.writeText(window.location.href)
-  }
+  const contentCode = detail ? String(detail.id) : ''
+
+  const handleShareClick = useCallback(() => {
+    if (status === 'loading' || loading) {
+      openShareWhenAuthReady.current = true
+      return
+    }
+    if (authenticatedMember) {
+      setShareModalOpen(true)
+    } else if (shareEntitlementOnly) {
+      setEntitlementShareModalOpen(true)
+    } else {
+      setGuestShareModalOpen(true)
+    }
+  }, [status, loading, authenticatedMember, shareEntitlementOnly])
+
+  useEffect(() => {
+    if (!openShareWhenAuthReady.current) return
+    if (status === 'loading' || loading) return
+    openShareWhenAuthReady.current = false
+    if (authenticatedMember) {
+      setShareModalOpen(true)
+    } else if (shareEntitlementOnly) {
+      setEntitlementShareModalOpen(true)
+    } else {
+      setGuestShareModalOpen(true)
+    }
+  }, [status, loading, authenticatedMember, shareEntitlementOnly])
+
+  const handleBookmarkClick = useCallback(async () => {
+    if (!detail) return
+    const cid = String(detail.id)
+    if (!authenticated) return
+    try {
+      if (isBookmarked) {
+        await deleteBookmark(apiContentType, cid)
+        setIsBookmarked(false)
+      } else {
+        await postBookmark(apiContentType, cid)
+        setIsBookmarked(true)
+      }
+    } catch {
+      // ignore
+    }
+  }, [detail, authenticated, isBookmarked, apiContentType])
 
   if (loading) {
     return (
@@ -159,6 +252,11 @@ export default function VideoSeminarDetailContent({ type, id }: VideoSeminarDeta
   const questions = Array.isArray(detail.questions) ? detail.questions.filter((q): q is string => Boolean(q && String(q).trim())) : []
   const attachments = Array.isArray(detail.attachments) ? detail.attachments.filter((a) => a?.url?.trim()) : []
   const bodyHtml = (detail.body ?? '').trim()
+  const categoryBreadcrumbLabel = (() => {
+    const c = detail.category?.trim()
+    if (!c) return '—'
+    return getSysCodeName(categoryCodes, c) || c
+  })()
 
   return (
     <div className={`${CONTAINER} px-4 pb-20 pt-6 sm:px-6 md:px-8`}>
@@ -177,8 +275,17 @@ export default function VideoSeminarDetailContent({ type, id }: VideoSeminarDeta
               {listLabel}
             </Link>
             <ChevronRight className="h-5 w-4 flex-shrink-0 text-[#64748b]" aria-hidden />
-            <span className={`text-[14px] font-bold leading-5 ${COLORS.text}`}>{detail.category ?? '—'}</span>
+            <span className={`text-[14px] font-bold leading-5 ${COLORS.text}`}>{categoryBreadcrumbLabel}</span>
           </nav>
+
+          {shareExpired ? (
+            <div
+              className="rounded-xl border border-amber-200 bg-amber-50/90 p-4 text-[14px] leading-snug text-[#0f172a]"
+              role="status"
+            >
+              공유 링크 유효 시간이 만료되었습니다. 전체 열람은 회원·새 공유 링크 발급을 이용해 주세요.
+            </div>
+          ) : null}
 
           <div className="flex flex-col gap-8">
             <h1 className={`text-[32px] font-bold tracking-[-1.2px] sm:text-[40px] md:text-[48px] md:leading-[48px] ${COLORS.text}`}>
@@ -215,11 +322,23 @@ export default function VideoSeminarDetailContent({ type, id }: VideoSeminarDeta
                     {attachmentLabel(file)}
                   </a>
                 ))}
-                <button type="button" className="rounded-lg p-2 hover:bg-gray-100" aria-label="공유">
+                <button
+                  type="button"
+                  className="rounded-lg p-2 hover:bg-gray-100"
+                  aria-label="공유"
+                  onClick={handleShareClick}
+                >
                   <Share2 className="h-5 w-5 text-[#0f172a]" />
                 </button>
-                <button type="button" className="rounded-lg p-2 hover:bg-gray-100" aria-label="북마크">
-                  <Bookmark className="h-5 w-5 text-[#0f172a]" />
+                <button
+                  type="button"
+                  className="rounded-lg p-2 hover:bg-gray-100"
+                  aria-label="북마크"
+                  onClick={handleBookmarkClick}
+                >
+                  <Bookmark
+                    className={`h-5 w-5 ${isBookmarked ? 'fill-[#0f172a] text-[#0f172a]' : 'text-[#0f172a]'}`}
+                  />
                 </button>
               </div>
             </div>
@@ -245,12 +364,48 @@ export default function VideoSeminarDetailContent({ type, id }: VideoSeminarDeta
         </div>
         <button
           type="button"
-          onClick={copyPageLink}
+          onClick={handleShareClick}
           className="rounded-xl bg-black px-6 py-3 text-[16px] font-bold text-white hover:opacity-90"
         >
           링크 복사하기
         </button>
       </section>
+
+      {shareToast ? (
+        <div
+          className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-[#0f172a] px-6 py-3 text-[14px] font-medium text-white shadow-lg"
+          role="status"
+        >
+          링크가 복사되었습니다
+        </div>
+      ) : null}
+
+      <ArticleShareModal
+        open={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        contentCode={contentCode}
+        contentType={apiContentType}
+      />
+      <ArticleEntitlementShareModal
+        open={entitlementShareModalOpen}
+        onClose={() => setEntitlementShareModalOpen(false)}
+        contentCode={contentCode}
+        contentType={apiContentType}
+        onCopied={() => {
+          setShareToast(true)
+          setTimeout(() => setShareToast(false), 2000)
+        }}
+      />
+      <ArticleGuestShareModal
+        open={guestShareModalOpen}
+        onClose={() => setGuestShareModalOpen(false)}
+        contentCode={contentCode}
+        contentType={apiContentType}
+        onCopied={() => {
+          setShareToast(true)
+          setTimeout(() => setShareToast(false), 2000)
+        }}
+      />
 
       <section className={`${COLORS.bgLight} mb-12 rounded-2xl border p-8 ${COLORS.border}`}>
         <h3 className={`mb-6 text-[20px] font-bold ${COLORS.text}`}>적용 질문</h3>
@@ -292,7 +447,7 @@ export default function VideoSeminarDetailContent({ type, id }: VideoSeminarDeta
               const thumb = resolveThumbnailUrl(item.thumbnail)
               return (
                 <Link key={item.id} href={getDetailUrl(type, String(item.id))} className="group block">
-                  <div className="relative mb-4 aspect-[4/3] overflow-hidden rounded-xl border border-slate-100 bg-[#f3f4f6]">
+                  <div className="relative mb-4 aspect-[16/9] overflow-hidden rounded-xl border border-slate-100 bg-[#f3f4f6]">
                     {thumb ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={thumb} alt="" className="h-full w-full object-cover" />

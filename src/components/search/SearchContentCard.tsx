@@ -23,7 +23,7 @@ type Props = {
 }
 
 export default function SearchContentCard({ item, kind }: Props) {
-  const categoryLabel = resolveSearchCategoryLabel(item.category)
+  const categoryLabel = resolveSearchCategoryLabel(item.category, kind)
   const tags = Array.isArray(item.tags) ? item.tags : []
 
   return (

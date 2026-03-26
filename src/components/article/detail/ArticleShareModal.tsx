@@ -2,13 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ensureShareLink, type ShareEnsureResult } from '@/services/contentShare'
-import { postShare } from '@/services/libraryUseractivity'
+import { postShare, type ContentType } from '@/services/libraryUseractivity'
 import { buildShortSharePageUrl } from '@/lib/shareUrl'
 
 export interface ArticleShareModalProps {
   open: boolean
   onClose: () => void
   contentCode: string
+  /** 기본 ARTICLE — 비디오·세미나 상세는 VIDEO / SEMINAR */
+  contentType?: ContentType
 }
 
 function formatRemainingMs(ms: number): string {
@@ -23,7 +25,12 @@ function formatRemainingMs(ms: number): string {
 /** §7.4 — SHARE 로그 스팸 완화 */
 const SHARE_LOG_DEBOUNCE_MS = 2000
 
-export default function ArticleShareModal({ open, onClose, contentCode }: ArticleShareModalProps) {
+export default function ArticleShareModal({
+  open,
+  onClose,
+  contentCode,
+  contentType = 'ARTICLE',
+}: ArticleShareModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<ShareEnsureResult | null>(null)
@@ -36,7 +43,7 @@ export default function ArticleShareModal({ open, onClose, contentCode }: Articl
     setLoading(true)
     setError(null)
     try {
-      const r = await ensureShareLink('ARTICLE', contentCode)
+      const r = await ensureShareLink(contentType, contentCode)
       setData(r)
     } catch (e) {
       setError(e instanceof Error ? e.message : '링크를 불러오지 못했습니다.')
@@ -44,7 +51,7 @@ export default function ArticleShareModal({ open, onClose, contentCode }: Articl
     } finally {
       setLoading(false)
     }
-  }, [contentCode])
+  }, [contentCode, contentType])
 
   useEffect(() => {
     if (!open) {
@@ -89,8 +96,8 @@ export default function ArticleShareModal({ open, onClose, contentCode }: Articl
     const now = Date.now()
     if (now - lastShareLogAt.current < SHARE_LOG_DEBOUNCE_MS) return
     lastShareLogAt.current = now
-    postShare('ARTICLE', contentCode).catch(() => {})
-  }, [contentCode])
+    postShare(contentType, contentCode).catch(() => {})
+  }, [contentCode, contentType])
 
   const handleCopy = async () => {
     if (!shareUrl || !isStateA) return

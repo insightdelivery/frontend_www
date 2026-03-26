@@ -58,4 +58,6 @@ export interface PublicVideoDetail {
     embedUrl?: string | null
     thumbnailUrl?: string | null
   } | null
+  /** 공유 entitlement로 회원과 동일 열람 시 (contentShareLinkCopy.md §10.9) */
+  shareEntitlement?: boolean
 }

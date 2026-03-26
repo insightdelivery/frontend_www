@@ -17,6 +17,12 @@ const CACHE_KEY = 'sysCodeData'
 /** 아티클 카테고리 부모 코드 (localStorage sysCodeData 키, list.me §5) */
 export const ARTICLE_CATEGORY_PARENT = 'SYS26209B002'
 
+/** 비디오 카테고리 부모 코드 (`videoPlan.md` §2.1.1 — 아티클·세미나와 구분) */
+export const VIDEO_CATEGORY_PARENT = 'SYS26325B002'
+
+/** 세미나 카테고리 부모 코드 (`seminarPlan.md` — 비디오 `SYS26325B002`와 구분) */
+export const SEMINAR_CATEGORY_PARENT = 'SYS26325B003'
+
 /** 아티클 하이라이트 상수 부모 코드 (localStorage sysCodeData, articleHightlightPlan 15.13) */
 export const ARTICLE_HIGHLIGHT_PARENT = 'SYS26312B001'
 
@@ -35,6 +41,8 @@ export const DISPLAY_CONTENT_TYPE_PARENT = 'SYS26320B009'
 
 export const SYSCODE_PARENT_IDS = [
   ARTICLE_CATEGORY_PARENT, // 아티클 카테고리
+  VIDEO_CATEGORY_PARENT, // 비디오 카테고리
+  SEMINAR_CATEGORY_PARENT, // 세미나 카테고리
   DISPLAY_EVENT_TYPE_PARENT,
   DISPLAY_CONTENT_TYPE_PARENT,
   'SYS26127B017', // 회원가입 지역

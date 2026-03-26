@@ -6,7 +6,7 @@
  */
 import { useRef } from 'react'
 import Link from 'next/link'
-import { postShare } from '@/services/libraryUseractivity'
+import { postShare, type ContentType } from '@/services/libraryUseractivity'
 
 const DEBOUNCE_MS = 2000
 
@@ -14,6 +14,8 @@ export interface ArticleGuestShareModalProps {
   open: boolean
   onClose: () => void
   contentCode: string
+  /** 기본 ARTICLE — 비디오·세미나는 VIDEO / SEMINAR */
+  contentType?: ContentType
   /** 복사 성공 후 (토스트 등) */
   onCopied?: () => void
 }
@@ -22,6 +24,7 @@ export default function ArticleGuestShareModal({
   open,
   onClose,
   contentCode,
+  contentType = 'ARTICLE',
   onCopied,
 }: ArticleGuestShareModalProps) {
   const lastLogAt = useRef(0)
@@ -32,7 +35,7 @@ export default function ArticleGuestShareModal({
       const now = Date.now()
       if (now - lastLogAt.current >= DEBOUNCE_MS) {
         lastLogAt.current = now
-        postShare('ARTICLE', contentCode).catch(() => {})
+        postShare(contentType, contentCode).catch(() => {})
       }
       onCopied?.()
       onClose()

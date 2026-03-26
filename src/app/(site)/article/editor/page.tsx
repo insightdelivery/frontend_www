@@ -173,7 +173,7 @@ function ArticleEditorContent() {
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-2xl border border-gray-200 bg-gray-100 animate-pulse aspect-[4/3] min-h-[180px]"
+                className="rounded-2xl border border-gray-200 bg-gray-100 animate-pulse aspect-[3/2] min-h-[180px]"
               />
             ))}
           </div>

@@ -7,6 +7,13 @@ import HomeHeroCarousel from '@/components/home/HomeHeroCarousel'
 import { fetchPublicVideoList } from '@/services/video'
 import type { PublicVideoListItem } from '@/types/video'
 import { getApiBaseURL } from '@/lib/axios'
+import type { SysCodeItem } from '@/lib/syscode'
+import {
+  getSysCode,
+  getSysCodeName,
+  SEMINAR_CATEGORY_PARENT,
+  VIDEO_CATEGORY_PARENT,
+} from '@/lib/syscode'
 
 const PAGE_SIZE = 12
 
@@ -76,6 +83,25 @@ export default function PublicVideoSeminarListPage({
   const [sortOpen, setSortOpen] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [seenCategories, setSeenCategories] = useState<string[]>([])
+  const [categoryCodes, setCategoryCodes] = useState<SysCodeItem[]>([])
+
+  const categoryParent = useMemo(
+    () => (listContentType === 'seminar' ? SEMINAR_CATEGORY_PARENT : VIDEO_CATEGORY_PARENT),
+    [listContentType],
+  )
+
+  useEffect(() => {
+    void getSysCode(categoryParent).then(setCategoryCodes)
+  }, [categoryParent])
+
+  const categoryLabel = useCallback(
+    (sid: string | undefined | null) => {
+      const s = sid?.trim() ?? ''
+      if (!s) return ''
+      return getSysCodeName(categoryCodes, s)
+    },
+    [categoryCodes],
+  )
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -93,7 +119,10 @@ export default function PublicVideoSeminarListPage({
       setTotal(res.total ?? 0)
       setSeenCategories((prev) => {
         const next = new Set(prev)
-        list.forEach((v) => next.add(v.category))
+        list.forEach((v) => {
+          const c = v.category?.trim()
+          if (c) next.add(c)
+        })
         return Array.from(next).sort()
       })
     } catch {
@@ -159,7 +188,7 @@ export default function PublicVideoSeminarListPage({
                 }}
                 className={pillClass(activeCategory === c)}
               >
-                {c}
+                {categoryLabel(c) || c}
               </button>
             ))}
           </div>
@@ -229,7 +258,7 @@ export default function PublicVideoSeminarListPage({
                       ) : null}
                     </div>
                     <p className="mt-2 text-[11px] uppercase text-gray-500 sm:text-[12px]">
-                      {row.category} · {row.speaker ?? '—'}
+                      {categoryLabel(row.category) || row.category?.trim() || '—'} · {row.speaker ?? '—'}
                     </p>
                     <p className="mt-0.5 text-[15px] font-extrabold leading-snug line-clamp-2 transition-colors group-hover:text-gray-600 sm:text-[17px]">
                       {row.title}

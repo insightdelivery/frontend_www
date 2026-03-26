@@ -126,7 +126,7 @@ function DetailBottomArticleCard({ item, index }: { item: ArticleListItem; index
   return (
     <Link href={detailUrl(String(item.id))} className="block group">
       <div
-        className={`aspect-[4/3] rounded-xl overflow-hidden mb-4 relative ${
+        className={`aspect-[3/2] rounded-xl overflow-hidden mb-4 relative ${
           thumbSrc ? 'bg-slate-100 border border-slate-100' : grad
         }`}
       >
@@ -742,7 +742,7 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
               {[0, 1, 2].map((i) => (
                 <div key={i} className="animate-pulse">
-                  <div className="aspect-[4/3] rounded-xl bg-[#e2e8f0] mb-4" />
+                  <div className="aspect-[3/2] rounded-xl bg-[#e2e8f0] mb-4" />
                   <div className="h-4 w-4/5 bg-[#e2e8f0] rounded mb-2" />
                   <div className="h-3 w-1/2 bg-[#e2e8f0] rounded" />
                 </div>
@@ -754,7 +754,7 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
               {[0, 1, 2].map((i) => (
                 <div key={i} className="animate-pulse">
-                  <div className="aspect-[4/3] rounded-xl bg-[#e2e8f0] mb-4" />
+                  <div className="aspect-[3/2] rounded-xl bg-[#e2e8f0] mb-4" />
                   <div className="h-4 w-4/5 bg-[#e2e8f0] rounded mb-2" />
                   <div className="h-3 w-1/2 bg-[#e2e8f0] rounded" />
                 </div>

@@ -3,12 +3,13 @@
 import HomeHeroCarousel from '@/components/home/HomeHeroCarousel'
 import HomeLatestArticles from '@/components/home/HomeLatestArticles'
 import HomeLatestVideos from '@/components/home/HomeLatestVideos'
+import { SeminarHomeProvider } from '@/components/home/SeminarHomeContext'
+import HomeSeminarReplay from '@/components/home/HomeSeminarReplay'
+import HomeUpcomingSeminars from '@/components/home/HomeUpcomingSeminars'
 
 /**
- * 메인 페이지 (wwwMainPage.md)
- * - 히어로: eventBannerPlan + HomeHeroCarousel
- * - 다가오는 세미나 / 세미나 다시보기: 비활성(추후 구현)
- * - 최신 아티클·비디오: 각 최신 3건 API
+ * 메인 페이지 (`_docsRules/frontend_www/main.md`)
+ * - 히어로 → 다가오는 세미나(가로 단일 카드) → 최신 아티클 → 최신 비디오 → 세미나 다시보기
  */
 export default function Home() {
   return (
@@ -16,11 +17,16 @@ export default function Home() {
       <div className="mx-auto max-w-[1220px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
         <HomeHeroCarousel />
 
-        <HomeLatestArticles />
+        <SeminarHomeProvider>
+          <HomeUpcomingSeminars />
 
-        <div className="pb-12">
-          <HomeLatestVideos />
-        </div>
+          <HomeLatestArticles />
+
+          <div className="pb-12">
+            <HomeLatestVideos />
+            <HomeSeminarReplay />
+          </div>
+        </SeminarHomeProvider>
       </div>
     </main>
   )

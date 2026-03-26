@@ -167,7 +167,7 @@ export default function MypageRatingsPage() {
                   className="rounded-2xl border border-[#f1f5f9] bg-white p-6 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]"
                 >
                   <div className="flex gap-6">
-                    <div className="aspect-[4/3] h-[96px] w-[128px] shrink-0 overflow-hidden rounded-lg bg-[#f1f5f9]" />
+                    <div className="aspect-[3/2] w-[128px] shrink-0 overflow-hidden rounded-lg bg-[#f1f5f9]" />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-4">
                         <div>

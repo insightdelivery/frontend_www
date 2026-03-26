@@ -7,6 +7,7 @@ import VideoSeminarDetailContent from '@/components/content-detail/VideoSeminarD
 function VideoDetailInner() {
   const searchParams = useSearchParams()
   const id = searchParams.get('id')
+  const shareExpired = searchParams.get('share_expired') === '1'
 
   if (!id) {
     return (
@@ -18,7 +19,7 @@ function VideoDetailInner() {
 
   return (
     <main className="min-h-screen bg-white">
-      <VideoSeminarDetailContent type="video" id={id} />
+      <VideoSeminarDetailContent type="video" id={id} shareExpired={shareExpired} />
     </main>
   )
 }
