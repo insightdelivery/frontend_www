@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
 
 export type ArticleCardBadge = 'NEW' | 'BEST'
 
@@ -55,13 +56,14 @@ export function ArticleCard({
   const gradient = imageGradient || DEFAULT_GRADIENT
   const sub = typeof subtitle === 'string' ? subtitle.trim() : ''
   const badgeList = normalizeBadges(badges)
+  const thumbSrc = resolveArticleThumbnailUrl(thumbnail ?? null)
 
   return (
     <Link href={`/article/detail?id=${encodeURIComponent(id)}`} className="block group">
       <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        {thumbnail ? (
+        {thumbSrc ? (
           <img
-            src={thumbnail}
+            src={thumbSrc}
             alt=""
             className="aspect-[4/3] w-full object-cover"
           />

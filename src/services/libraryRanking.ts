@@ -31,3 +31,9 @@ export async function fetchArticleRankingShare(): Promise<ArticleRankingPayload>
   const { data } = await api.get('/api/library/ranking/share')
   return unwrapResult<ArticleRankingPayload>(data)
 }
+
+/** schedulerContentPlan §D / detail.md §3.5.1 — RECOMMENDED 캐시 */
+export async function fetchArticleRankingRecommended(): Promise<ArticleRankingPayload> {
+  const { data } = await api.get('/api/library/ranking/recommended')
+  return unwrapResult<ArticleRankingPayload>(data)
+}

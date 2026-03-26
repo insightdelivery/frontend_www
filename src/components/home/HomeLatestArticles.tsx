@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fetchArticleList } from '@/services/article'
 import type { ArticleListItem } from '@/types/article'
+import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
 import { getSysCode, getSysCodeName, ARTICLE_CATEGORY_PARENT } from '@/lib/syscode'
 import type { SysCodeItem } from '@/lib/syscode'
 
@@ -63,14 +64,16 @@ export default function HomeLatestArticles() {
         <p className="text-sm text-[#6b7280]">등록된 아티클이 없습니다.</p>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((a, i) => (
+          {items.map((a, i) => {
+            const thumbSrc = resolveArticleThumbnailUrl(a.thumbnail)
+            return (
             <Link key={a.id} href={`/article/detail?id=${a.id}`}>
               <div className="group">
                 <div className="relative overflow-hidden rounded-[8px] bg-[#f3f4f6]">
-                  {a.thumbnail ? (
+                  {thumbSrc ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={a.thumbnail}
+                      src={thumbSrc}
                       alt=""
                       className="aspect-[4/3] w-full object-cover"
                     />
@@ -86,7 +89,8 @@ export default function HomeLatestArticles() {
                 </p>
               </div>
             </Link>
-          ))}
+            )
+          })}
         </div>
       )}
     </section>

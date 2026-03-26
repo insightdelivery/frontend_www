@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
 
 export interface EditorPickCardProps {
   id: string
@@ -25,14 +26,15 @@ export function EditorPickCard({
   const gradient = imageGradient || DEFAULT_GRADIENT
   const sub = typeof subtitle === 'string' ? subtitle.trim() : ''
   const shapeClass = imageShape === 'circle' ? 'rounded-full' : 'rounded-lg'
+  const thumbSrc = resolveArticleThumbnailUrl(thumbnail ?? null)
   return (
     <Link
       href={`/article/detail?id=${encodeURIComponent(id)}`}
       className="flex gap-3 sm:gap-4 p-4 rounded-xl border border-gray-200 bg-gray-50/50 shadow-sm group hover:border-gray-300 hover:bg-gray-50 transition-colors min-w-0"
     >
-      {thumbnail ? (
+      {thumbSrc ? (
         <img
-          src={thumbnail}
+          src={thumbSrc}
           alt=""
           className={`w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 object-cover ${shapeClass}`}
         />

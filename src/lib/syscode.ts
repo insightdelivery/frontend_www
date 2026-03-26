@@ -53,16 +53,32 @@ export const REGION_FOREIGN_PARENT = 'SYS26127B019'
 /** 직분 = SYS26127B006 */
 export const POSITION_PARENT = 'SYS26127B006'
 
+/** 브라우저 전용 — SSR·Node(Next server)에서는 localStorage가 없거나 getItem이 함수가 아닐 수 있음 */
+function getBrowserLocalStorage(): Storage | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const ls = window.localStorage
+    if (ls == null || typeof ls.getItem !== 'function' || typeof ls.setItem !== 'function') {
+      return null
+    }
+    return ls
+  } catch {
+    return null
+  }
+}
+
 // syscode 데이터를 localStorage에서 가져오기
 export const getSysCodeFromCache = (sysCodeGubn: string): SysCodeItem[] | null => {
   try {
-    const cached = localStorage.getItem(CACHE_KEY)
+    const storage = getBrowserLocalStorage()
+    if (!storage) return null
+    const cached = storage.getItem(CACHE_KEY)
     if (!cached) return null
 
     const allCacheData = JSON.parse(cached)
     const now = Date.now()
     if (now - allCacheData.timestamp > CACHE_DURATION) {
-      localStorage.removeItem(CACHE_KEY)
+      storage.removeItem(CACHE_KEY)
       return null
     }
     return allCacheData[sysCodeGubn] || null
@@ -75,7 +91,9 @@ export const getSysCodeFromCache = (sysCodeGubn: string): SysCodeItem[] | null =
 // syscode 데이터를 localStorage에 저장
 export const setSysCodeToCache = (sysCodeGubn: string, data: SysCodeItem[]): void => {
   try {
-    const existingCache = localStorage.getItem(CACHE_KEY)
+    const storage = getBrowserLocalStorage()
+    if (!storage) return
+    const existingCache = storage.getItem(CACHE_KEY)
     let allCacheData: Record<string, unknown> & { timestamp: number } = {
       timestamp: Date.now(),
     }
@@ -87,7 +105,7 @@ export const setSysCodeToCache = (sysCodeGubn: string, data: SysCodeItem[]): voi
       }
     }
     allCacheData[sysCodeGubn] = data
-    localStorage.setItem(CACHE_KEY, JSON.stringify(allCacheData))
+    storage.setItem(CACHE_KEY, JSON.stringify(allCacheData))
   } catch (error) {
     console.error('syscode 캐시 저장 오류:', error)
   }

@@ -32,6 +32,13 @@ const isPublicBoard = (url?: string) => {
   )
 }
 
+/** GET /api/articles/{숫자id} — 로그인 시 JWT를 붙여 전체 본문 수신 (비회원은 미리보기 %) */
+const isArticleDetailGet = (config: InternalAxiosRequestConfig) => {
+  if (String(config.method || 'get').toLowerCase() !== 'get') return false
+  const path = pathOnly(config.url)
+  return /^\/api\/articles\/\d+\/?$/.test(path)
+}
+
 /** 비로그인·가입 단계 API — 만료 토큰으로 refresh 실패 시 리다이렉트 방지 (ensureToken 생략) */
 const isPublicAuthFlow = (url?: string) => {
   const path = pathOnly(url)
@@ -141,7 +148,20 @@ const refreshAccessToken = async (): Promise<string> => {
 // Request Interceptor: ensureToken 후 토큰 첨부, 실패 시 요청 중단 (userAuthPlan §10 §16)
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    if (isPublicBoard(config.url) || isPublicAuthFlow(config.url)) return config
+    if (isPublicBoard(config.url) || isPublicAuthFlow(config.url)) {
+      if (isArticleDetailGet(config)) {
+        try {
+          await ensureToken()
+        } catch {
+          /* 비로그인·갱신 실패: 미리보기 본문만 */
+        }
+        const token = Cookies.get('accessToken')
+        if (token && config.headers) {
+          config.headers.Authorization = `Bearer ${token}`
+        }
+      }
+      return config
+    }
     try {
       await ensureToken()
     } catch (e) {

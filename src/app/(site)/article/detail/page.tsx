@@ -8,10 +8,11 @@ function ArticleDetailInner() {
   const searchParams = useSearchParams()
   const idParam = searchParams.get('id')
   const id = idParam ?? ''
+  const shareExpired = searchParams.get('share_expired') === '1'
 
   return (
     <main className="bg-white min-h-screen">
-      <ArticleDetailContent id={id} />
+      <ArticleDetailContent id={id} shareExpired={shareExpired} />
     </main>
   )
 }

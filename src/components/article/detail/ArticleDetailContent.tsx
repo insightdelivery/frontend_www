@@ -3,12 +3,23 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Bookmark, Share2, Star } from 'lucide-react'
-import { fetchArticleDetail } from '@/services/article'
+import { fetchArticleDetail, fetchArticleList, resolveArticlesByRanking } from '@/services/article'
+import { fetchArticleRankingRecommended } from '@/services/libraryRanking'
+import { fetchHomepageDocPublic } from '@/services/homepageDoc'
+import { HOMEPAGE_DOC_DEFAULT_TITLES } from '@/constants/homepageDoc'
+import { sanitizeHomepageHtml } from '@/lib/sanitizeHomepageHtml'
+import type { HomepageDocPayload } from '@/types/homepageDoc'
 import { fetchContentQuestions, submitQuestionAnswer, type ContentQuestionItem } from '@/services/contentQuestion'
 import { postView, postRating, postBookmark, deleteBookmark } from '@/services/libraryUseractivity'
+import ArticleShareModal from '@/components/article/detail/ArticleShareModal'
+import ArticleGuestShareModal from '@/components/article/detail/ArticleGuestShareModal'
+import ArticleEntitlementShareModal from '@/components/article/detail/ArticleEntitlementShareModal'
 import { useAuth } from '@/contexts/AuthContext'
-import type { ArticleDetail } from '@/types/article'
+import type { ArticleDetail, ArticleListItem } from '@/types/article'
 import { getSysCodeName, getSysCodeFromCache } from '@/lib/syscode'
+import { formatArticleTagLabel } from '@/lib/articleTags'
+import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
+import { fetchWeeklyCrossRanking, resolveWeeklyCrossCards, type WeeklyCrossCardData } from '@/services/weeklyCrossRanking'
 import { HighlightProvider, useHighlight, HighlightRenderer, HighlightButton, selectionToPayloads } from '@/components/highlight'
 
 /** 아티클 상세 페이지 전체(GNB 제외) 가로 폭 */
@@ -34,11 +45,24 @@ function formatDate(iso: string | null | undefined): string {
   }
 }
 
-const RELATED = [
-  { id: '1', title: '독립 서점에서 발견한 나만의 취향', editor: '이성민 에디터', imageGradient: 'bg-gradient-to-br from-emerald-200 to-emerald-600' },
-  { id: '2', title: '성장을 위한 기록의 기술', editor: '박지수 에디터', imageGradient: 'bg-gradient-to-br from-sky-200 to-sky-600' },
-  { id: '3', title: '함께 읽고 토론하는 커뮤니티의 힘', editor: '김현아 에디터', imageGradient: 'bg-gradient-to-br from-violet-200 to-violet-600' },
+/** 썸네일 없을 때 카드 배경 (ArticleListContent와 동일 계열) */
+const PLACEHOLDER_GRADIENTS = [
+  'bg-gradient-to-br from-emerald-200 via-emerald-400 to-emerald-700',
+  'bg-gradient-to-br from-sky-200 via-sky-300 to-sky-600',
+  'bg-gradient-to-br from-violet-200 via-violet-400 to-violet-700',
 ]
+
+function shufflePick<T>(items: T[], count: number): T[] {
+  if (count <= 0 || items.length === 0) return []
+  const copy = [...items]
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const t = copy[i]!
+    copy[i] = copy[j]!
+    copy[j] = t
+  }
+  return copy.slice(0, Math.min(count, copy.length))
+}
 
 function detailUrl(id: string) {
   return `/article/detail?id=${encodeURIComponent(id)}`
@@ -67,11 +91,59 @@ function contentWithLineBreaks(html: string): string {
 
 export interface ArticleDetailContentProps {
   id: string
+  /** `/s/{code}` 만료 후 리다이렉트 시 안내 (contentShareLinkCopy.md §6) */
+  shareExpired?: boolean
 }
 
 const ARTICLE_DETAIL_PROSE_CLASS = `prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:!block [&_p]:!mb-2 [&_br]:block [&_blockquote]:border-l-[5px] [&_blockquote]:border-l-[#03c75a] [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:my-5 [&_blockquote]:bg-[#f6fff8] [&_blockquote]:text-[#222] [&_blockquote]:text-[15px]`
 
-function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
+function DetailBottomWeeklyCard({ item }: { item: WeeklyCrossCardData }) {
+  const grad = PLACEHOLDER_GRADIENTS[item.gradientIndex % PLACEHOLDER_GRADIENTS.length]
+  const thumbSrc = item.thumbSrc
+  return (
+    <Link href={item.href} className="block group">
+      <div
+        className={`aspect-[4/3] rounded-xl overflow-hidden mb-4 relative ${
+          thumbSrc ? 'bg-slate-100 border border-slate-100' : grad
+        }`}
+      >
+        {thumbSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={thumbSrc} alt="" className="h-full w-full object-cover" />
+        ) : null}
+      </div>
+      <p className={`font-bold text-[16px] leading-6 ${COLORS.text} group-hover:underline line-clamp-2`}>
+        {item.title}
+      </p>
+      <p className={`text-[14px] leading-5 ${COLORS.textSecondary} mt-1 line-clamp-1`}>{item.line2}</p>
+    </Link>
+  )
+}
+
+function DetailBottomArticleCard({ item, index }: { item: ArticleListItem; index: number }) {
+  const grad = PLACEHOLDER_GRADIENTS[index % PLACEHOLDER_GRADIENTS.length]
+  const thumbSrc = resolveArticleThumbnailUrl(item.thumbnail)
+  return (
+    <Link href={detailUrl(String(item.id))} className="block group">
+      <div
+        className={`aspect-[4/3] rounded-xl overflow-hidden mb-4 relative ${
+          thumbSrc ? 'bg-slate-100 border border-slate-100' : grad
+        }`}
+      >
+        {thumbSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={thumbSrc} alt="" className="h-full w-full object-cover" />
+        ) : null}
+      </div>
+      <p className={`font-bold text-[16px] leading-6 ${COLORS.text} group-hover:underline line-clamp-2`}>
+        {item.title}
+      </p>
+      <p className={`text-[14px] leading-5 ${COLORS.textSecondary} mt-1`}>{item.author}</p>
+    </Link>
+  )
+}
+
+function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentProps) {
   const { status } = useAuth()
   const authenticated = status === 'authenticated'
   const [article, setArticle] = useState<ArticleDetail | null>(null)
@@ -83,15 +155,49 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [shareToast, setShareToast] = useState(false)
+  const [shareModalOpen, setShareModalOpen] = useState(false)
+  const [entitlementShareModalOpen, setEntitlementShareModalOpen] = useState(false)
+  const [guestShareModalOpen, setGuestShareModalOpen] = useState(false)
+  /** 인증 status가 loading일 때 공유 클릭 → 인증 확정 후 모달 자동 오픈 */
+  const openShareWhenAuthReady = useRef(false)
   const [ratingValue, setRatingValue] = useState<number | null>(null)
+  /** undefined 로딩, null 미노출(404 등), 있으면 표시 */
+  const [articleCopyright, setArticleCopyright] = useState<HomepageDocPayload | null | undefined>(undefined)
   const contentRootRef = useRef<HTMLDivElement>(null)
   const lastFetchedId = useRef<string | null>(null)
   /** Strict Mode 재마운트 시 첫 요청 결과 재사용 (중복 호출 없이 화면 갱신) */
   const articlePromiseRef = useRef<{ id: string; promise: Promise<ArticleDetail> } | null>(null)
   const highlightContext = useHighlight()
+  /** detail.md §3.5.1 — 관련(동일 카테고리 최신 30 중 랜덤 3)·추천(RECOMMENDED 캐시) */
+  const [relatedArticles, setRelatedArticles] = useState<ArticleListItem[]>([])
+  const [recommendedArticles, setRecommendedArticles] = useState<ArticleListItem[]>([])
+  const [weeklyCards, setWeeklyCards] = useState<WeeklyCrossCardData[]>([])
+  const [detailBlocksLoading, setDetailBlocksLoading] = useState(false)
 
   const numId = id ? parseInt(id, 10) : NaN
   const idValid = id !== '' && !Number.isNaN(numId) && numId > 0
+  /** 공유 entitlement로 본문이 회원 동일이면 공유 UI도 회원용(contentShareLinkCopy.md §10.9) */
+  const shareAsMember = authenticated || article?.shareEntitlement === true
+  const authenticatedMember = authenticated
+  const shareEntitlementOnly = !authenticated && article?.shareEntitlement === true
+
+  useEffect(() => {
+    if (!idValid) {
+      setArticleCopyright(undefined)
+      return
+    }
+    let cancelled = false
+    fetchHomepageDocPublic('article_copyright')
+      .then((doc) => {
+        if (!cancelled) setArticleCopyright(doc ?? null)
+      })
+      .catch(() => {
+        if (!cancelled) setArticleCopyright(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [idValid])
 
   // 사용자 활동 로그 VIEW — id 기준 1회, 클라이언트만, fire-and-forget (detail.md §4.1, userAuthPlan)
   const calledMap = useRef(new Set<string>())
@@ -170,6 +276,47 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
     return () => { cancelled = true }
   }, [article?.id])
 
+  useEffect(() => {
+    if (!article?.id) return
+    const category = article.category?.trim()
+    let cancelled = false
+    setDetailBlocksLoading(true)
+    ;(async () => {
+      try {
+        const byId = new Map<string, ArticleListItem>()
+        const [recRes, weeklyRes, listRes] = await Promise.all([
+          fetchArticleRankingRecommended().catch(() => ({ list: [] as { contentCode: string; rankOrder: number }[] })),
+          fetchWeeklyCrossRanking().catch(() => ({ list: [] })),
+          category
+            ? fetchArticleList({ category, sort: 'latest', pageSize: 30, page: 1 })
+            : Promise.resolve({ articles: [] as ArticleListItem[] }),
+        ])
+        if (cancelled) return
+        for (const a of listRes.articles ?? []) {
+          byId.set(String(a.id), a)
+        }
+        const rec = await resolveArticlesByRanking(recRes.list ?? [], byId)
+        const weeklyResolved = await resolveWeeklyCrossCards(weeklyRes.list ?? [])
+        if (cancelled) return
+        setRecommendedArticles(rec)
+        setWeeklyCards(weeklyResolved)
+        const candidates = (listRes.articles ?? []).filter((a) => a.id !== article.id)
+        setRelatedArticles(shufflePick(candidates, Math.min(3, candidates.length)))
+      } catch {
+        if (!cancelled) {
+          setRecommendedArticles([])
+          setRelatedArticles([])
+          setWeeklyCards([])
+        }
+      } finally {
+        if (!cancelled) setDetailBlocksLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [article?.id, article?.category])
+
   // §6 SEO: title, description (detail.md)
   useEffect(() => {
     if (!article) return
@@ -235,15 +382,32 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
     }
   }, [id, idValid, article, status, isBookmarked])
 
-  const handleShareClick = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(typeof window !== 'undefined' ? window.location.href : '')
-      setShareToast(true)
-      setTimeout(() => setShareToast(false), 2000)
-    } catch {
-      // ignore
+  const handleShareClick = useCallback(() => {
+    if (status === 'loading' || loading) {
+      openShareWhenAuthReady.current = true
+      return
     }
-  }, [])
+    if (authenticatedMember) {
+      setShareModalOpen(true)
+    } else if (shareEntitlementOnly) {
+      setEntitlementShareModalOpen(true)
+    } else {
+      setGuestShareModalOpen(true)
+    }
+  }, [status, loading, authenticatedMember, shareEntitlementOnly])
+
+  useEffect(() => {
+    if (!openShareWhenAuthReady.current) return
+    if (status === 'loading' || loading) return
+    openShareWhenAuthReady.current = false
+    if (authenticatedMember) {
+      setShareModalOpen(true)
+    } else if (shareEntitlementOnly) {
+      setEntitlementShareModalOpen(true)
+    } else {
+      setGuestShareModalOpen(true)
+    }
+  }, [status, loading, authenticatedMember, shareEntitlementOnly])
 
   const handleRatingClick = useCallback(
     async (value: number) => {
@@ -324,7 +488,7 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
   }
 
   const categoryLabel = getCategoryName(article.category)
-  const displayTags = Array.isArray(article.tags) ? article.tags : []
+  const displayTags = (article.tags ?? []).map((t) => formatArticleTagLabel(t)).filter(Boolean)
   const authorAvatarSrc =
     (article.authorProfileImage && article.authorProfileImage.trim()) || '/editorDefault.png'
 
@@ -338,23 +502,40 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
         <span className={`text-[14px] leading-5 font-semibold ${COLORS.text}`}>{categoryLabel}</span>
       </nav>
 
+      {shareExpired ? (
+        <div
+          className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50/90 text-[14px] leading-snug text-[#0f172a]"
+          role="status"
+        >
+          공유 링크 유효 시간이 만료되었습니다. 전체 열람은 회원·새 공유 링크 발급을 이용해 주세요.
+        </div>
+      ) : null}
+
       <header className="mb-8">
         <h1 className={`font-extrabold text-[32px] sm:text-[32px] md:text-[40px] leading-[1.1] tracking-[-0.025em] ${COLORS.text} mb-4`}>
           {article.title}
         </h1>
         {article.subtitle ? (
-          <p className={`text-[18px] sm:text-[20px] leading-[1.4] ${COLORS.textSecondary} mb-4`}>{article.subtitle}</p>
+          <p
+            className={`text-[18px] sm:text-[20px] leading-[1.4] ${COLORS.textSecondary} ${
+              displayTags.length > 0 ? 'mb-3' : 'mb-4'
+            }`}
+          >
+            {article.subtitle}
+          </p>
         ) : null}
-        <div className="flex flex-wrap gap-2 mb-6">
-          {displayTags.map((tag) => (
-            <span
-              key={tag}
-              className="bg-[#e2e8f0] text-[12px] font-medium text-[#0f172a] px-3 py-1 rounded-full"
-            >
-              {tag.startsWith('#') ? tag : `#${tag}`}
-            </span>
-          ))}
-        </div>
+        {displayTags.length > 0 ? (
+          <div className="flex flex-wrap gap-2 mb-6" aria-label="태그">
+            {displayTags.map((label, i) => (
+              <span
+                key={`${label}-${i}`}
+                className="rounded-full bg-[#e8edf2] px-3 py-1 text-[12px] font-medium leading-snug text-[#475569]"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <div className={`flex items-center justify-between py-[25px] border-t border-b ${COLORS.border}`}>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 ring-1 ring-slate-200/90 bg-slate-100">
@@ -370,12 +551,22 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`font-bold text-[16px] leading-6 ${COLORS.text}`}>{article.author}</span>
-                <button type="button" className={`text-[12px] ${COLORS.textSecondary} underline hover:no-underline`}>
-                  에디터의 글 더보기
-                </button>
+                {article.authorAffiliation?.trim() ? (
+                  <span className={`text-[14px] leading-6 font-medium ${COLORS.textSecondary}`}>
+                    {article.authorAffiliation.trim()}
+                  </span>
+                ) : null}
+                {article.author_id != null && Number(article.author_id) > 0 ? (
+                  <Link
+                    href={`/article/editor?author_id=${encodeURIComponent(String(article.author_id))}`}
+                    className={`text-[12px] ${COLORS.textSecondary} underline hover:no-underline`}
+                  >
+                    에디터의 글 더보기
+                  </Link>
+                ) : null}
               </div>
               <p className={`text-[14px] leading-5 ${COLORS.textSecondary} mt-0.5`}>
-                {article.authorAffiliation ? `${article.authorAffiliation} · ` : ''}{formatDate(article.createdAt)}
+                {formatDate(article.createdAt)}
               </p>
             </div>
           </div>
@@ -420,12 +611,33 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
         />
       </div>
 
-      <section className="my-10 p-6 rounded-xl bg-blue-50/50 border-2 border-blue-200">
-        <p className="font-bold text-[12px] text-[#0f172a] mb-1">© InDe Content Policy</p>
-        <p className="text-[12px] leading-[19.5px] text-[#475569]">
-          본 콘텐츠는 인디가 제작한 고유한 자산으로 무단 전재 및 재배포, AI 학습·활용을 금합니다. 원문의 20% 이상 인용할 수 없으며, 일부 인용한 경우 반드시 출처를 표기해야 합니다.
-        </p>
-      </section>
+      {article.contentTruncated && !shareAsMember && (
+        <div className="mt-4 mb-2 p-4 rounded-xl border border-amber-200 bg-amber-50/90 text-[14px] leading-snug text-[#0f172a]">
+          미리보기만 표시 중입니다. 회원 로그인 시{' '}
+          <span className="font-semibold">전체 본문</span>을 읽을 수 있습니다.{' '}
+          <Link href="/login" className="font-bold text-[#0f172a] underline underline-offset-2">
+            로그인
+          </Link>
+          후 페이지를 새로고침해 주세요.
+        </div>
+      )}
+
+      {articleCopyright != null && (
+        <section className="my-10 p-6 rounded-xl bg-blue-50/50 border-2 border-blue-200">
+          <p className="font-bold text-[12px] text-[#0f172a] mb-2">
+            {articleCopyright.title?.trim() || HOMEPAGE_DOC_DEFAULT_TITLES.article_copyright}
+          </p>
+          {(() => {
+            const safeHtml = sanitizeHomepageHtml(articleCopyright.bodyHtml || '')
+            return safeHtml.trim() ? (
+              <div
+                className="text-[12px] leading-[19.5px] text-[#475569] [&_p]:mb-2 [&_p:last-child]:mb-0 [&_a]:text-[#2563eb] [&_a]:underline"
+                dangerouslySetInnerHTML={{ __html: safeHtml }}
+              />
+            ) : null
+          })()}
+        </section>
+      )}
 
       <section className={`${COLORS.accent} rounded-2xl p-8 flex flex-wrap items-center justify-between gap-4 mb-12`}>
         <div>
@@ -448,6 +660,26 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
           링크가 복사되었습니다
         </div>
       )}
+
+      <ArticleShareModal open={shareModalOpen} onClose={() => setShareModalOpen(false)} contentCode={id} />
+      <ArticleEntitlementShareModal
+        open={entitlementShareModalOpen}
+        onClose={() => setEntitlementShareModalOpen(false)}
+        contentCode={id}
+        onCopied={() => {
+          setShareToast(true)
+          setTimeout(() => setShareToast(false), 2000)
+        }}
+      />
+      <ArticleGuestShareModal
+        open={guestShareModalOpen}
+        onClose={() => setGuestShareModalOpen(false)}
+        contentCode={id}
+        onCopied={() => {
+          setShareToast(true)
+          setTimeout(() => setShareToast(false), 2000)
+        }}
+      />
 
       <section className={`${COLORS.bgLight} border ${COLORS.border} rounded-2xl p-8 mb-12`}>
         <h3 className={`font-bold text-[20px] ${COLORS.text} mb-6`}>적용 질문</h3>
@@ -503,55 +735,81 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
         </div>
       </section>
 
-      <section className="pt-16 mb-12">
-        <h2 className={`font-bold text-[24px] tracking-[-0.6px] ${COLORS.text} mb-8`}>관련 아티클</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-          {RELATED.map((item) => (
-            <Link key={item.id} href={detailUrl(item.id)} className="block group">
-              <div className={`aspect-[4/3] rounded-xl overflow-hidden ${item.imageGradient} mb-4`} />
-              <p className={`font-bold text-[16px] leading-6 ${COLORS.text} group-hover:underline line-clamp-2`}>
-                {item.title}
-              </p>
-              <p className={`text-[14px] leading-5 ${COLORS.textSecondary} mt-1`}>{item.editor}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {detailBlocksLoading ? (
+        <>
+          <section className="pt-16 mb-12" aria-busy="true">
+            <h2 className={`font-bold text-[24px] tracking-[-0.6px] ${COLORS.text} mb-8`}>관련 아티클</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-[4/3] rounded-xl bg-[#e2e8f0] mb-4" />
+                  <div className="h-4 w-4/5 bg-[#e2e8f0] rounded mb-2" />
+                  <div className="h-3 w-1/2 bg-[#e2e8f0] rounded" />
+                </div>
+              ))}
+            </div>
+          </section>
+          <section className="pt-16 mb-12" aria-busy="true">
+            <h2 className={`font-bold text-[24px] tracking-[-0.6px] ${COLORS.text} mb-8`}>추천 아티클</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-[4/3] rounded-xl bg-[#e2e8f0] mb-4" />
+                  <div className="h-4 w-4/5 bg-[#e2e8f0] rounded mb-2" />
+                  <div className="h-3 w-1/2 bg-[#e2e8f0] rounded" />
+                </div>
+              ))}
+            </div>
+          </section>
+          <section className="pt-16 mb-12" aria-busy="true">
+            <h2 className={`font-bold text-[24px] tracking-[-0.6px] ${COLORS.text} mb-8`}>주간 인기 콘텐츠</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-[4/3] rounded-xl bg-[#e2e8f0] mb-4" />
+                  <div className="h-4 w-4/5 bg-[#e2e8f0] rounded mb-2" />
+                  <div className="h-3 w-1/2 bg-[#e2e8f0] rounded" />
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
+      ) : (
+        <>
+          {relatedArticles.length > 0 ? (
+            <section className="pt-16 mb-12">
+              <h2 className={`font-bold text-[24px] tracking-[-0.6px] ${COLORS.text} mb-8`}>관련 아티클</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                {relatedArticles.map((item, i) => (
+                  <DetailBottomArticleCard key={item.id} item={item} index={i} />
+                ))}
+              </div>
+            </section>
+          ) : null}
 
-      <section className="pt-16 mb-12">
-        <div className="flex items-center gap-2 mb-8">
-          <h2 className={`font-bold text-[24px] tracking-[-0.6px] ${COLORS.text}`}>추천 아티클</h2>
-          <span className="bg-[#e1f800] text-black text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
-            Editor&apos;s Pick
-          </span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-          {RELATED.map((item) => (
-            <Link key={item.id} href={detailUrl(item.id)} className="block group">
-              <div className={`aspect-[4/3] rounded-xl border border-slate-100 overflow-hidden ${item.imageGradient} mb-4`} />
-              <p className={`font-bold text-[16px] leading-6 ${COLORS.text} group-hover:underline line-clamp-2`}>
-                {item.title}
-              </p>
-              <p className={`text-[14px] leading-5 ${COLORS.textSecondary} mt-1`}>{item.editor}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
+          {recommendedArticles.length > 0 ? (
+            <section className="pt-16 mb-12">
+              <h2 className={`font-bold text-[24px] tracking-[-0.6px] ${COLORS.text} mb-8`}>추천 아티클</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                {recommendedArticles.map((item, i) => (
+                  <DetailBottomArticleCard key={item.id} item={item} index={i} />
+                ))}
+              </div>
+            </section>
+          ) : null}
 
-      <section className="pt-16">
-        <h2 className={`font-bold text-[24px] tracking-[-0.6px] ${COLORS.text} mb-8`}>주간 인기 콘텐츠</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-          {RELATED.map((item) => (
-            <Link key={item.id} href={detailUrl(item.id)} className="block group">
-              <div className={`aspect-[4/3] rounded-xl overflow-hidden ${item.imageGradient} mb-4`} />
-              <p className={`font-bold text-[16px] leading-6 ${COLORS.text} group-hover:underline line-clamp-2`}>
-                {item.title}
-              </p>
-              <p className={`text-[14px] leading-5 ${COLORS.textSecondary} mt-1`}>{item.editor}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
+          {weeklyCards.length > 0 ? (
+            <section className="pt-16 mb-12">
+              <h2 className={`font-bold text-[24px] tracking-[-0.6px] ${COLORS.text} mb-8`}>주간 인기 콘텐츠</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                {weeklyCards.map((item) => (
+                  <DetailBottomWeeklyCard key={item.href} item={item} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </>
+      )}
     </div>
   )
 }
@@ -559,7 +817,7 @@ function ArticleDetailContentInner({ id }: ArticleDetailContentProps) {
 export default function ArticleDetailContent(props: ArticleDetailContentProps) {
   return (
     <HighlightProvider articleId={props.id}>
-      <ArticleDetailContentInner id={props.id} />
+      <ArticleDetailContentInner {...props} />
     </HighlightProvider>
   )
 }

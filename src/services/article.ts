@@ -1,4 +1,5 @@
 import api from '@/lib/api'
+import { normalizeArticleTags } from '@/lib/articleTags'
 import type { ArticleListResponse, ArticleDetail, ArticleListItem } from '@/types/article'
 
 const BASE = '/api/articles'
@@ -21,13 +22,19 @@ export async function fetchArticleDetail(id: number | string): Promise<ArticleDe
     throw new Error('유효하지 않은 아티클 ID입니다.')
   }
   const { data } = await api.get(`${BASE}/${numId}`)
-  return unwrapResult<ArticleDetail>(data)
+  const raw = unwrapResult<ArticleDetail>(data)
+  return {
+    ...raw,
+    tags: normalizeArticleTags((raw as ArticleDetail & { tags?: unknown }).tags),
+  }
 }
 
 export interface FetchArticleListParams {
   page?: number
   pageSize?: number
   category?: string
+  /** ContentAuthor PK — 에디터별 목록 (`/article/editor`) */
+  authorId?: number
   sort?: 'latest' | 'popular'
 }
 
@@ -40,10 +47,19 @@ export async function fetchArticleList(
       page: params?.page ?? 1,
       pageSize: params?.pageSize ?? 20,
       category: params?.category || undefined,
+      author_id:
+        params?.authorId != null && params.authorId > 0 ? params.authorId : undefined,
       sort: params?.sort ?? 'latest',
     },
   })
-  return unwrapResult<ArticleListResponse>(data)
+  const res = unwrapResult<ArticleListResponse>(data)
+  return {
+    ...res,
+    articles: (res.articles ?? []).map((a) => ({
+      ...a,
+      tags: normalizeArticleTags((a as ArticleListItem & { tags?: unknown }).tags),
+    })),
+  }
 }
 
 /** 상세 응답 → 목록 카드용 필드 (랭킹 contentCode 보강 시) */

@@ -49,6 +49,16 @@ export interface RatingsListResult extends ListResult {
   }
 }
 
+/** 공유(복사) 기록 — SHARE (§8) */
+export async function postShare(contentType: ContentType, contentCode: string): Promise<void> {
+  const res = await apiClient.post('/api/library/useractivity/share', {
+    contentType,
+    contentCode,
+  })
+  const out = unwrap<{ result?: string }>(res.data)
+  if (!out?.result) throw new Error(getMessage(res.data))
+}
+
 /** 콘텐츠 조회 기록 */
 export async function postView(contentType: ContentType, contentCode: string): Promise<void> {
   const res = await apiClient.post('/api/library/useractivity/view', {
