@@ -16,6 +16,10 @@ const DUAL_ROUTES = [
   { html: 'privacy.html', dir: 'privacy' },
   { html: 'terms.html', dir: 'terms' },
   { html: path.join('about', 'companyInfo.html'), dir: path.join('about', 'companyInfo') },
+  // 아티클: /article·/article/category 새로고침 시 index.html 폴백만 있는 CDN에서 메인으로 떨어지는 문제 방지
+  { html: 'article.html', dir: 'article' },
+  { html: path.join('article', 'category.html'), dir: path.join('article', 'category') },
+  { html: path.join('article', 'detail.html'), dir: path.join('article', 'detail') },
 ]
 
 function copyHtmlToIndex(relHtml, relDir) {
