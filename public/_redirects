@@ -1,0 +1,2 @@
+# Cloudflare Pages: `/s` 요청이 루트 index.html로 떨어지지 않도록 본문을 s.html로 rewrite (쿼리 유지)
+/s /s.html 200

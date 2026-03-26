@@ -13,6 +13,8 @@ const outDir = path.join(__dirname, '..', 'out')
 
 /** { 소스: out 기준 .html 경로, 대상: out 기준 디렉터리 (그 안에 index.html) } */
 const DUAL_ROUTES = [
+  // short 공유 `/s?code=` — `s.html`만 있고 `/s` 매핑이 없는 CDN이 index.html(메인)을 주는 문제 방지
+  { html: 's.html', dir: 's' },
   { html: 'privacy.html', dir: 'privacy' },
   { html: 'terms.html', dir: 'terms' },
   { html: path.join('about', 'companyInfo.html'), dir: path.join('about', 'companyInfo') },
