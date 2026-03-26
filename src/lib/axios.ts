@@ -32,6 +32,20 @@ const isPublicBoard = (url?: string) => {
   )
 }
 
+/**
+ * `/api/library/*` 가 isPublicBoard에 걸리지만, 아래는 회원 JWT 필수(contentShareLinkCopy.md ensure 등).
+ * 이 경로들은 Authorization을 붙이지 않으면 서버가 401 → response 인터셉터가 handleAuthFail로 로그인 풀림.
+ */
+const isLibraryMemberEndpoint = (config: InternalAxiosRequestConfig) => {
+  const path = pathOnly(config.url)
+  const m = String(config.method || 'get').toLowerCase()
+  if (m === 'post' && /^\/api\/library\/content-share\/ensure\/?$/.test(path)) return true
+  if (m === 'post' && /^\/api\/library\/useractivity\/rating\/?$/.test(path)) return true
+  if ((m === 'post' || m === 'delete') && /^\/api\/library\/useractivity\/bookmark\/?$/.test(path)) return true
+  if (m === 'get' && /^\/api\/library\/useractivity\/me\//.test(path)) return true
+  return false
+}
+
 /** GET /api/articles/{숫자id} — 로그인 시 JWT를 붙여 전체 본문 수신 (비회원은 미리보기 %) */
 const isArticleDetailGet = (config: InternalAxiosRequestConfig) => {
   if (String(config.method || 'get').toLowerCase() !== 'get') return false
@@ -149,10 +163,14 @@ const refreshAccessToken = async (): Promise<string> => {
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     if (isPublicBoard(config.url) || isPublicAuthFlow(config.url)) {
-      if (isArticleDetailGet(config)) {
+      if (isArticleDetailGet(config) || isLibraryMemberEndpoint(config)) {
         try {
           await ensureToken()
-        } catch {
+        } catch (e) {
+          if (isLibraryMemberEndpoint(config)) {
+            handleAuthFail()
+            return Promise.reject(e)
+          }
           /* 비로그인·갱신 실패: 미리보기 본문만 */
         }
         const token = Cookies.get('accessToken')
