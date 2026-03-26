@@ -163,7 +163,7 @@ export default function PublicVideoSeminarListPage({
         </header>
 
         <section className="mb-8 sm:mb-10">
-          <HomeHeroCarousel forcedEventTypeCode={heroEventTypeCode} />
+          <HomeHeroCarousel forcedEventTypeCode={heroEventTypeCode} variant="inner" />
         </section>
 
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">

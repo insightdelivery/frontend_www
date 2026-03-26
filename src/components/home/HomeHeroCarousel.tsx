@@ -248,9 +248,14 @@ function ReducedMotionHero({ slides }: { slides: DisplayEventHeroItem[] }) {
 export type HomeHeroCarouselProps = {
   /** 지정 시 `resolveHeroEventTypeCode`를 쓰지 않고 이 코드로만 조회 (비디오 리스트 Hero 전용) */
   forcedEventTypeCode?: string
+  /**
+   * `inner`: 비디오·세미나 목록 등 — 메인과 동일한 대형 로딩 블록이면 '메인이 로딩되는 것처럼' 보이므로 컴팩트 스켈레톤
+   * `home`(기본): 메인 히어로
+   */
+  variant?: 'home' | 'inner'
 }
 
-export default function HomeHeroCarousel({ forcedEventTypeCode }: HomeHeroCarouselProps = {}) {
+export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home' }: HomeHeroCarouselProps = {}) {
   const [resolvedEventTypeCode, setResolvedEventTypeCode] = useState<string | null>(null)
   const [slides, setSlides] = useState<DisplayEventHeroItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -388,6 +393,15 @@ export default function HomeHeroCarousel({ forcedEventTypeCode }: HomeHeroCarous
   }
 
   if (loading) {
+    if (variant === 'inner') {
+      return (
+        <section className="mb-8 sm:mb-10 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
+          <div className="relative min-h-[160px] sm:min-h-[200px] w-full flex items-center justify-center bg-gradient-to-b from-gray-200 to-gray-300 text-gray-600 text-sm animate-pulse">
+            상단 배너 불러오는 중…
+          </div>
+        </section>
+      )
+    }
     return (
       <section className="mb-16 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
         <div

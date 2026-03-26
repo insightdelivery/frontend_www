@@ -32,6 +32,12 @@ const isPublicBoard = (url?: string) => {
   )
 }
 
+/** 공개 API 시스코드 조회 — 익명 허용. 만료 토큰으로 ensureToken 실패 시 전역 로그아웃·리다이렉트 방지 */
+const isPublicSyscodePath = (url?: string) => {
+  const path = pathOnly(url)
+  return /^\/systemmanage\/syscode(\/|$)/.test(path)
+}
+
 /**
  * `/api/library/*` 가 isPublicBoard에 걸리지만, 아래는 회원 JWT 필수(contentShareLinkCopy.md ensure 등).
  * 이 경로들은 Authorization을 붙이지 않으면 서버가 401 → response 인터셉터가 handleAuthFail로 로그인 풀림.
@@ -162,6 +168,14 @@ const refreshAccessToken = async (): Promise<string> => {
 // Request Interceptor: ensureToken 후 토큰 첨부, 실패 시 요청 중단 (userAuthPlan §10 §16)
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    if (isPublicSyscodePath(config.url)) {
+      const token = Cookies.get('accessToken')
+      if (token && !isTokenExpired(token) && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+      return config
+    }
+
     if (isPublicBoard(config.url) || isPublicAuthFlow(config.url)) {
       if (isArticleDetailGet(config) || isLibraryMemberEndpoint(config)) {
         try {
@@ -203,7 +217,10 @@ apiClient.interceptors.response.use(
   },
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      handleAuthFail()
+      const reqUrl = error.config?.url
+      if (!isPublicBoard(reqUrl) && !isPublicSyscodePath(reqUrl) && !isPublicAuthFlow(reqUrl)) {
+        handleAuthFail()
+      }
     }
     return Promise.reject(error)
   }

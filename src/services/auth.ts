@@ -305,18 +305,23 @@ export const getMe = async (): Promise<UserInfo> => {
   }
 }
 
-/** 앱 최초 1회만 getMe 호출 (userAuthPlan §2). 이후 호출 시에는 API를 호출하지 않고 null 반환. */
-let initAuthDone = false
+/**
+ * 세션 초기화용 getMe — 동시에 여러 번 호출돼도 동일 Promise 공유 (React Strict Mode 이중 effect 대비).
+ * 호출부는 AuthProvider 한정이나, 모듈 레벨 플래그로 두 번째 호출을 null 처리하면 경합 버그가 난다.
+ */
+let initAuthInFlight: Promise<UserInfo | null> | null = null
 
 export const initAuth = async (): Promise<UserInfo | null> => {
-  if (initAuthDone) return null
-  initAuthDone = true
   if (!Cookies.get('accessToken')) return null
-  try {
-    return await getMe()
-  } catch {
-    return null
+  if (!initAuthInFlight) {
+    initAuthInFlight = getMe()
+      .then((u) => u)
+      .catch(() => null)
+      .finally(() => {
+        initAuthInFlight = null
+      })
   }
+  return initAuthInFlight
 }
 
 

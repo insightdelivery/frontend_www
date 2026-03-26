@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useState } from 'react'
 import Cookies from 'js-cookie'
 import { initAuth, logout as authLogout, type UserInfo } from '@/services/auth'
 
@@ -27,24 +27,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [user, setUserState] = useState<UserInfo | null>(null)
 
+  /** 토큰 없음은 동기적으로 비로그인 확정 → 서브페이지 새로고침 시 GNB·본문이 불필요하게 '로딩'에 머물지 않게 함 */
+  useLayoutEffect(() => {
+    if (!Cookies.get('accessToken')) {
+      setUserState(null)
+      setStatus('unauthenticated')
+    }
+  }, [])
+
   useEffect(() => {
-    const init = async () => {
-      const token = Cookies.get('accessToken')
-      if (!token) {
-        setUserState(null)
-        setStatus('unauthenticated')
-        return
-      }
+    const token = Cookies.get('accessToken')
+    if (!token) return
+
+    let cancelled = false
+    const run = async () => {
       try {
         const u = await initAuth()
+        if (cancelled) return
         setUserState(u ?? null)
         setStatus(u ? 'authenticated' : 'unauthenticated')
       } catch {
-        setUserState(null)
-        setStatus('unauthenticated')
+        if (!cancelled) {
+          setUserState(null)
+          setStatus('unauthenticated')
+        }
       }
     }
-    init()
+    void run()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const setUser = useCallback((u: UserInfo | null) => {

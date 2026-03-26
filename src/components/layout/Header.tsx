@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { getAccessToken, getUserInfo } from '@/services/auth'
 import { Search, Menu, X, Home } from 'lucide-react'
 import MainBar from '@/components/layout/MainBar'
 import HeaderSearch from '@/components/layout/HeaderSearch'
@@ -16,13 +17,23 @@ export default function Header() {
   const pathname = usePathname()
   const router = useRouter()
   const { status, user, logout } = useAuth()
+  const [clientReady, setClientReady] = useState(false)
+  useEffect(() => {
+    setClientReady(true)
+  }, [])
+  const cookieUser = clientReady ? getUserInfo() : null
+  const tokenPresent = clientReady && !!getAccessToken()
+  /** 세션 검증 중이어도 쿠키 userInfo가 있으면 GNB를 로그인 상태로 표시 (새로고침 시 상단이 '비로그인 스켈레톤'으로 고정되지 않게) */
+  const showMemberChrome =
+    status === 'authenticated' || (status === 'loading' && tokenPresent && !!cookieUser)
+  const displayUser = user ?? (showMemberChrome ? cookieUser : null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [gnbNotice, setGnbNotice] = useState<NoticeListItem | null>(null)
   const gnbFetchedRef = useRef(false)
 
   const closeSearch = useCallback(() => setIsSearchOpen(false), [])
-  const greetLabel = user?.nickname?.trim() || user?.name?.trim() || null
+  const greetLabel = displayUser?.nickname?.trim() || displayUser?.name?.trim() || null
 
   useEffect(() => {
     if (gnbFetchedRef.current) return
@@ -58,10 +69,10 @@ export default function Header() {
     closeSearch()
   }
 
-  if (status === 'loading') {
+  if (status === 'loading' && !showMemberChrome) {
     return (
       <div className="sticky top-0 z-50">
-        <MainBar notice={null} />
+        <MainBar notice={gnbNotice} />
         <div className="h-[52px] bg-neon-yellow" aria-hidden />
       </div>
     )
@@ -139,7 +150,7 @@ export default function Header() {
             </div>
 
             <div className="hidden flex-1 items-center justify-end gap-6 text-[14px] font-bold lg:flex">
-              {status === 'authenticated' ? (
+              {showMemberChrome ? (
                 <>
                   {greetLabel && <span className="text-[13px] font-medium">{greetLabel}님</span>}
                   <Link href="/mypage" className="transition-opacity hover:opacity-70">
@@ -228,7 +239,7 @@ export default function Header() {
                   세미나
                 </Link>
                 <div className="space-y-3 border-t border-black/10 pt-4">
-                  {status === 'authenticated' ? (
+                  {showMemberChrome ? (
                     <>
                       {greetLabel && <p className="text-[14px] font-medium text-gray-700">{greetLabel}님</p>}
                       <Link
