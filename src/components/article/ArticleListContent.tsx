@@ -1,10 +1,15 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { ArticleCard } from './ArticleCard'
+import { articleCardBadges } from './articleBadges'
 import { EditorPickCard } from './EditorPickCard'
-import { fetchArticleList } from '@/services/article'
+import {
+  fetchArticleList,
+  resolveArticlesByRanking,
+} from '@/services/article'
+import { fetchArticleRankingHot, fetchArticleRankingShare } from '@/services/libraryRanking'
 import type { ArticleListItem } from '@/types/article'
 import { getSysCode, getSysCodeName, ARTICLE_CATEGORY_PARENT } from '@/lib/syscode'
 import type { SysCodeItem } from '@/lib/syscode'
@@ -28,19 +33,13 @@ function getGradient(index: number) {
   return PLACEHOLDER_GRADIENTS[index % PLACEHOLDER_GRADIENTS.length]
 }
 
-/** 최신 14일 이내면 NEW (주요 섹션용). 공유 섹션은 카드에서 직접 tag="BEST" 사용 */
-function getTag(item: ArticleListItem): 'NEW' | 'BEST' | undefined {
-  const createdAt = item.createdAt ? new Date(item.createdAt).getTime() : 0
-  const daysSinceCreation = (Date.now() - createdAt) / (1000 * 60 * 60 * 24)
-  if (daysSinceCreation <= 14) return 'NEW'
-  return undefined
-}
-
 export function ArticleListContent() {
   const [categories, setCategories] = useState<SysCodeItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [allArticles, setAllArticles] = useState<ArticleListItem[]>([])
+  const [hotArticles, setHotArticles] = useState<ArticleListItem[]>([])
+  const [sharedArticles, setSharedArticles] = useState<ArticleListItem[]>([])
 
   // §5 list.me: localStorage sysCodeData SYS26209B002 → pill에 sysCodeName 표시, 링크에 sysCodeSid
   useEffect(() => {
@@ -51,8 +50,18 @@ export function ArticleListContent() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetchArticleList({ page: 1, pageSize: 50, sort: 'latest' })
-      setAllArticles(res.articles ?? [])
+      const [listRes, hotRes, shareRes] = await Promise.all([
+        fetchArticleList({ page: 1, pageSize: 50, sort: 'latest' }),
+        fetchArticleRankingHot().catch(() => ({ list: [] as { contentCode: string; rankOrder: number }[] })),
+        fetchArticleRankingShare().catch(() => ({ list: [] as { contentCode: string; rankOrder: number }[] })),
+      ])
+      const articles = listRes.articles ?? []
+      setAllArticles(articles)
+      const byId = new Map(articles.map((a) => [String(a.id), a]))
+      const hot = await resolveArticlesByRanking(hotRes.list ?? [], byId)
+      const shared = await resolveArticlesByRanking(shareRes.list ?? [], byId)
+      setHotArticles(hot)
+      setSharedArticles(shared)
     } catch (e) {
       setError(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.')
     } finally {
@@ -64,15 +73,13 @@ export function ArticleListContent() {
     load()
   }, [load])
 
-  // § list-api.me: 섹션별 분배
+  // § list.md: 주요 6 / 핫·공유는 랭킹 API / 에디터 추천
   const mainArticles = allArticles.slice(0, 6)
-  const hotArticles = [...allArticles]
-    .sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
-    .slice(0, 3)
-  const sharedArticles = [...allArticles]
-    .sort((a, b) => (b.highlightCount ?? 0) - (a.highlightCount ?? 0))
-    .slice(0, 3)
   const editorArticles = allArticles.filter((a) => Boolean(a.isEditorPick)).slice(0, 3)
+  const sharedTopIds = useMemo(
+    () => new Set(sharedArticles.map((a) => String(a.id))),
+    [sharedArticles]
+  )
 
   if (loading) {
     return (
@@ -84,7 +91,7 @@ export function ArticleListContent() {
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-2xl border border-gray-200 bg-gray-100 animate-pulse aspect-[3/2] min-h-[200px]"
+              className="rounded-2xl border border-gray-200 bg-gray-100 animate-pulse aspect-[4/3] min-h-[200px]"
             />
           ))}
         </div>
@@ -124,8 +131,9 @@ export function ArticleListContent() {
               key={article.id}
               id={String(article.id)}
               title={article.title}
+              subtitle={article.subtitle}
               categoryName={getSysCodeName(categories, article.category)}
-              tag={getTag(article)}
+              badges={articleCardBadges(article, sharedTopIds)}
               thumbnail={article.thumbnail}
               imageGradient={getGradient(i)}
             />
@@ -164,10 +172,12 @@ export function ArticleListContent() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {hotArticles.map((article, i) => (
               <ArticleCard
-                key={article.id}
+                key={`hot-${article.id}`}
                 id={String(article.id)}
                 title={article.title}
+                subtitle={article.subtitle}
                 categoryName={getSysCodeName(categories, article.category)}
+                badges={articleCardBadges(article, sharedTopIds)}
                 thumbnail={article.thumbnail}
                 imageGradient={getGradient(6 + i)}
               />
@@ -190,8 +200,9 @@ export function ArticleListContent() {
                 key={article.id}
                 id={String(article.id)}
                 title={article.title}
+                subtitle={article.subtitle}
                 categoryName={getSysCodeName(categories, article.category)}
-                tag="BEST"
+                badges={articleCardBadges(article, sharedTopIds)}
                 thumbnail={article.thumbnail}
                 imageGradient={getGradient(9 + i)}
               />
@@ -216,6 +227,7 @@ export function ArticleListContent() {
                 key={article.id}
                 id={String(article.id)}
                 title={article.title}
+                subtitle={article.subtitle}
                 thumbnail={article.thumbnail}
                 imageGradient={getGradient(12 + i)}
                 imageShape={i % 2 === 0 ? 'circle' : 'square'}

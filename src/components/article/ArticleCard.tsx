@@ -2,11 +2,16 @@
 
 import Link from 'next/link'
 
+export type ArticleCardBadge = 'NEW' | 'BEST'
+
 export interface ArticleCardProps {
   id: string
   title: string
+  /** API subtitle — null/빈 문자열이면 미표시 (list.md §3.1) */
+  subtitle?: string | null
   categoryName?: string
-  tag?: 'NEW' | 'BEST'
+  /** NEW·BEST 동시 표시 가능. 표시 순서: NEW → BEST (list.md) */
+  badges?: ArticleCardBadge[]
   /** S3 또는 Presigned URL. 있으면 img 사용, 없으면 imageGradient 사용 */
   thumbnail?: string | null
   /** 썸네일이 없을 때만 사용하는 그라데이션 클래스 */
@@ -14,6 +19,21 @@ export interface ArticleCardProps {
 }
 
 const DEFAULT_GRADIENT = 'bg-gradient-to-br from-gray-200 via-gray-300 to-gray-500'
+
+/** list.md §7 — NEW #FF75E1 / #FFFFFF, BEST #ef4444 / #FFFFFF */
+const BADGE_STYLES: Record<ArticleCardBadge, string> = {
+  NEW: 'bg-[#FF75E1] text-[#FFFFFF]',
+  BEST: 'bg-[#ef4444] text-[#FFFFFF]',
+}
+
+/** 중복 제거, 순서 NEW → BEST */
+function normalizeBadges(badges?: ArticleCardBadge[]): ArticleCardBadge[] {
+  if (!badges?.length) return []
+  const out: ArticleCardBadge[] = []
+  if (badges.includes('NEW')) out.push('NEW')
+  if (badges.includes('BEST')) out.push('BEST')
+  return out
+}
 
 /** 제목 위 카테고리 라벨 통일 스타일 (list.md §3.2) */
 const CATEGORY_LABEL_CLASS =
@@ -26,12 +46,16 @@ export function getCategoryPillClass(_name: string): string {
 export function ArticleCard({
   id,
   title,
+  subtitle,
   categoryName = '카테고리',
-  tag,
+  badges,
   thumbnail,
   imageGradient = DEFAULT_GRADIENT,
 }: ArticleCardProps) {
   const gradient = imageGradient || DEFAULT_GRADIENT
+  const sub = typeof subtitle === 'string' ? subtitle.trim() : ''
+  const badgeList = normalizeBadges(badges)
+
   return (
     <Link href={`/article/detail?id=${encodeURIComponent(id)}`} className="block group">
       <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -39,21 +63,23 @@ export function ArticleCard({
           <img
             src={thumbnail}
             alt=""
-            className="aspect-[4/3] sm:aspect-[3/2] w-full object-cover"
+            className="aspect-[4/3] w-full object-cover"
           />
         ) : (
-          <div className={`aspect-[4/3] sm:aspect-[3/2] ${gradient}`} />
+          <div className={`aspect-[4/3] ${gradient}`} />
         )}
-        {tag && (
-          <span
-            className={[
-              'absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-extrabold text-black',
-              tag === 'NEW' ? 'bg-neon-yellow' : 'bg-brand-orange text-white',
-            ].join(' ')}
-          >
-            {tag}
-          </span>
-        )}
+        {badgeList.length > 0 ? (
+          <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+            {badgeList.map((b) => (
+              <span
+                key={b}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold ${BADGE_STYLES[b]}`}
+              >
+                {b}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </div>
       {categoryName ? (
         <span className={`mt-2 inline-block ${getCategoryPillClass(categoryName)}`}>
@@ -63,6 +89,11 @@ export function ArticleCard({
       <p className="mt-2 text-[15px] sm:text-[17px] font-extrabold leading-snug line-clamp-2 group-hover:text-gray-600 transition-colors">
         {title}
       </p>
+      {sub ? (
+        <p className="mt-0.5 text-[12px] sm:text-[13px] text-gray-500 leading-snug line-clamp-2">
+          {sub}
+        </p>
+      ) : null}
     </Link>
   )
 }

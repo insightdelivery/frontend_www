@@ -5,6 +5,7 @@ import Link from 'next/link'
 export interface EditorPickCardProps {
   id: string
   title: string
+  subtitle?: string | null
   /** S3 또는 Presigned URL. 있으면 img 사용, 없으면 imageGradient 사용 */
   thumbnail?: string | null
   imageGradient?: string
@@ -16,11 +17,13 @@ const DEFAULT_GRADIENT = 'bg-gradient-to-br from-amber-200 to-amber-600'
 export function EditorPickCard({
   id,
   title,
+  subtitle,
   thumbnail,
   imageGradient = DEFAULT_GRADIENT,
   imageShape = 'circle',
 }: EditorPickCardProps) {
   const gradient = imageGradient || DEFAULT_GRADIENT
+  const sub = typeof subtitle === 'string' ? subtitle.trim() : ''
   const shapeClass = imageShape === 'circle' ? 'rounded-full' : 'rounded-lg'
   return (
     <Link
@@ -42,6 +45,11 @@ export function EditorPickCard({
         <p className="text-[14px] sm:text-[15px] font-extrabold leading-snug line-clamp-2 group-hover:text-gray-600 transition-colors">
           {title}
         </p>
+        {sub ? (
+          <p className="mt-0.5 text-[12px] sm:text-[13px] text-gray-500 leading-snug line-clamp-2">
+            {sub}
+          </p>
+        ) : null}
       </div>
     </Link>
   )

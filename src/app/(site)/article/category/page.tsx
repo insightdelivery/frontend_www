@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
-import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getSysCode, getSysCodeName, ARTICLE_CATEGORY_PARENT } from '@/lib/syscode'
 import type { SysCodeItem } from '@/lib/syscode'
 import { fetchArticleList } from '@/services/article'
+import { fetchArticleRankingShare } from '@/services/libraryRanking'
 import type { ArticleListItem } from '@/types/article'
-import { getCategoryPillClass } from '@/components/article/ArticleCard'
+import { ArticleCard } from '@/components/article/ArticleCard'
+import { articleCardBadges, sharedTopIdsFromRankingList } from '@/components/article/articleBadges'
 
 const SORT_OPTIONS = [
   { value: 'latest' as const, label: '최신순' },
@@ -28,44 +29,6 @@ function getGradient(index: number) {
   return PLACEHOLDER_GRADIENTS[index % PLACEHOLDER_GRADIENTS.length]
 }
 
-function CategoryCard({
-  id,
-  title,
-  categoryTag,
-  thumbnail,
-  imageGradient,
-}: {
-  id: string
-  title: string
-  categoryTag: string
-  thumbnail?: string | null
-  imageGradient: string
-}) {
-  return (
-    <Link href={`/article/detail?id=${encodeURIComponent(id)}`} className="block group">
-      <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        {thumbnail ? (
-          <img
-            src={thumbnail}
-            alt=""
-            className="aspect-[4/3] w-full object-cover"
-          />
-        ) : (
-          <div className={`aspect-[4/3] ${imageGradient}`} />
-        )}
-      </div>
-      {categoryTag ? (
-        <span className={`mt-2 inline-block ${getCategoryPillClass(categoryTag)}`}>
-          {categoryTag}
-        </span>
-      ) : null}
-      <p className="mt-2 text-[15px] sm:text-[17px] font-extrabold leading-snug line-clamp-2 group-hover:text-gray-600 transition-colors">
-        {title}
-      </p>
-    </Link>
-  )
-}
-
 function ArticleCategoryContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -80,6 +43,7 @@ function ArticleCategoryContent() {
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [total, setTotal] = useState(0)
+  const [sharedTopIds, setSharedTopIds] = useState<Set<string>>(() => new Set())
   const pageSize = 12
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -96,6 +60,21 @@ function ArticleCategoryContent() {
       }
     })
     return () => { cancelled = true }
+  }, [])
+
+  // list.md — 메인 `/article`과 동일: 당일 공유 랭킹 상위 3 → BEST (경량: list만 조회)
+  useEffect(() => {
+    let cancelled = false
+    fetchArticleRankingShare()
+      .then((res) => {
+        if (!cancelled) setSharedTopIds(sharedTopIdsFromRankingList(res.list))
+      })
+      .catch(() => {
+        if (!cancelled) setSharedTopIds(new Set())
+      })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const loadArticles = useCallback(() => {
@@ -212,11 +191,13 @@ function ArticleCategoryContent() {
           <section>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
               {articles.map((article, idx) => (
-                <CategoryCard
+                <ArticleCard
                   key={article.id}
                   id={String(article.id)}
                   title={article.title}
-                  categoryTag={getSysCodeName(categories, article.category)}
+                  subtitle={article.subtitle}
+                  categoryName={getSysCodeName(categories, article.category)}
+                  badges={articleCardBadges(article, sharedTopIds)}
                   thumbnail={article.thumbnail}
                   imageGradient={getGradient(idx)}
                 />

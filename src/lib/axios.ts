@@ -27,7 +27,9 @@ const pathOnly = (url?: string) => {
 
 const isPublicBoard = (url?: string) => {
   const path = pathOnly(url)
-  return /^\/api\/(notices|faqs|articles|content|events|videos|search|homepage-docs)(\/|$)/.test(path)
+  return /^\/api\/(notices|faqs|articles|content|events|videos|search|homepage-docs|library)(\/|$)/.test(
+    path
+  )
 }
 
 /** 비로그인·가입 단계 API — 만료 토큰으로 refresh 실패 시 리다이렉트 방지 (ensureToken 생략) */
