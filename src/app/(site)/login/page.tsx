@@ -58,11 +58,7 @@ function LoginForm() {
         // ignore
       }
 
-      if (response.user.profile_completed) {
-        router.push('/')
-      } else {
-        router.push('/signup/complete')
-      }
+      router.push('/')
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { message?: string; error?: string } }; message?: string }
       const msg = anyErr.response?.data?.error ?? anyErr.response?.data?.message ?? anyErr.message ?? '로그인에 실패했습니다.'

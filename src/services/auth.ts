@@ -78,6 +78,17 @@ export interface IndeAPIResponse<T> {
 
 export type LoginResponse = LoginResult
 
+/** SNS 최초 가입 세션(temp_token) 쿠키명 — oauth_pending JWT (userJoinPlan) */
+export const OAUTH_PENDING_TEMP_COOKIE = 'oauthPendingTemp'
+
+/** OAuth 완료 API 응답 (로그인과 동일 형태) */
+export interface OAuthCompleteSignupResult {
+  access_token: string
+  refresh_token: string
+  expires_in?: number
+  user: UserInfo
+}
+
 /** 회원가입 성공 시 (이메일 인증 필요 - 토큰 없음) */
 export interface RegisterSuccessResponse {
   success: true
@@ -200,6 +211,45 @@ export const verifySignupSms = async (
   }
 }
 
+export const setOauthPendingTempToken = (token: string) => {
+  const cookieOptions = {
+    expires: 10 / (24 * 60),
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict' as const,
+    path: '/',
+  }
+  Cookies.set(OAUTH_PENDING_TEMP_COOKIE, token, cookieOptions)
+}
+
+export const getOauthPendingTempToken = (): string | undefined => Cookies.get(OAUTH_PENDING_TEMP_COOKIE)
+
+export const clearOauthPendingTempToken = () => {
+  Cookies.remove(OAUTH_PENDING_TEMP_COOKIE, { path: '/' })
+}
+
+/**
+ * SNS 최초 가입 마무리: temp_token(oauth_pending JWT) + 휴대폰(SMS 인증 완료된 번호)
+ */
+export const oauthCompleteSignup = async (tempToken: string, phone: string): Promise<OAuthCompleteSignupResult> => {
+  try {
+    const response = await apiClient.post<OAuthCompleteSignupResult & { IndeAPIResponse?: { Result?: OAuthCompleteSignupResult } }>(
+      '/auth/oauth-complete-signup',
+      { temp_token: tempToken, phone },
+    )
+    const raw = response.data
+    const body =
+      raw?.IndeAPIResponse?.Result ?? (raw && 'access_token' in raw && raw.access_token ? raw : null)
+    if (!body?.access_token || !body?.user) {
+      throw new Error('응답 형식이 올바르지 않습니다.')
+    }
+    saveTokens(body.access_token, body.refresh_token || '', body.user)
+    clearOauthPendingTempToken()
+    return body
+  } catch (error: unknown) {
+    throw new Error(messageFromApiError(error, '가입 완료 처리에 실패했습니다.'))
+  }
+}
+
 export const register = async (data: RegisterRequest): Promise<RegisterSuccessResponse> => {
   try {
     const response = await apiClient.post<RegisterApiRaw>('/auth/register', data)
@@ -315,6 +365,7 @@ export const logout = async (): Promise<void> => {
     Cookies.remove('accessToken')
     Cookies.remove('refreshToken')
     Cookies.remove('userInfo')
+    Cookies.remove(OAUTH_PENDING_TEMP_COOKIE, { path: '/' })
     if (typeof window !== 'undefined') {
       window.location.replace('/login')
     }

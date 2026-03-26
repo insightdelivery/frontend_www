@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { getApiBaseURL } from '@/lib/axios'
-import { register as registerAPI, sendSignupSms, verifySignupSms } from '@/services/auth'
+import { register as registerAPI, sendSignupSms, verifySignupSms, getAccessToken } from '@/services/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -164,6 +164,10 @@ export default function RegisterPage() {
         position: '',
         newsletter_agree: data.newsletter_agree,
       })
+      if (getAccessToken()) {
+        router.push('/')
+        return
+      }
       const email = 'email' in res ? res.email : data.email
       router.push(`/signup/complete?email=${encodeURIComponent(email)}`)
     } catch (err: any) {

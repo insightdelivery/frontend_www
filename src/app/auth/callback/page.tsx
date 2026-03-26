@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getMe, saveTokens } from '@/services/auth'
+import { getMe, saveTokens, setOauthPendingTempToken } from '@/services/auth'
 import { useAuth } from '@/contexts/AuthContext'
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -30,6 +30,7 @@ function AuthCallbackContent() {
           : new URLSearchParams(searchParams?.toString() ?? '')
       const accessToken = params.get('access_token')
       const refreshToken = params.get('refresh_token')
+      const tempToken = params.get('temp_token')
       const error = params.get('error')
 
       if (error) {
@@ -41,6 +42,12 @@ function AuthCallbackContent() {
         return
       }
 
+      if (tempToken) {
+        setOauthPendingTempToken(tempToken)
+        router.replace('/signup/phone')
+        return
+      }
+
       if (accessToken && refreshToken) {
         try {
           saveTokens(accessToken, refreshToken)
@@ -48,12 +55,7 @@ function AuthCallbackContent() {
           saveTokens(accessToken, refreshToken, user)
           setUser(user)
           const fromSignup = params.get('from') === 'signup'
-          if (user.profile_completed) {
-            router.replace(fromSignup ? '/?welcome=1' : '/')
-          } else {
-            // LOCAL 이메일 가입 완료 안내(/signup/complete)가 아닌 부가정보 입력(소셜 공통)
-            router.replace('/signup/complete-profile')
-          }
+          router.replace(fromSignup ? '/?welcome=1' : '/')
           return
         } catch (e) {
           console.error('OAuth 콜백 후 사용자 정보 조회 오류:', e)
@@ -64,20 +66,9 @@ function AuthCallbackContent() {
         }
       }
 
-      try {
-        const user = await getMe()
-        setUser(user)
-        if (user.profile_completed) {
-          router.replace('/')
-        } else {
-          router.replace('/signup/complete-profile')
-        }
-      } catch (error) {
-        console.error('콜백 처리 오류:', error)
-        setStatus('error')
-        setErrorMessage('로그인 처리 중 오류가 발생했습니다.')
-        setTimeout(() => router.replace('/login?error=OAUTH_FAILED'), 2500)
-      }
+      setStatus('error')
+      setErrorMessage('로그인 정보를 받지 못했습니다.')
+      setTimeout(() => router.replace('/login?error=OAUTH_NO_CODE'), 2500)
     }
 
     handleCallback()
