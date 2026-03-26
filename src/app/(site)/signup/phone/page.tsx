@@ -66,7 +66,7 @@ export default function SignupPhonePage() {
     try {
       await sendSignupSms(p)
       setCooldownSec(30)
-      setSmsHint('인증번호를 문자로 발송했습니다. 3분 이내에 입력해 주세요.')
+      setSmsHint('인증번호를 문자로 발송했습니다. 10분 이내에 입력해 주세요.')
     } catch (e: unknown) {
       const ax = e as {
         response?: { data?: { IndeAPIResponse?: { Message?: string }; error?: string } }
@@ -95,7 +95,8 @@ export default function SignupPhonePage() {
       await verifySignupSms(p, smsCode)
       setPhoneVerified(true)
       setVerifiedForPhone(p)
-      setSmsHint('휴대폰 인증이 완료되었습니다.')
+      setSmsHint(null)
+      setCooldownSec(0)
     } catch (e: unknown) {
       const ax = e as {
         response?: { data?: { IndeAPIResponse?: { Message?: string }; error?: string } }
@@ -149,7 +150,7 @@ export default function SignupPhonePage() {
     <div className="min-h-screen flex flex-col bg-white">
       <main className="flex-1 flex flex-col items-center px-4 py-10 w-full max-w-[450px] mx-auto">
         <div className="text-center mb-8">
-          <Image src="/inde_logo.png" alt="InDe" width={140} height={40} className="mx-auto object-contain" priority />
+          <Image src="/inde_logo1.png" alt="InDe" width={140} height={40} className="mx-auto object-contain" priority />
           <h1 className="mt-6 text-xl font-bold text-gray-900">휴대폰 인증</h1>
           <p className="mt-2 text-sm text-gray-600">
             소셜 계정 연동을 마치려면 휴대폰 번호 인증이 필요합니다.
@@ -186,7 +187,7 @@ export default function SignupPhonePage() {
                 onClick={handleSendSms}
                 className="h-12 shrink-0 px-4"
               >
-                {cooldownSec > 0 ? `${cooldownSec}초` : '인증요청'}
+                {phoneVerified ? '인증요청' : cooldownSec > 0 ? `${cooldownSec}초` : '인증요청'}
               </Button>
             </div>
           </div>

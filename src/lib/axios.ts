@@ -62,7 +62,9 @@ const isArticleDetailGet = (config: InternalAxiosRequestConfig) => {
 /** 비로그인·가입 단계 API — 만료 토큰으로 refresh 실패 시 리다이렉트 방지 (ensureToken 생략) */
 const isPublicAuthFlow = (url?: string) => {
   const path = pathOnly(url)
-  return /^\/auth\/(send-sms|verify-sms|register|login)(\/|$)/i.test(path)
+  return /^\/auth\/(send-sms|verify-sms|register|login|send-sms-find-id|find-id|send-password-reset-code|verify-password-reset-code|reset-password)(\/|$)/i.test(
+    path
+  )
 }
 
 // 토큰 갱신 중 플래그 및 Promise 공유 (userAuthPlan §9 §16)

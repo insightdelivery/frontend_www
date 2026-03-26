@@ -7,7 +7,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { getApiBaseURL } from '@/lib/axios'
-import { register as registerAPI, sendSignupSms, verifySignupSms, getAccessToken } from '@/services/auth'
+import { register as registerAPI, sendSignupSms, verifySignupSms } from '@/services/auth'
+import { useAuth } from '@/contexts/AuthContext'
+import { loadAllSysCodesOnLogin } from '@/lib/syscode'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,6 +41,7 @@ type RegisterFormData = z.infer<typeof registerSchema>
 
 export default function RegisterPage() {
   const router = useRouter()
+  const { setUser } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
@@ -100,7 +103,7 @@ export default function RegisterPage() {
     try {
       await sendSignupSms(phone)
       setCooldownSec(30)
-      setSmsHint('인증번호를 문자로 발송했습니다. 3분 이내에 입력해 주세요.')
+      setSmsHint('인증번호를 문자로 발송했습니다. 10분 이내에 입력해 주세요.')
     } catch (e: unknown) {
       const ax = e as {
         response?: { data?: { IndeAPIResponse?: { Message?: string }; error?: string } }
@@ -129,7 +132,8 @@ export default function RegisterPage() {
       await verifySignupSms(phone, smsCode)
       setPhoneVerified(true)
       setVerifiedForPhone(phone)
-      setSmsHint('휴대폰 인증이 완료되었습니다.')
+      setSmsHint(null)
+      setCooldownSec(0)
     } catch (e: unknown) {
       const ax = e as {
         response?: { data?: { IndeAPIResponse?: { Message?: string }; error?: string } }
@@ -164,12 +168,15 @@ export default function RegisterPage() {
         position: '',
         newsletter_agree: data.newsletter_agree,
       })
-      if (getAccessToken()) {
-        router.push('/')
-        return
+      if ('user' in res && res.user) {
+        setUser(res.user)
+        try {
+          await loadAllSysCodesOnLogin()
+        } catch {
+          // ignore
+        }
       }
-      const email = 'email' in res ? res.email : data.email
-      router.push(`/signup/complete?email=${encodeURIComponent(email)}`)
+      router.replace('/?welcome=1')
     } catch (err: any) {
       const details = err.response?.data?.details
       const msg = err.response?.data?.error
@@ -381,7 +388,13 @@ export default function RegisterPage() {
                 disabled={phoneVerified || sendingSms || cooldownSec > 0}
                 onClick={handleSendSms}
               >
-                {cooldownSec > 0 ? `${cooldownSec}초` : sendingSms ? '발송 중…' : '인증번호 전송'}
+                {phoneVerified
+                  ? '인증번호 전송'
+                  : cooldownSec > 0
+                    ? `${cooldownSec}초`
+                    : sendingSms
+                      ? '발송 중…'
+                      : '인증번호 전송'}
               </Button>
             </div>
             {errors.phone && (

@@ -89,7 +89,7 @@ export interface OAuthCompleteSignupResult {
   user: UserInfo
 }
 
-/** 회원가입 성공 시 (이메일 인증 필요 - 토큰 없음) */
+/** 레거시 호환: 토큰 없이 success만 오는 경우(현재 LOCAL 가입은 사용하지 않음) */
 export interface RegisterSuccessResponse {
   success: true
   message: string
@@ -159,8 +159,8 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
 }
 
 /**
- * 회원가입 (이메일 인증 필요: 토큰 없이 success/email 반환, 인증 메일 발송됨)
- * API 응답: IndeAPIResponse(Result 내부에 success, email, user) 또는 raw { success, email, user }
+ * 회원가입 — LOCAL 성공 시 로그인과 동일하게 access_token·refresh_token·user 반환 (즉시 로그인).
+ * API 응답: IndeAPIResponse 래핑 또는 raw `{ access_token, refresh_token, user }`
  */
 /** 회원가입 API 응답: IndeAPIResponse 래핑 또는 raw 또는 직접 성공 객체 */
 type RegisterApiRaw =
@@ -188,18 +188,24 @@ export const sendSignupSms = async (phone: string): Promise<{ success: boolean; 
   }
 }
 
-/** 회원가입 전 휴대폰 인증 — 6자리 코드 검증 */
+/**
+ * 휴대폰 인증번호 검증 — `POST /auth/verify-sms`
+ * `purpose`: `signup`(기본) = `send-sms` 행만, `find_id` = `send-sms-find-id` 행만 검증(두 흐름이 같은 번호로 겹칠 때 분리).
+ */
 export const verifySignupSms = async (
   phone: string,
   code: string,
+  options?: { purpose?: 'signup' | 'find_id' },
 ): Promise<{ success: boolean; message?: string }> => {
   try {
+    const payload: { phone: string; code: string; purpose?: string } = { phone, code }
+    if (options?.purpose) payload.purpose = options.purpose
     const response = await apiClient.post<{
       success?: boolean
       message?: string
       error?: string
       IndeAPIResponse?: { Message?: string; ErrorCode?: string }
-    }>('/auth/verify-sms', { phone, code })
+    }>('/auth/verify-sms', payload)
     const body = response.data
     if (body?.IndeAPIResponse && body.IndeAPIResponse.ErrorCode && body.IndeAPIResponse.ErrorCode !== '00') {
       throw new Error(body.IndeAPIResponse.Message || '인증에 실패했습니다.')
@@ -210,6 +216,9 @@ export const verifySignupSms = async (
     throw new Error(messageFromApiError(error, '인증에 실패했습니다.'))
   }
 }
+
+/** `verifySignupSms`와 동일 API — 문서·호출부 가독성용 별칭 */
+export const verifySms = verifySignupSms
 
 export const setOauthPendingTempToken = (token: string) => {
   const cookieOptions = {
@@ -491,6 +500,122 @@ export const resendVerificationEmail = async (
     const err = error as { response?: { data?: { error?: string } } }
     return { success: false, error: err.response?.data?.error || '재발송 처리 중 오류가 발생했습니다.' }
   }
+}
+
+/** 아이디 찾기 — `POST /auth/send-sms-find-id` (LOCAL만 SMS, raw 또는 IndeAPIResponse) */
+export const sendSmsFindId = async (phone: string): Promise<{ success: boolean; message?: string; expires_in?: number }> => {
+  try {
+    const response = await apiClient.post<{
+      success?: boolean
+      message?: string
+      expires_in?: number
+      error?: string
+      IndeAPIResponse?: { ErrorCode?: string; Message?: string }
+    }>('/auth/send-sms-find-id', { phone })
+    const body = response.data
+    const wrapped = body?.IndeAPIResponse
+    if (wrapped?.ErrorCode && wrapped.ErrorCode !== '00') {
+      throw new Error(wrapped.Message || '인증번호를 발송할 수 없습니다.')
+    }
+    if (body?.error) throw new Error(body.error)
+    return { success: !!body?.success, message: body?.message, expires_in: body?.expires_in }
+  } catch (error: unknown) {
+    throw new Error(messageFromApiError(error, '인증번호 발송에 실패했습니다.'))
+  }
+}
+
+/** 아이디 찾기 — SMS 인증 완료 후 이메일 조회 (raw `{ email }` 또는 `IndeAPIResponse.Result`) */
+export const findIdByPhone = async (phone: string): Promise<{ email: string }> => {
+  const response = await apiClient.post<{
+    email?: string
+    error?: string
+    IndeAPIResponse?: { ErrorCode?: string; Message?: string; Result?: { email?: string } }
+    Result?: { email?: string }
+  }>('/auth/find-id', { phone })
+  const body = response.data
+  const wrapped = body?.IndeAPIResponse
+  if (wrapped?.ErrorCode && wrapped.ErrorCode !== '00') {
+    throw new Error(wrapped.Message || '이메일을 조회할 수 없습니다.')
+  }
+  const email =
+    wrapped?.Result?.email ?? body?.Result?.email ?? body?.email
+  if (body?.error && !email) throw new Error(body.error)
+  if (!email) throw new Error('이메일을 조회할 수 없습니다.')
+  return { email }
+}
+
+/** 비밀번호 재설정 — 이메일 또는 휴대폰(SMS)로 인증코드 발송 (미등록·SNS·형식 오류는 400 + `error`) */
+export const sendPasswordResetCode = async (
+  params: { email: string } | { phone: string }
+): Promise<{ message: string }> => {
+  const body = 'phone' in params ? { phone: params.phone } : { email: params.email }
+  try {
+    const response = await apiClient.post<{ message?: string; error?: string }>(
+      '/auth/send-password-reset-code',
+      body
+    )
+    const data = response.data
+    if (data?.error) throw new Error(data.error)
+    const fallback =
+      'phone' in params
+        ? '입력하신 휴대폰 번호로 안내가 전송되었습니다.'
+        : '입력하신 이메일로 안내가 전송되었습니다.'
+    return { message: data?.message || fallback }
+  } catch (error: unknown) {
+    throw new Error(messageFromApiError(error, '요청에 실패했습니다.'))
+  }
+}
+
+/** 비밀번호 재설정 — 인증코드 검증 후 reset_token (raw 또는 `IndeAPIResponse.Result`) */
+export const verifyPasswordResetCode = async (
+  params: ({ email: string } | { phone: string }) & { code: string }
+): Promise<{ reset_token: string }> => {
+  const { code, ...rest } = params
+  const payload = 'phone' in rest ? { phone: rest.phone, code } : { email: rest.email, code }
+  try {
+    const response = await apiClient.post<{
+      reset_token?: string
+      error?: string
+      IndeAPIResponse?: { ErrorCode?: string; Message?: string; Result?: { reset_token?: string } }
+      Result?: { reset_token?: string }
+    }>('/auth/verify-password-reset-code', payload)
+    const data = response.data
+    const wrapped = data?.IndeAPIResponse
+    if (wrapped?.ErrorCode && wrapped.ErrorCode !== '00') {
+      throw new Error(wrapped.Message || '인증에 실패했습니다.')
+    }
+    const reset_token =
+      wrapped?.Result?.reset_token ?? data?.Result?.reset_token ?? data?.reset_token
+    if (data?.error && !reset_token) throw new Error(data.error)
+    if (!reset_token) throw new Error('인증에 실패했습니다.')
+    return { reset_token }
+  } catch (error: unknown) {
+    throw new Error(messageFromApiError(error, '인증에 실패했습니다.'))
+  }
+}
+
+/** 비밀번호 재설정 — reset_token + 새 비밀번호 (raw 또는 `IndeAPIResponse.Result`) */
+export const resetPasswordWithToken = async (
+  resetToken: string,
+  password: string
+): Promise<{ success: boolean; message?: string }> => {
+  const response = await apiClient.post<{
+    success?: boolean
+    message?: string
+    error?: string
+    IndeAPIResponse?: { ErrorCode?: string; Message?: string; Result?: { success?: boolean; message?: string } }
+    Result?: { success?: boolean; message?: string }
+  }>('/auth/reset-password', { reset_token: resetToken, password })
+  const body = response.data
+  const wrapped = body?.IndeAPIResponse
+  if (wrapped?.ErrorCode && wrapped.ErrorCode !== '00') {
+    throw new Error(wrapped.Message || '비밀번호 변경에 실패했습니다.')
+  }
+  const result = wrapped?.Result ?? body?.Result
+  const success = result?.success ?? body?.success
+  const message = result?.message ?? body?.message
+  if (body?.error && success !== true) throw new Error(body.error)
+  return { success: !!success, message }
 }
 
 /**

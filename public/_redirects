@@ -3,6 +3,8 @@
 /article /article.html 200
 /faq /faq.html 200
 /login /login.html 200
+/forgot-id /forgot-id.html 200
+/forgot-password /forgot-password.html 200
 /mypage /mypage.html 200
 /notice /notice.html 200
 /profile /profile.html 200

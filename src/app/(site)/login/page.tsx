@@ -9,7 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Eye, EyeOff } from 'lucide-react'
 import { getApiBaseURL } from '@/lib/axios'
-import { login, resendVerificationEmail } from '@/services/auth'
+import { login } from '@/services/auth'
 import { useAuth } from '@/contexts/AuthContext'
 import { loadAllSysCodesOnLogin } from '@/lib/syscode'
 import { Button } from '@/components/ui/button'
@@ -30,14 +30,11 @@ function LoginForm() {
   const { setUser } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
-  const [resendMessage, setResendMessage] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [autoLogin, setAutoLogin] = useState(false)
 
   const {
     register,
-    watch,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginFormData>({
@@ -63,8 +60,6 @@ function LoginForm() {
       const anyErr = err as { response?: { data?: { message?: string; error?: string } }; message?: string }
       const msg = anyErr.response?.data?.error ?? anyErr.response?.data?.message ?? anyErr.message ?? '로그인에 실패했습니다.'
       setError(msg)
-      setResendStatus('idle')
-      setResendMessage(null)
     } finally {
       setIsLoading(false)
     }
@@ -82,27 +77,6 @@ function LoginForm() {
 
   const errorParam = searchParams.get('error')
   const displayError = error || (errorParam === 'OAUTH_FAILED' ? '소셜 로그인에 실패했습니다.' : null)
-  const isEmailNotVerified = typeof displayError === 'string' && displayError.includes('이메일 인증')
-  const loginEmail = watch('email')
-
-  const handleResendVerification = async () => {
-    const email = loginEmail?.trim()
-    if (!email) {
-      setResendMessage('이메일을 입력한 뒤 다시 시도해 주세요.')
-      setResendStatus('error')
-      return
-    }
-    setResendStatus('sending')
-    setResendMessage(null)
-    const result = await resendVerificationEmail(email)
-    if (result.success) {
-      setResendStatus('success')
-      setResendMessage(result.message || '인증 메일을 발송했습니다.')
-    } else {
-      setResendStatus('error')
-      setResendMessage(result.error || '재발송에 실패했습니다.')
-    }
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -111,7 +85,7 @@ function LoginForm() {
           {/* 로고 & 슬로건 (Figma) */}
           <div className="text-center mb-10">
             <Image
-              src="/inde_logo.png"
+              src="/inde_logo1.png"
               alt="InDe"
               width={140}
               height={40}
@@ -123,26 +97,8 @@ function LoginForm() {
 
           <form className="w-full space-y-4" onSubmit={handleSubmit(onSubmit)}>
             {displayError && (
-              <div className="rounded-lg bg-red-50 p-4 space-y-2">
+              <div className="rounded-lg bg-red-50 p-4">
                 <p className="text-sm text-red-800">{displayError}</p>
-                {isEmailNotVerified && (
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      onClick={handleResendVerification}
-                      disabled={resendStatus === 'sending'}
-                      className="text-sm font-medium text-primary hover:underline disabled:opacity-50"
-                    >
-                      {resendStatus === 'sending' ? '발송 중...' : '이메일 인증 메일 다시 보내기'}
-                    </button>
-                    {resendStatus === 'success' && resendMessage && (
-                      <p className="mt-2 text-sm text-green-700">{resendMessage}</p>
-                    )}
-                    {resendStatus === 'error' && resendMessage && (
-                      <p className="mt-2 text-sm text-red-700">{resendMessage}</p>
-                    )}
-                  </div>
-                )}
               </div>
             )}
 
@@ -212,9 +168,13 @@ function LoginForm() {
               <span className="text-sm text-gray-600">자동로그인</span>
             </label>
             <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Link href="/find-id" className="hover:text-gray-700">아이디 찾기</Link>
+              <Link href="/forgot-id" target="_blank" rel="noopener noreferrer" className="hover:text-gray-700">
+                아이디 찾기
+              </Link>
               <span aria-hidden>|</span>
-              <Link href="/find-password" className="hover:text-gray-700">비밀번호 찾기</Link>
+              <Link href="/forgot-password" target="_blank" rel="noopener noreferrer" className="hover:text-gray-700">
+                비밀번호 찾기
+              </Link>
             </div>
           </div>
 

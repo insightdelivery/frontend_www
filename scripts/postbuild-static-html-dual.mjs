@@ -32,6 +32,8 @@ const DUAL_ROUTES = [
   { html: 'faq.html', dir: 'faq' },
   { html: 'search.html', dir: 'search' },
   { html: 'login.html', dir: 'login' },
+  { html: 'forgot-id.html', dir: 'forgot-id' },
+  { html: 'forgot-password.html', dir: 'forgot-password' },
   { html: 'register.html', dir: 'register' },
   { html: 'inquiry.html', dir: 'inquiry' },
   { html: path.join('inquiry', 'write.html'), dir: path.join('inquiry', 'write') },
