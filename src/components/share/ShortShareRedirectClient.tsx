@@ -22,13 +22,26 @@ export default function ShortShareRedirectClient({ code }: { code: string }) {
     visitShareShortCode(trimmed)
       .then((res) => {
         if (cancelled) return
-        if (res.contentType === 'ARTICLE') {
-          const q = res.expired ? `?id=${res.contentId}&share_expired=1` : `?id=${res.contentId}`
+        const ct = (res.contentType || '').toUpperCase()
+        const id = res.contentId
+        const expiredQ = res.expired ? '&share_expired=1' : ''
+        if (ct === 'ARTICLE') {
+          const q = res.expired
+            ? `?id=${id}&share_expired=1`
+            : `?id=${id}`
           router.replace(`/article/detail${q}`)
           return
         }
+        if (ct === 'VIDEO') {
+          router.replace(`/video/detail?id=${id}${res.expired ? '&share_expired=1' : ''}`)
+          return
+        }
+        if (ct === 'SEMINAR') {
+          router.replace(`/seminar/detail?id=${id}${res.expired ? '&share_expired=1' : ''}`)
+          return
+        }
         setMessage('지원하지 않는 링크입니다.')
-        setTimeout(() => router.replace('/'), 2000)
+        setTimeout(() => router.replace('/article'), 2000)
       })
       .catch(() => {
         if (cancelled) return
