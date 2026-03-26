@@ -23,6 +23,33 @@ const DUAL_ROUTES = [
   { html: path.join('article', 'category.html'), dir: path.join('article', 'category') },
   { html: path.join('article', 'editor.html'), dir: path.join('article', 'editor') },
   { html: path.join('article', 'detail.html'), dir: path.join('article', 'detail') },
+  // 비디오·세미나·게시 — `video.html`만 있을 때 일부 CDN이 `/video` → `video/index.html`을 찾다 없으면 루트 index(메인)로 폴백
+  { html: 'video.html', dir: 'video' },
+  { html: path.join('video', 'detail.html'), dir: path.join('video', 'detail') },
+  { html: 'seminar.html', dir: 'seminar' },
+  { html: path.join('seminar', 'detail.html'), dir: path.join('seminar', 'detail') },
+  { html: 'notice.html', dir: 'notice' },
+  { html: 'faq.html', dir: 'faq' },
+  { html: 'search.html', dir: 'search' },
+  { html: 'login.html', dir: 'login' },
+  { html: 'register.html', dir: 'register' },
+  { html: 'inquiry.html', dir: 'inquiry' },
+  { html: path.join('inquiry', 'write.html'), dir: path.join('inquiry', 'write') },
+  { html: path.join('signup', 'complete.html'), dir: path.join('signup', 'complete') },
+  { html: path.join('signup', 'complete-profile.html'), dir: path.join('signup', 'complete-profile') },
+  { html: path.join('signup', 'phone.html'), dir: path.join('signup', 'phone') },
+  { html: path.join('auth', 'verify-email.html'), dir: path.join('auth', 'verify-email') },
+  { html: path.join('auth', 'callback.html'), dir: path.join('auth', 'callback') },
+  { html: 'profile.html', dir: 'profile' },
+  // 마이페이지 — 전 탭·루트(redirect) 동일 이슈
+  { html: 'mypage.html', dir: 'mypage' },
+  { html: path.join('mypage', 'info.html'), dir: path.join('mypage', 'info') },
+  { html: path.join('mypage', 'library.html'), dir: path.join('mypage', 'library') },
+  { html: path.join('mypage', 'bookmarks.html'), dir: path.join('mypage', 'bookmarks') },
+  { html: path.join('mypage', 'ratings.html'), dir: path.join('mypage', 'ratings') },
+  { html: path.join('mypage', 'highlights.html'), dir: path.join('mypage', 'highlights') },
+  { html: path.join('mypage', 'support.html'), dir: path.join('mypage', 'support') },
+  { html: path.join('mypage', 'applied-questions.html'), dir: path.join('mypage', 'applied-questions') },
 ]
 
 function copyHtmlToIndex(relHtml, relDir) {

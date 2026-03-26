@@ -1,2 +1,15 @@
-# Cloudflare Pages: `/s` 요청이 루트 index.html로 떨어지지 않도록 본문을 s.html로 rewrite (쿼리 유지)
+# Cloudflare Pages: `trailingSlash: false` 산출물은 `*.html` — 디렉터리 인덱스만 찾는 CDN에서 루트 index(메인) 폴백 방지
+# (postbuild-static-html-dual.mjs 가 `*/index.html` 도 복제 — 이 파일은 rewrite 보조)
+/article /article.html 200
+/faq /faq.html 200
+/login /login.html 200
+/mypage /mypage.html 200
+/notice /notice.html 200
+/profile /profile.html 200
+/register /register.html 200
+/search /search.html 200
+/seminar /seminar.html 200
+/video /video.html 200
+/auth/callback /auth/callback.html 200
+# `/s` 요청이 루트 index.html로 떨어지지 않도록 본문을 s.html로 rewrite (쿼리 유지)
 /s /s.html 200
