@@ -1,14 +1,23 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Eye, EyeOff } from 'lucide-react'
-import { getMe, updateProfile, logout, isAuthenticated } from '@/services/auth'
-import { loadSysCodeOnLogin, getSysCodeFromCache, type SysCodeItem } from '@/lib/syscode'
-import { POSITION_PARENT, REGION_DOMESTIC_PARENT, REGION_FOREIGN_PARENT } from '@/lib/syscode'
+import { useAuth } from '@/contexts/AuthContext'
+import {
+  getMe,
+  updateProfile,
+  logout,
+  isAuthenticated,
+  sendProfilePhoneSms,
+  verifySms,
+  type UserInfo,
+} from '@/services/auth'
+import { normalizePhoneKr } from '@/lib/phoneNormalize'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,13 +28,6 @@ const profileSchema = z.object({
   phone: z.string().min(1, '핸드폰 번호를 입력해주세요.'),
   name: z.string().min(1, '이름을 입력해주세요.'),
   nickname: z.string().min(1, '닉네임을 입력해주세요.'),
-  position: z.string().optional(),
-  birth_year: z.number().min(1900).max(new Date().getFullYear()),
-  birth_month: z.number().min(1).max(12),
-  birth_day: z.number().min(1).max(31),
-  region_type: z.enum(['DOMESTIC', 'FOREIGN']),
-  region_domestic: z.string().optional(),
-  region_foreign: z.string().optional(),
 }).refine((data) => !data.password || data.password.length >= 8, {
   message: '비밀번호는 8자 이상 입력해주세요.',
   path: ['password'],
@@ -39,48 +41,27 @@ interface ProfileFormProps {
   variant?: ProfileFormVariant
 }
 
-function toSysCodeOptions(list: SysCodeItem[], emptyLabel = '선택하세요') {
-  const sorted = [...list]
-    .filter((c) => c.sysCodeUseFlag === 'Y')
-    .sort((a, b) => a.sysCodeSort - b.sysCodeSort)
-  return [
-    { value: '', label: emptyLabel },
-    ...sorted.map((c) => ({ value: c.sysCodeSid, label: c.sysCodeName })),
-  ]
-}
-
-/** API 값이 SID 또는 명칭일 때 옵션 목록에서 선택용 value(SID)로 변환 */
-function toOptionValue(
-  apiValue: string | undefined,
-  options: { value: string; label: string }[]
-): string {
-  if (!apiValue?.trim()) return ''
-  const byValue = options.find((o) => o.value === apiValue.trim())
-  if (byValue) return byValue.value
-  const byLabel = options.find((o) => o.label === apiValue.trim())
-  if (byLabel) return byLabel.value
-  return apiValue.trim()
-}
+const SMS_COOLDOWN_SEC = 30
 
 export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps) {
   const router = useRouter()
+  const { setUser } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingUser, setIsLoadingUser] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string>('')
   const [joinedVia, setJoinedVia] = useState<string>('LOCAL')
   const [showPassword, setShowPassword] = useState(false)
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false)
-  const [positionOptions, setPositionOptions] = useState<{ value: string; label: string }[]>([])
-  const [regionDomesticOptions, setRegionDomesticOptions] = useState<{ value: string; label: string }[]>([])
-  const [regionForeignOptions, setRegionForeignOptions] = useState<{ value: string; label: string }[]>([])
-  const [fetchedUser, setFetchedUser] = useState<{
-    position?: string
-    region_type?: 'DOMESTIC' | 'FOREIGN'
-    region_domestic?: string
-    region_foreign?: string
-  } | null>(null)
-  const sysCodeLoadStartedRef = useRef(false)
+  const originalPhoneNormRef = useRef<string>('')
+  const [verifiedPhoneNorm, setVerifiedPhoneNorm] = useState<string | null>(null)
+  const [smsCode, setSmsCode] = useState('')
+  const [smsCooldownSec, setSmsCooldownSec] = useState(0)
+  const [smsSending, setSmsSending] = useState(false)
+  const [verifyingSms, setVerifyingSms] = useState(false)
+  const [phoneInlineError, setPhoneInlineError] = useState<string | null>(null)
 
   const {
     register,
@@ -93,129 +74,117 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
     resolver: zodResolver(profileSchema),
   })
 
-  const regionType = watch('region_type')
+  const watchedPhone = watch('phone')
+
+  const normalizedInputPhone = useMemo(
+    () => normalizePhoneKr(watchedPhone || ''),
+    [watchedPhone],
+  )
+
+  /** 저장된 정규화 번호와 입력이 다르면 문자 인증 필요 (최초 번호 등록 포함) */
+  const needsPhoneVerification =
+    normalizedInputPhone !== originalPhoneNormRef.current
+
+  const phoneChangeOk =
+    !needsPhoneVerification ||
+    (verifiedPhoneNorm !== null && verifiedPhoneNorm === normalizedInputPhone)
+
+  const applyUserToForm = useCallback(
+    (user: UserInfo) => {
+      setUserEmail(user.email)
+      setJoinedVia(user.joined_via || 'LOCAL')
+      originalPhoneNormRef.current = normalizePhoneKr(user.phone || '')
+      setVerifiedPhoneNorm(null)
+      setSmsCode('')
+      setPhoneInlineError(null)
+      reset({
+        password: '',
+        phone: user.phone || '',
+        name: user.name || '',
+        nickname: user.nickname || '',
+      })
+    },
+    [reset],
+  )
+
+  const fetchUserInfo = useCallback(async () => {
+    setLoadError(false)
+    setIsLoadingUser(true)
+    try {
+      const user = await getMe()
+      applyUserToForm(user)
+    } catch {
+      setLoadError(true)
+    } finally {
+      setIsLoadingUser(false)
+    }
+  }, [applyUserToForm])
 
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push('/login')
       return
     }
+    void fetchUserInfo()
+  }, [router, fetchUserInfo])
 
-    const fetchUserInfo = async () => {
-      try {
-        const user = await getMe()
-        setUserEmail(user.email)
-        setJoinedVia(user.joined_via || 'LOCAL')
-        setFetchedUser({
-          position: user.position,
-          region_type: user.region_type,
-          region_domestic: user.region_domestic,
-          region_foreign: user.region_foreign,
-        })
-        reset({
-          password: '',
-          phone: user.phone || '',
-          name: user.name || '',
-          nickname: user.nickname || '',
-          position: user.position || '',
-          birth_year: user.birth_year || new Date().getFullYear() - 30,
-          birth_month: user.birth_month || 1,
-          birth_day: user.birth_day || 1,
-          region_type: user.region_type || 'DOMESTIC',
-          region_domestic: user.region_domestic || '',
-          region_foreign: user.region_foreign || '',
-        })
-      } catch {
-        router.push('/login')
-      } finally {
-        setIsLoadingUser(false)
-      }
-    }
-
-    fetchUserInfo()
-  }, [router, reset])
-
-  // 직분·지역 옵션: 캐시에 키가 있으면(빈 배열이어도) 캐시만 사용, 없을 때만 API 호출. 중복 호출 방지(Strict Mode 등).
   useEffect(() => {
-    let cancelled = false
-    const load = async () => {
-      if (sysCodeLoadStartedRef.current) return
-      const cachedPos = getSysCodeFromCache(POSITION_PARENT)
-      const cachedDom = getSysCodeFromCache(REGION_DOMESTIC_PARENT)
-      const cachedFor = getSysCodeFromCache(REGION_FOREIGN_PARENT)
-      if (cachedPos !== null && cachedDom !== null && cachedFor !== null) {
-        setPositionOptions(toSysCodeOptions(cachedPos))
-        setRegionDomesticOptions(toSysCodeOptions(cachedDom, '국내 지역을 선택하세요'))
-        setRegionForeignOptions(toSysCodeOptions(cachedFor, '해외 지역을 선택하세요'))
-        return
-      }
-      sysCodeLoadStartedRef.current = true
-      try {
-        const toLoad = []
-        if (cachedPos === null) toLoad.push(loadSysCodeOnLogin(POSITION_PARENT))
-        if (cachedDom === null) toLoad.push(loadSysCodeOnLogin(REGION_DOMESTIC_PARENT))
-        if (cachedFor === null) toLoad.push(loadSysCodeOnLogin(REGION_FOREIGN_PARENT))
-        if (toLoad.length) await Promise.all(toLoad)
-        if (cancelled) return
-        const positionList = getSysCodeFromCache(POSITION_PARENT) ?? []
-        const domesticList = getSysCodeFromCache(REGION_DOMESTIC_PARENT) ?? []
-        const foreignList = getSysCodeFromCache(REGION_FOREIGN_PARENT) ?? []
-        setPositionOptions(toSysCodeOptions(positionList))
-        setRegionDomesticOptions(toSysCodeOptions(domesticList, '국내 지역을 선택하세요'))
-        setRegionForeignOptions(toSysCodeOptions(foreignList, '해외 지역을 선택하세요'))
-      } finally {
-        sysCodeLoadStartedRef.current = false
-      }
-    }
-    load()
-    return () => {
-      cancelled = true
-    }
-  }, [])
+    if (smsCooldownSec <= 0) return
+    const t = window.setInterval(() => {
+      setSmsCooldownSec((s) => (s <= 1 ? 0 : s - 1))
+    }, 1000)
+    return () => window.clearInterval(t)
+  }, [smsCooldownSec])
 
-  // 직분·지역 옵션 로드 후 API에서 가져온 값으로 select 선택 상태 동기화 (SID/명칭 모두 대응)
   useEffect(() => {
-    if (!fetchedUser) return
-    const posValue = toOptionValue(fetchedUser.position, positionOptions)
-    const domValue = toOptionValue(fetchedUser.region_domestic, regionDomesticOptions)
-    const forValue = toOptionValue(fetchedUser.region_foreign, regionForeignOptions)
-    if (posValue !== undefined) setValue('position', posValue)
-    if (domValue !== undefined) setValue('region_domestic', domValue)
-    if (forValue !== undefined) setValue('region_foreign', forValue)
-  }, [fetchedUser, positionOptions, regionDomesticOptions, regionForeignOptions, setValue])
-
-  // 국내/해외 전환 시 다른 지역 필드 초기화
-  useEffect(() => {
-    setValue(regionType === 'DOMESTIC' ? 'region_foreign' : 'region_domestic', '')
-  }, [regionType, setValue])
+    if (verifiedPhoneNorm === null) return
+    if (normalizedInputPhone !== verifiedPhoneNorm) {
+      setVerifiedPhoneNorm(null)
+    }
+  }, [normalizedInputPhone, verifiedPhoneNorm])
 
   const onSubmit = async (data: ProfileFormData) => {
-    setIsLoading(true)
     setError(null)
+    if (needsPhoneVerification && !phoneChangeOk) {
+      setError('휴대폰 번호를 변경한 경우에는 문자 인증을 완료한 뒤 저장해 주세요.')
+      return
+    }
+    setIsLoading(true)
     try {
       const profileData = {
         email: userEmail,
         phone: data.phone,
         name: data.name,
         nickname: data.nickname,
-        position: data.position || undefined,
-        birth_year: data.birth_year,
-        birth_month: data.birth_month,
-        birth_day: data.birth_day,
-        region_type: data.region_type,
-        ...(data.region_type === 'DOMESTIC'
-          ? { region_domestic: data.region_domestic || '', region_foreign: '' }
-          : { region_foreign: data.region_foreign || '', region_domestic: '' }),
-        ...(data.password && data.password.trim() ? { password: data.password.trim() } : {}),
+        position: null,
+        birth_year: null,
+        birth_month: null,
+        birth_day: null,
+        region_type: null,
+        region_domestic: null,
+        region_foreign: null,
+        ...(joinedVia === 'LOCAL' && data.password?.trim()
+          ? { password: data.password.trim() }
+          : {}),
       }
-      await updateProfile(profileData)
-      alert('프로필이 성공적으로 수정되었습니다.')
-      window.location.reload()
+      const res = await updateProfile(profileData)
+      setSaveSuccess(true)
+      if (res.user) {
+        setUser(res.user)
+        applyUserToForm(res.user)
+      } else {
+        const u = await getMe()
+        setUser(u)
+        applyUserToForm(u)
+      }
+      setValue('password', '')
     } catch (err: unknown) {
       setError(
         err && typeof err === 'object' && 'response' in err && err.response && typeof (err.response as any).data?.message === 'string'
           ? (err.response as any).data.message
-          : err instanceof Error ? err.message : '프로필 수정에 실패했습니다.'
+          : err && typeof err === 'object' && 'response' in err && err.response && typeof (err.response as any).data?.error === 'string'
+            ? (err.response as any).data.error
+            : err instanceof Error ? err.message : '프로필 수정에 실패했습니다.'
       )
     } finally {
       setIsLoading(false)
@@ -228,12 +197,56 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
     }
   }
 
+  const handleSendSms = async () => {
+    setPhoneInlineError(null)
+    const phone = watchedPhone?.trim() || ''
+    if (!normalizePhoneKr(phone)) {
+      setPhoneInlineError('올바른 휴대폰 번호를 입력해 주세요.')
+      return
+    }
+    if (!needsPhoneVerification) {
+      setPhoneInlineError('번호를 변경한 경우에만 인증이 필요합니다.')
+      return
+    }
+    try {
+      setSmsSending(true)
+      await sendProfilePhoneSms(phone)
+      setSmsCooldownSec(SMS_COOLDOWN_SEC)
+    } catch (e) {
+      setPhoneInlineError(e instanceof Error ? e.message : '인증번호 발송에 실패했습니다.')
+    } finally {
+      setSmsSending(false)
+    }
+  }
+
+  const handleVerifySms = async () => {
+    setPhoneInlineError(null)
+    const code = smsCode.replace(/\D/g, '')
+    if (code.length !== 6) {
+      setPhoneInlineError('6자리 인증번호를 입력해 주세요.')
+      return
+    }
+    const phone = watchedPhone?.trim() || ''
+    try {
+      setVerifyingSms(true)
+      await verifySms(phone, code, { purpose: 'profile_phone' })
+      setVerifiedPhoneNorm(normalizePhoneKr(phone))
+      setPhoneInlineError(null)
+    } catch (e) {
+      setPhoneInlineError(e instanceof Error ? e.message : '인증에 실패했습니다.')
+    } finally {
+      setVerifyingSms(false)
+    }
+  }
+
   const joinedViaText = {
     LOCAL: '일반 가입',
     KAKAO: '카카오',
     NAVER: '네이버',
     GOOGLE: '구글',
   }[joinedVia] || '일반 가입'
+
+  const isLocal = joinedVia === 'LOCAL'
 
   if (isLoadingUser) {
     return (
@@ -246,11 +259,39 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
     )
   }
 
+  if (loadError) {
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-center space-y-4">
+        <p className="text-gray-800">사용자 정보를 불러오지 못했습니다. 네트워크 상태를 확인하거나 다시 시도해 주세요.</p>
+        <div className="flex flex-col sm:flex-row gap-2 justify-center">
+          <Button type="button" onClick={() => void fetchUserInfo()} className="bg-[#e1f800] text-[#111827] hover:bg-[#c9e000]">
+            다시 시도
+          </Button>
+          <Button type="button" variant="outline" asChild>
+            <Link href="/login">로그인으로 이동</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <form
       className="space-y-6 rounded-lg bg-white p-6 shadow"
       onSubmit={handleSubmit(onSubmit)}
     >
+      {saveSuccess && (
+        <div className="rounded-md bg-emerald-50 border border-emerald-200 p-4 flex justify-between gap-4 items-start">
+          <p className="text-sm text-emerald-900">프로필이 저장되었습니다.</p>
+          <button
+            type="button"
+            className="text-sm text-emerald-800 underline shrink-0"
+            onClick={() => setSaveSuccess(false)}
+          >
+            닫기
+          </button>
+        </div>
+      )}
       {error && (
         <div className="rounded-md bg-red-50 p-4">
           <p className="text-sm text-red-800">{error}</p>
@@ -270,29 +311,31 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
           <p className="mt-1 text-xs text-gray-500">이메일은 변경할 수 없습니다.</p>
         </div>
 
-        <div>
-          <Label htmlFor="password">비밀번호</Label>
-          <div className="relative mt-1">
-            <Input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="비밀번호 변경 시에만 입력해 주세요."
-              {...register('password')}
-              className="pr-10"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-              aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
-            >
-              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-            </button>
+        {isLocal && (
+          <div>
+            <Label htmlFor="password">비밀번호</Label>
+            <div className="relative mt-1">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="비밀번호 변경 시에만 입력해 주세요."
+                {...register('password')}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+            )}
           </div>
-          {errors.password && (
-            <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-          )}
-        </div>
+        )}
 
         <div>
           <Label htmlFor="joined_via">가입 방법</Label>
@@ -341,135 +384,57 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
               placeholder="010-1234-5678"
               {...register('phone')}
               className="flex-1"
+              disabled={Boolean(needsPhoneVerification && phoneChangeOk)}
             />
             <Button
               type="button"
               variant="outline"
-              className="shrink-0 bg-[#e5e7eb] text-[#374151] hover:bg-[#d1d5db]"
-              onClick={() => alert('휴대폰 인증 요청 기능은 준비 중입니다.')}
+              className="shrink-0 bg-[#e5e7eb] text-[#374151] hover:bg-[#d1d5db] disabled:opacity-50"
+              onClick={() => void handleSendSms()}
+              disabled={smsSending || smsCooldownSec > 0 || !needsPhoneVerification || (needsPhoneVerification && phoneChangeOk)}
             >
-              인증요청
+              {smsSending ? '발송 중…' : smsCooldownSec > 0 ? `${smsCooldownSec}초` : '인증요청'}
             </Button>
           </div>
+          {needsPhoneVerification && (
+            <p className="mt-1 text-xs text-amber-800">
+              번호를 변경하면 문자 인증 후 저장할 수 있습니다.
+            </p>
+          )}
+          {needsPhoneVerification && !phoneChangeOk && (
+            <div className="mt-3 space-y-2">
+              <div className="flex gap-2 flex-wrap items-center">
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="인증번호 6자리"
+                  value={smsCode}
+                  onChange={(e) => setSmsCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="max-w-[160px]"
+                  disabled={phoneChangeOk}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="bg-[#111827] text-white hover:bg-[#1f2937]"
+                  onClick={() => void handleVerifySms()}
+                  disabled={verifyingSms || phoneChangeOk}
+                >
+                  {verifyingSms ? '확인 중…' : '인증확인'}
+                </Button>
+              </div>
+            </div>
+          )}
+          {phoneInlineError && (
+            <p className="mt-1 text-sm text-red-600">{phoneInlineError}</p>
+          )}
+          {phoneChangeOk && needsPhoneVerification && (
+            <p className="mt-1 text-xs text-emerald-700">휴대폰 인증이 완료되었습니다.</p>
+          )}
           {errors.phone && (
             <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
           )}
-        </div>
-
-        <div>
-          <Label htmlFor="position">직분 (선택)</Label>
-          <select
-            id="position"
-            {...register('position')}
-            className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          >
-            <option value="">직분을 선택하세요</option>
-            {positionOptions.map((opt) => (
-              <option key={opt.value || 'empty'} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          {errors.position && (
-            <p className="mt-1 text-sm text-red-600">{errors.position.message}</p>
-          )}
-        </div>
-
-        <div>
-          <Label>생일</Label>
-          <div className="mt-1 grid grid-cols-3 gap-2">
-            <div>
-              <Input
-                type="number"
-                placeholder="년"
-                min={1900}
-                max={new Date().getFullYear()}
-                {...register('birth_year', { valueAsNumber: true })}
-              />
-              {errors.birth_year && (
-                <p className="mt-1 text-xs text-red-600">{errors.birth_year.message}</p>
-              )}
-            </div>
-            <div>
-              <Input
-                type="number"
-                placeholder="월"
-                min={1}
-                max={12}
-                {...register('birth_month', { valueAsNumber: true })}
-              />
-              {errors.birth_month && (
-                <p className="mt-1 text-xs text-red-600">{errors.birth_month.message}</p>
-              )}
-            </div>
-            <div>
-              <Input
-                type="number"
-                placeholder="일"
-                min={1}
-                max={31}
-                {...register('birth_day', { valueAsNumber: true })}
-              />
-              {errors.birth_day && (
-                <p className="mt-1 text-xs text-red-600">{errors.birth_day.message}</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <Label>지역</Label>
-          <div className="mt-1 space-y-2">
-            <div className="flex gap-4">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="DOMESTIC"
-                  {...register('region_type')}
-                  className="mr-2"
-                />
-                <span className="text-sm">내국인</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="FOREIGN"
-                  {...register('region_type')}
-                  className="mr-2"
-                />
-                <span className="text-sm">외국인</span>
-              </label>
-            </div>
-            {regionType === 'DOMESTIC' ? (
-              <select
-                {...register('region_domestic')}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                {regionDomesticOptions.map((opt) => (
-                  <option key={opt.value || 'empty'} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <select
-                {...register('region_foreign')}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                {regionForeignOptions.map((opt) => (
-                  <option key={opt.value || 'empty'} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            )}
-            {errors.region_domestic && (
-              <p className="mt-1 text-sm text-red-600">{errors.region_domestic.message}</p>
-            )}
-            {errors.region_foreign && (
-              <p className="mt-1 text-sm text-red-600">{errors.region_foreign.message}</p>
-            )}
-          </div>
         </div>
       </div>
 
@@ -477,7 +442,7 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
         <Button
           type="submit"
           className={`flex-1 ${variant === 'mypage' ? 'bg-[#e1f800] text-[#111827] hover:bg-[#c9e000]' : ''}`}
-          disabled={isLoading}
+          disabled={isLoading || (needsPhoneVerification && !phoneChangeOk)}
         >
           {isLoading
             ? '저장 중...'

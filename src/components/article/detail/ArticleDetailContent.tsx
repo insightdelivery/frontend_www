@@ -9,7 +9,7 @@ import { fetchHomepageDocPublic } from '@/services/homepageDoc'
 import { HOMEPAGE_DOC_DEFAULT_TITLES } from '@/constants/homepageDoc'
 import { sanitizeHomepageHtml } from '@/lib/sanitizeHomepageHtml'
 import type { HomepageDocPayload } from '@/types/homepageDoc'
-import { fetchContentQuestions, submitQuestionAnswer, type ContentQuestionItem } from '@/services/contentQuestion'
+import AppliedQuestionsSection from '@/components/content-detail/AppliedQuestionsSection'
 import { postView, postRating, postBookmark, deleteBookmark } from '@/services/libraryUseractivity'
 import ArticleShareModal from '@/components/article/detail/ArticleShareModal'
 import ArticleGuestShareModal from '@/components/article/detail/ArticleGuestShareModal'
@@ -149,10 +149,6 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
   const [article, setArticle] = useState<ArticleDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [contentQuestions, setContentQuestions] = useState<ContentQuestionItem[]>([])
-  const [answers, setAnswers] = useState<Record<number, string>>({})
-  const [submitting, setSubmitting] = useState<number | null>(null)
-  const [submitError, setSubmitError] = useState<string | null>(null)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [shareToast, setShareToast] = useState(false)
   const [shareModalOpen, setShareModalOpen] = useState(false)
@@ -265,19 +261,6 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
 
   useEffect(() => {
     if (!article?.id) return
-    let cancelled = false
-    fetchContentQuestions('ARTICLE', article.id)
-      .then((list) => {
-        if (!cancelled) setContentQuestions(list)
-      })
-      .catch(() => {
-        if (!cancelled) setContentQuestions([])
-      })
-    return () => { cancelled = true }
-  }, [article?.id])
-
-  useEffect(() => {
-    if (!article?.id) return
     const category = article.category?.trim()
     let cancelled = false
     setDetailBlocksLoading(true)
@@ -329,42 +312,6 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
       document.title = prevTitle
     }
   }, [article])
-
-  const handleAnswerChange = useCallback((questionId: number, value: string) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }))
-    setSubmitError(null)
-  }, [])
-
-  const handleSubmitAnswer = useCallback(
-    async (q: ContentQuestionItem) => {
-      if (!article) return
-      const text = (answers[q.question_id] ?? '').trim()
-      if (!text) return
-      setSubmitting(q.question_id)
-      setSubmitError(null)
-      try {
-        await submitQuestionAnswer({
-          question_id: q.question_id,
-          content_type: 'ARTICLE',
-          content_id: article.id,
-          answer_text: text,
-        })
-        setAnswers((prev) => {
-          const next = { ...prev }
-          delete next[q.question_id]
-          return next
-        })
-      } catch (e: unknown) {
-        const msg = e && typeof e === 'object' && 'response' in e
-          ? (e as { response?: { data?: { IndeAPIResponse?: { Message?: string } } } }).response?.data?.IndeAPIResponse?.Message
-          : null
-        setSubmitError(msg || '답변 등록에 실패했습니다. 로그인 후 다시 시도해 주세요.')
-      } finally {
-        setSubmitting(null)
-      }
-    },
-    [article, answers]
-  )
 
   const handleBookmarkClick = useCallback(async () => {
     if (!idValid || !article) return
@@ -681,40 +628,9 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
         }}
       />
 
-      <section className={`${COLORS.bgLight} border ${COLORS.border} rounded-2xl p-8 mb-12`}>
-        <h3 className={`font-bold text-[20px] ${COLORS.text} mb-6`}>적용 질문</h3>
-        {submitError && (
-          <p className="text-sm text-red-600 mb-4">{submitError}</p>
-        )}
-        <div className="space-y-6">
-          {contentQuestions.length > 0 ? (
-            contentQuestions.map((q, i) => (
-              <div key={q.question_id}>
-                <label className={`block font-semibold text-[14px] leading-5 ${COLORS.text} mb-2`}>
-                  Q{i + 1}. {q.question_text}
-                </label>
-                <textarea
-                  value={answers[q.question_id] ?? ''}
-                  onChange={(e) => handleAnswerChange(q.question_id, e.target.value)}
-                  placeholder="나만의 생각을 정리해보세요."
-                  className="w-full min-h-[120px] p-4 rounded-xl border border-[#e2e8f0] bg-white text-[16px] text-gray-500 placeholder:text-gray-400"
-                />
-                <button
-                  type="button"
-                  disabled={submitting === q.question_id || !(answers[q.question_id] ?? '').trim()}
-                  onClick={() => handleSubmitAnswer(q)}
-                  className="mt-2 bg-black text-white text-[14px] font-bold px-6 py-2 rounded-xl disabled:opacity-50"
-                >
-                  {submitting === q.question_id ? '저장 중...' : '저장하기'}
-                </button>
-              </div>
-            ))
-          ) : (
-            <p className={`text-[14px] ${COLORS.textSecondary}`}>등록된 적용 질문이 없습니다.</p>
-          )}
-        </div>
-        <div className="border-t border-[#e2e8f0] pt-10 mt-8 text-center">
-          <p className={`font-bold text-[16px] ${COLORS.text} mb-3`}>콘텐츠가 도움이 되었나요?</p>
+      <AppliedQuestionsSection contentType="ARTICLE" contentId={article.id} className="mb-12">
+        <div className="mt-8 border-t border-[#e2e8f0] pt-10 text-center">
+          <p className={`mb-3 font-bold text-[16px] ${COLORS.text}`}>콘텐츠가 도움이 되었나요?</p>
           <div className="flex justify-center gap-2">
             {[1, 2, 3, 4, 5].map((n) => (
               <button
@@ -733,7 +649,7 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
             ))}
           </div>
         </div>
-      </section>
+      </AppliedQuestionsSection>
 
       {detailBlocksLoading ? (
         <>

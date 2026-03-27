@@ -25,6 +25,23 @@ const pathOnly = (url?: string) => {
   return url.replace(getApiBaseURL(), '').split('?')[0].replace(/^https?:\/\/[^/]+/, '') || url
 }
 
+/** baseURL+url 조합·선행 슬래시 누락 대비 — 인터셉터에서 경로 매칭 실패로 Bearer 미첨부되는 것 방지 */
+const normalizeApiPath = (path: string) => {
+  const p = path.split('?')[0] || ''
+  if (!p) return ''
+  return p.startsWith('/') ? p : `/${p}`
+}
+
+const resolveRequestPath = (config: InternalAxiosRequestConfig): string => {
+  const raw = config.url || ''
+  const base = (config.baseURL || '').replace(/\/$/, '')
+  if (raw.startsWith('http://') || raw.startsWith('https://')) {
+    return normalizeApiPath(pathOnly(raw))
+  }
+  const combined = base ? `${base}${raw.startsWith('/') ? raw : raw ? `/${raw}` : ''}` : raw
+  return normalizeApiPath(pathOnly(combined) || (raw ? normalizeApiPath(raw) : ''))
+}
+
 const isPublicBoard = (url?: string) => {
   const path = pathOnly(url)
   return /^\/api\/(notices|faqs|articles|content|events|videos|search|homepage-docs|library)(\/|$)/.test(
@@ -43,7 +60,7 @@ const isPublicSyscodePath = (url?: string) => {
  * 이 경로들은 Authorization을 붙이지 않으면 서버가 401 → response 인터셉터가 handleAuthFail로 로그인 풀림.
  */
 const isLibraryMemberEndpoint = (config: InternalAxiosRequestConfig) => {
-  const path = pathOnly(config.url)
+  const path = resolveRequestPath(config)
   const m = String(config.method || 'get').toLowerCase()
   if (m === 'post' && /^\/api\/library\/content-share\/ensure\/?$/.test(path)) return true
   if (m === 'post' && /^\/api\/library\/useractivity\/rating\/?$/.test(path)) return true
@@ -55,8 +72,15 @@ const isLibraryMemberEndpoint = (config: InternalAxiosRequestConfig) => {
 /** GET /api/articles/{숫자id} — 로그인 시 JWT를 붙여 전체 본문 수신 (비회원은 미리보기 %) */
 const isArticleDetailGet = (config: InternalAxiosRequestConfig) => {
   if (String(config.method || 'get').toLowerCase() !== 'get') return false
-  const path = pathOnly(config.url)
+  const path = resolveRequestPath(config)
   return /^\/api\/articles\/\d+\/?$/.test(path)
+}
+
+/** POST /api/content/question-answer — 콘텐츠 질문 답변 등록 (회원 JWT 필수) */
+const isContentQuestionAnswerPost = (config: InternalAxiosRequestConfig) => {
+  const path = resolveRequestPath(config)
+  const m = String(config.method || 'get').toLowerCase()
+  return m === 'post' && /^\/api\/content\/question-answer\/?$/.test(path)
 }
 
 /** 비로그인·가입 단계 API — 만료 토큰으로 refresh 실패 시 리다이렉트 방지 (ensureToken 생략) */
@@ -104,24 +128,7 @@ function isTokenExpired(token: string): boolean {
   }
 }
 
-/** 요청 전 토큰 유효 보장: 만료 시 refresh 후 진행, 실패 시 throw (userAuthPlan §9 §10 §15 §16) */
-async function ensureToken(): Promise<void> {
-  if (typeof window === 'undefined') return
-  const token = Cookies.get('accessToken')
-  if (!token) return
-  if (!isTokenExpired(token)) return
-
-  if (!isRefreshing) {
-    isRefreshing = true
-    refreshPromise = refreshAccessToken().finally(() => {
-      isRefreshing = false
-      refreshPromise = null
-    })
-  }
-  await refreshPromise
-}
-
-/** 공개 API 토큰 갱신: Body에 refresh_token 전송 (로그인 풀림 방지) */
+/** 공개 API 토큰 갱신: Body에 refresh_token 전송 (로그인 풀림 방지) — ensureToken보다 먼저 정의 */
 const refreshAccessToken = async (): Promise<string> => {
   try {
     const refreshToken = Cookies.get('refreshToken')
@@ -167,10 +174,32 @@ const refreshAccessToken = async (): Promise<string> => {
   }
 }
 
+/** 요청 전 토큰 유효 보장: 만료 시 refresh 후 진행, 실패 시 throw (userAuthPlan §9 §10 §15 §16) */
+async function ensureToken(): Promise<void> {
+  if (typeof window === 'undefined') return
+  let token = Cookies.get('accessToken')
+  if (!token && Cookies.get('refreshToken')) {
+    await refreshAccessToken()
+    return
+  }
+  if (!token) return
+  if (!isTokenExpired(token)) return
+
+  if (!isRefreshing) {
+    isRefreshing = true
+    refreshPromise = refreshAccessToken().finally(() => {
+      isRefreshing = false
+      refreshPromise = null
+    })
+  }
+  await refreshPromise
+}
+
 // Request Interceptor: ensureToken 후 토큰 첨부, 실패 시 요청 중단 (userAuthPlan §10 §16)
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    if (isPublicSyscodePath(config.url)) {
+    const reqPath = resolveRequestPath(config)
+    if (isPublicSyscodePath(reqPath)) {
       const token = Cookies.get('accessToken')
       if (token && !isTokenExpired(token) && config.headers) {
         config.headers.Authorization = `Bearer ${token}`
@@ -178,12 +207,16 @@ apiClient.interceptors.request.use(
       return config
     }
 
-    if (isPublicBoard(config.url) || isPublicAuthFlow(config.url)) {
-      if (isArticleDetailGet(config) || isLibraryMemberEndpoint(config)) {
+    if (isPublicBoard(reqPath) || isPublicAuthFlow(reqPath)) {
+      if (
+        isArticleDetailGet(config) ||
+        isLibraryMemberEndpoint(config) ||
+        isContentQuestionAnswerPost(config)
+      ) {
         try {
           await ensureToken()
         } catch (e) {
-          if (isLibraryMemberEndpoint(config)) {
+          if (isLibraryMemberEndpoint(config) || isContentQuestionAnswerPost(config)) {
             handleAuthFail()
             return Promise.reject(e)
           }
@@ -219,8 +252,8 @@ apiClient.interceptors.response.use(
   },
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      const reqUrl = error.config?.url
-      if (!isPublicBoard(reqUrl) && !isPublicSyscodePath(reqUrl) && !isPublicAuthFlow(reqUrl)) {
+      const reqPath = error.config ? resolveRequestPath(error.config) : ''
+      if (!isPublicBoard(reqPath) && !isPublicSyscodePath(reqPath) && !isPublicAuthFlow(reqPath)) {
         handleAuthFail()
       }
     }

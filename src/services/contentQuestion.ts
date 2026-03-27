@@ -37,10 +37,41 @@ export interface SubmitQuestionAnswerPayload {
   answer_text: string
 }
 
-/** 질문 답변 등록 (로그인 사용자; user_id는 백엔드에서 토큰으로 추출 가능 시 생략) */
+/** 질문 답변 등록 (로그인 필수 — axios가 `POST /api/content/question-answer`에 Bearer 첨부) */
 export async function submitQuestionAnswer(
   payload: SubmitQuestionAnswerPayload
 ): Promise<{ answer_id: number; question_id: number }> {
   const { data } = await api.post('/api/content/question-answer', payload)
+  return unwrapResult(data)
+}
+
+export interface MyContentAnswerItem {
+  answer_id: number
+  question_id: number
+  answer_text: string
+}
+
+/** 로그인 사용자의 해당 콘텐츠 답변 목록 (`GET .../my-answers`) */
+export async function fetchMyContentAnswers(
+  contentType: ContentType,
+  contentId: number | string
+): Promise<MyContentAnswerItem[]> {
+  const id = typeof contentId === 'string' ? parseInt(contentId, 10) : contentId
+  if (Number.isNaN(id)) return []
+  const { data } = await api.get(`/api/content/${contentType}/${id}/my-answers`)
+  const result = unwrapResult<MyContentAnswerItem[]>(data)
+  return Array.isArray(result) ? result : []
+}
+
+export async function updateQuestionAnswer(
+  answerId: number,
+  payload: { answer_text: string }
+): Promise<{ answer_id: number; question_id: number }> {
+  const { data } = await api.patch(`/api/content/question-answer/${answerId}`, payload)
+  return unwrapResult(data)
+}
+
+export async function deleteQuestionAnswer(answerId: number): Promise<{ question_id: number }> {
+  const { data } = await api.delete(`/api/content/question-answer/${answerId}`)
   return unwrapResult(data)
 }

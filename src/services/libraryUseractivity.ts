@@ -30,8 +30,11 @@ export interface ActivityLogItem {
   regDateTime: string | null
   ratingValue?: number | null
   title?: string | null
+  subtitle?: string | null
   thumbnail?: string | null
   category?: string | null
+  /** 마스터에 없거나 삭제된 콘텐츠 (상세 링크 비활성) */
+  contentMissing?: boolean
 }
 
 export interface ListResult {

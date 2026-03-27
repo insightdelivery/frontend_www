@@ -2,17 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight, Bookmark, Share2 } from 'lucide-react'
+import { ChevronRight, Bookmark, Share2, Star } from 'lucide-react'
 import VideoPlayer from '@/components/video/VideoPlayer'
 import { fetchPublicVideoDetail, fetchPublicVideoList } from '@/services/video'
 import type { PublicVideoDetail, PublicVideoListItem, VideoAttachment } from '@/types/video'
 import { getApiBaseURL } from '@/lib/axios'
 import { useAuth } from '@/contexts/AuthContext'
-import { postView, postBookmark, deleteBookmark } from '@/services/libraryUseractivity'
+import { postView, postRating, postBookmark, deleteBookmark } from '@/services/libraryUseractivity'
 import type { ContentType } from '@/services/libraryUseractivity'
 import ArticleShareModal from '@/components/article/detail/ArticleShareModal'
 import ArticleGuestShareModal from '@/components/article/detail/ArticleGuestShareModal'
 import ArticleEntitlementShareModal from '@/components/article/detail/ArticleEntitlementShareModal'
+import AppliedQuestionsSection from '@/components/content-detail/AppliedQuestionsSection'
 import type { SysCodeItem } from '@/lib/syscode'
 import {
   getSysCode,
@@ -101,6 +102,8 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
   const [entitlementShareModalOpen, setEntitlementShareModalOpen] = useState(false)
   const openShareWhenAuthReady = useRef(false)
   const [isBookmarked, setIsBookmarked] = useState(false)
+  /** 로그인 후 별점 제출 시만 설정 (article/detail과 동일 — 서버 개인 별점 조회 없음) */
+  const [ratingValue, setRatingValue] = useState<number | null>(null)
 
   const apiContentType = useMemo(() => toApiContentType(type), [type])
 
@@ -155,6 +158,7 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
       }
 
       setDetail(d)
+      setRatingValue(null)
 
       const ct: 'video' | 'seminar' = type === 'seminar' ? 'seminar' : 'video'
       try {
@@ -228,6 +232,20 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
     }
   }, [detail, authenticated, isBookmarked, apiContentType])
 
+  const handleRatingClick = useCallback(
+    async (value: number) => {
+      if (!detail || !authenticated) return
+      const cid = String(detail.id)
+      try {
+        await postRating(apiContentType, cid, value)
+        setRatingValue(value)
+      } catch {
+        // ignore
+      }
+    },
+    [detail, authenticated, apiContentType]
+  )
+
   if (loading) {
     return (
       <div className={`${CONTAINER} flex justify-center px-4 pb-20 pt-6 sm:px-6 md:px-8`}>
@@ -249,7 +267,6 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
   const editorLine = detail.editor?.trim() || detail.speaker?.trim() || '—'
   const metaDate = formatListedAt(detail.createdAt)
   const tags = Array.isArray(detail.tags) ? detail.tags.filter((t): t is string => Boolean(t && String(t).trim())) : []
-  const questions = Array.isArray(detail.questions) ? detail.questions.filter((q): q is string => Boolean(q && String(q).trim())) : []
   const attachments = Array.isArray(detail.attachments) ? detail.attachments.filter((a) => a?.url?.trim()) : []
   const bodyHtml = (detail.body ?? '').trim()
   const categoryBreadcrumbLabel = (() => {
@@ -407,35 +424,30 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
         }}
       />
 
-      <section className={`${COLORS.bgLight} mb-12 rounded-2xl border p-8 ${COLORS.border}`}>
-        <h3 className={`mb-6 text-[20px] font-bold ${COLORS.text}`}>적용 질문</h3>
-        {questions.length > 0 ? (
-          <div className="space-y-6">
-            {questions.map((q, i) => (
-              <div key={`${i}-${q.slice(0, 20)}`}>
-                <div className={`font-semibold ${COLORS.text}`}>Q{i + 1}</div>
-                <textarea
-                  className={`mt-2 w-full rounded-xl border p-4 ${COLORS.border}`}
-                  placeholder={q}
-                  rows={4}
-                />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className={`text-sm ${COLORS.textSecondary}`}>등록된 적용 질문이 없습니다.</p>
-        )}
+      <AppliedQuestionsSection contentType={apiContentType} contentId={detail.id} className="mb-12">
         <div className={`mt-8 border-t pt-10 text-center ${COLORS.border}`}>
           <p className={`mb-3 text-[16px] font-bold ${COLORS.text}`}>콘텐츠가 도움이 되었나요?</p>
           <div className="flex justify-center gap-2">
             {[1, 2, 3, 4, 5].map((n) => (
-              <button key={n} type="button" className="p-1 hover:opacity-70" aria-label={`${n}점`}>
-                <span className="text-2xl text-[#e2e8f0] hover:text-amber-400">★</span>
+              <button
+                key={n}
+                type="button"
+                className="p-1 hover:opacity-70"
+                aria-label={`${n}점`}
+                onClick={() => void handleRatingClick(n)}
+              >
+                <Star
+                  className={`h-6 w-6 ${
+                    ratingValue !== null && n <= ratingValue
+                      ? 'fill-amber-400 text-amber-400'
+                      : 'text-[#e2e8f0] hover:text-amber-400'
+                  }`}
+                />
               </button>
             ))}
           </div>
         </div>
-      </section>
+      </AppliedQuestionsSection>
 
       <section className="pt-8">
         <h2 className={`mb-8 text-[24px] font-bold tracking-[-0.6px] ${COLORS.text}`}>추천 콘텐츠</h2>

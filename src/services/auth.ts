@@ -19,6 +19,24 @@ function messageFromApiError(error: unknown, fallback: string): string {
   return fallback
 }
 
+/**
+ * 공개 API 응답에서 `IndeAPIResponse.Result` 또는 `Result` 우선 추출 (wwwMypagePlan §10.6).
+ * 레거시 평면 JSON은 `null` 반환 → 호출부에서 루트 객체 폴백.
+ */
+export function unwrapApiResult<T extends object>(data: unknown): T | null {
+  if (data === null || data === undefined || typeof data !== 'object') return null
+  const d = data as Record<string, unknown>
+  const inde = d.IndeAPIResponse
+  if (inde && typeof inde === 'object' && inde !== null) {
+    const r = (inde as { Result?: T }).Result
+    if (r !== undefined && r !== null && typeof r === 'object') return r
+  }
+  if ('Result' in d && d.Result !== undefined && d.Result !== null && typeof d.Result === 'object') {
+    return d.Result as T
+  }
+  return null
+}
+
 export interface LoginRequest {
   email: string
   password: string
@@ -103,13 +121,13 @@ export interface ProfileCompleteRequest {
   phone: string
   name: string
   nickname: string
-  position?: string
-  birth_year?: number
-  birth_month?: number
-  birth_day?: number
-  region_type?: 'DOMESTIC' | 'FOREIGN'
-  region_domestic?: string
-  region_foreign?: string
+  position?: string | null
+  birth_year?: number | null
+  birth_month?: number | null
+  birth_day?: number | null
+  region_type?: 'DOMESTIC' | 'FOREIGN' | null
+  region_domestic?: string | null
+  region_foreign?: string | null
   newsletter_agree?: boolean
   /** 비밀번호 변경 시에만 전송 (write_only) */
   password?: string
@@ -189,13 +207,40 @@ export const sendSignupSms = async (phone: string): Promise<{ success: boolean; 
 }
 
 /**
+ * 로그인 사용자 회원정보 휴대폰 변경 — `POST /auth/send-sms-profile-phone` (JWT 필수)
+ */
+export const sendProfilePhoneSms = async (
+  phone: string,
+): Promise<{ success: boolean; message?: string; expires_in?: number }> => {
+  try {
+    const response = await apiClient.post<{
+      success?: boolean
+      message?: string
+      expires_in?: number
+      error?: string
+      detail?: string
+      IndeAPIResponse?: { Message?: string; ErrorCode?: string }
+    }>('/auth/send-sms-profile-phone', { phone })
+    const body = response.data
+    if (body?.IndeAPIResponse && body.IndeAPIResponse.ErrorCode && body.IndeAPIResponse.ErrorCode !== '00') {
+      throw new Error(body.IndeAPIResponse.Message || '인증번호 발송에 실패했습니다.')
+    }
+    if ((body as { error?: string }).error) throw new Error((body as { error: string }).error)
+    if ((body as { detail?: string }).detail) throw new Error((body as { detail: string }).detail)
+    return { success: !!body?.success, message: body?.message, expires_in: body?.expires_in }
+  } catch (error: unknown) {
+    throw new Error(messageFromApiError(error, '인증번호 발송에 실패했습니다.'))
+  }
+}
+
+/**
  * 휴대폰 인증번호 검증 — `POST /auth/verify-sms`
  * `purpose`: `signup`(기본) = `send-sms` 행만, `find_id` = `send-sms-find-id` 행만 검증(두 흐름이 같은 번호로 겹칠 때 분리).
  */
 export const verifySignupSms = async (
   phone: string,
   code: string,
-  options?: { purpose?: 'signup' | 'find_id' },
+  options?: { purpose?: 'signup' | 'find_id' | 'profile_phone' },
 ): Promise<{ success: boolean; message?: string }> => {
   try {
     const payload: { phone: string; code: string; purpose?: string } = { phone, code }
@@ -305,8 +350,13 @@ export const getMe = async (): Promise<UserInfo> => {
   try {
     const response = await apiClient.get<UserInfo & { IndeAPIResponse?: { Result?: UserInfo }; Result?: UserInfo }>('/me')
     const raw = response.data
-    const user = raw?.IndeAPIResponse?.Result ?? (raw && 'Result' in raw ? (raw as { Result?: UserInfo }).Result : null) ?? raw
-    if (!user || typeof user !== 'object') throw new Error('사용자 정보를 불러올 수 없습니다.')
+    const fromResult = unwrapApiResult<UserInfo>(raw)
+    const user =
+      fromResult ??
+      (raw && typeof raw === 'object' && 'email' in raw ? (raw as UserInfo) : null)
+    if (!user || typeof user !== 'object' || !user.email) {
+      throw new Error('사용자 정보를 불러올 수 없습니다.')
+    }
     return user as UserInfo
   } catch (error: unknown) {
     console.error('사용자 정보 조회 API 오류:', error)
@@ -343,8 +393,8 @@ export const completeProfile = async (data: ProfileCompleteRequest): Promise<Pro
       ProfileCompleteResponse & { IndeAPIResponse?: { Result?: ProfileCompleteResponse }; Result?: ProfileCompleteResponse }
     >('/profile/complete', data)
     const raw = response.data
-    const result = raw?.IndeAPIResponse?.Result ?? (raw && 'Result' in raw ? (raw as { Result?: ProfileCompleteResponse }).Result : null) ?? raw
-    const out = result as ProfileCompleteResponse
+    const fromResult = unwrapApiResult<ProfileCompleteResponse>(raw)
+    const out = (fromResult ?? (raw as ProfileCompleteResponse)) as ProfileCompleteResponse
     if (out?.user) {
       Cookies.set('userInfo', JSON.stringify(out.user), {
         expires: 1,
