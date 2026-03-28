@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import { clearMemoryAccessToken } from '@/lib/accessTokenMemory'
 
 type Channel = 'email' | 'phone'
 type Step = 'input' | 'code' | 'password' | 'done'
@@ -121,6 +122,7 @@ export default function ForgotPasswordPage() {
     setLoading(true)
     try {
       await resetPasswordWithToken(resetToken, password)
+      clearMemoryAccessToken()
       Cookies.remove('accessToken', { path: '/' })
       Cookies.remove('refreshToken', { path: '/' })
       Cookies.remove('userInfo', { path: '/' })

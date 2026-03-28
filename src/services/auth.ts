@@ -1,4 +1,5 @@
-import apiClient from '@/lib/axios'
+import apiClient, { resetAuthFailHandled, restoreSessionTokens } from '@/lib/axios'
+import { clearMemoryAccessToken, getMemoryAccessToken, setMemoryAccessToken } from '@/lib/accessTokenMemory'
 import Cookies from 'js-cookie'
 
 /** 공개 API가 4xx 시 raw `{ error }` 또는 `{ IndeAPIResponse: { Message } }` 둘 다 쓸 수 있음 */
@@ -371,7 +372,8 @@ export const getMe = async (): Promise<UserInfo> => {
 let initAuthInFlight: Promise<UserInfo | null> | null = null
 
 export const initAuth = async (): Promise<UserInfo | null> => {
-  if (!Cookies.get('accessToken')) return null
+  await restoreSessionTokens()
+  if (!getMemoryAccessToken()) return null
   if (!initAuthInFlight) {
     initAuthInFlight = getMe()
       .then((u) => u)
@@ -426,9 +428,10 @@ export const logout = async (): Promise<void> => {
   } catch (error: unknown) {
     console.error('로그아웃 API 오류:', error)
   } finally {
-    Cookies.remove('accessToken')
-    Cookies.remove('refreshToken')
-    Cookies.remove('userInfo')
+    clearMemoryAccessToken()
+    Cookies.remove('userInfo', { path: '/' })
+    Cookies.remove('accessToken', { path: '/' })
+    Cookies.remove('refreshToken', { path: '/' })
     Cookies.remove(OAUTH_PENDING_TEMP_COOKIE, { path: '/' })
     if (typeof window !== 'undefined') {
       window.location.replace('/login')
@@ -458,20 +461,23 @@ export const requestWithdraw = async (data: WithdrawRequest): Promise<{ success:
 }
 
 /**
- * 토큰 저장
- * CURSOR_RULES.md에 따라 쿠키에만 저장 (localStorage 사용 금지)
+ * 로그인·OAuth 직후 — frontend_wwwRules.md §2·§3
+ * accessToken → 메모리만. refreshToken → 서버 Set-Cookie(HttpOnly)에만 두고, 클라이언트 쿠키·헤더·바디로 저장·전송하지 않음.
+ * (refreshToken 인자는 API 응답 호환용으로 받되 저장하지 않음.)
  */
-export const saveTokens = (accessToken: string, refreshToken: string, userInfo?: UserInfo) => {
+export const saveTokens = (accessToken: string, _refreshToken: string, userInfo?: UserInfo) => {
+  setMemoryAccessToken(accessToken)
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console -- 로컬에서 access 수신 확인용
+    console.log('[auth] accessToken', accessToken)
+  }
+  resetAuthFailHandled()
   const cookieOptions = {
-    expires: 1, // 1일
+    expires: 1,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict' as const,
     path: '/',
   }
-  
-  Cookies.set('accessToken', accessToken, cookieOptions)
-  Cookies.set('refreshToken', refreshToken, { ...cookieOptions, expires: 7 }) // 7일
-  
   if (userInfo) {
     Cookies.set('userInfo', JSON.stringify(userInfo), cookieOptions)
   }
@@ -672,13 +678,14 @@ export const resetPasswordWithToken = async (
  * 토큰 확인
  */
 export const getAccessToken = (): string | undefined => {
-  return Cookies.get('accessToken')
+  const t = getMemoryAccessToken()
+  return t || undefined
 }
 
 /**
  * 인증 상태 확인
  */
 export const isAuthenticated = (): boolean => {
-  return !!Cookies.get('accessToken')
+  return !!getMemoryAccessToken()
 }
 

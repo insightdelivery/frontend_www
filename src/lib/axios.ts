@@ -1,5 +1,10 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import Cookies from 'js-cookie'
+import {
+  clearMemoryAccessToken,
+  getMemoryAccessToken,
+  setMemoryAccessToken,
+} from '@/lib/accessTokenMemory'
 
 // 로컬 개발 시 기본값: localhost:8001 (공개 API), 프로덕션: api.inde.kr
 export const getApiBaseURL = (): string => {
@@ -10,22 +15,19 @@ export const getApiBaseURL = (): string => {
   return 'https://api.inde.kr'
 }
 
-// Axios 인스턴스 생성
 const apiClient = axios.create({
   baseURL: getApiBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // CURSOR_loginRules.md에 따라 true로 설정
+  withCredentials: true,
 })
 
-// 공개 게시판(인증 불필요): 토큰을 붙이지 않음 — 만료된 토큰 전송 방지
 const pathOnly = (url?: string) => {
   if (!url) return ''
   return url.replace(getApiBaseURL(), '').split('?')[0].replace(/^https?:\/\/[^/]+/, '') || url
 }
 
-/** baseURL+url 조합·선행 슬래시 누락 대비 — 인터셉터에서 경로 매칭 실패로 Bearer 미첨부되는 것 방지 */
 const normalizeApiPath = (path: string) => {
   const p = path.split('?')[0] || ''
   if (!p) return ''
@@ -49,16 +51,11 @@ const isPublicBoard = (url?: string) => {
   )
 }
 
-/** 공개 API 시스코드 조회 — 익명 허용. 만료 토큰으로 ensureToken 실패 시 전역 로그아웃·리다이렉트 방지 */
 const isPublicSyscodePath = (url?: string) => {
   const path = pathOnly(url)
   return /^\/systemmanage\/syscode(\/|$)/.test(path)
 }
 
-/**
- * `/api/library/*` 가 isPublicBoard에 걸리지만, 아래는 회원 JWT 필수(contentShareLinkCopy.md ensure 등).
- * 이 경로들은 Authorization을 붙이지 않으면 서버가 401 → response 인터셉터가 handleAuthFail로 로그인 풀림.
- */
 const isLibraryMemberEndpoint = (config: InternalAxiosRequestConfig) => {
   const path = resolveRequestPath(config)
   const m = String(config.method || 'get').toLowerCase()
@@ -69,21 +66,18 @@ const isLibraryMemberEndpoint = (config: InternalAxiosRequestConfig) => {
   return false
 }
 
-/** GET /api/articles/{숫자id} — 로그인 시 JWT를 붙여 전체 본문 수신 (비회원은 미리보기 %) */
 const isArticleDetailGet = (config: InternalAxiosRequestConfig) => {
   if (String(config.method || 'get').toLowerCase() !== 'get') return false
   const path = resolveRequestPath(config)
   return /^\/api\/articles\/\d+\/?$/.test(path)
 }
 
-/** POST /api/content/question-answer — 콘텐츠 질문 답변 등록 (회원 JWT 필수) */
 const isContentQuestionAnswerPost = (config: InternalAxiosRequestConfig) => {
   const path = resolveRequestPath(config)
   const m = String(config.method || 'get').toLowerCase()
   return m === 'post' && /^\/api\/content\/question-answer\/?$/.test(path)
 }
 
-/** 비로그인·가입 단계 API — 만료 토큰으로 refresh 실패 시 리다이렉트 방지 (ensureToken 생략) */
 const isPublicAuthFlow = (url?: string) => {
   const path = pathOnly(url)
   return /^\/auth\/(send-sms|verify-sms|register|login|send-sms-find-id|find-id|send-password-reset-code|verify-password-reset-code|reset-password)(\/|$)/i.test(
@@ -91,27 +85,39 @@ const isPublicAuthFlow = (url?: string) => {
   )
 }
 
-// 토큰 갱신 중 플래그 및 Promise 공유 (userAuthPlan §9 §16)
-let isRefreshing = false
-let refreshPromise: Promise<string> | null = null
-let refreshRetryCount = 0
-const MAX_REFRESH_RETRIES = 3
-const TOKEN_EXPIRY_BUFFER_SEC = 60
+/** frontend_wwwRules.md — tokenrefresh는 인터셉터 ensureToken·401-refresh 재시도 대상에서 제외 */
+const isTokenRefreshPath = (path: string) => /^\/auth\/tokenrefresh\/?$/i.test(path)
 
-/** 인증 실패 시 단일 진입점. 리다이렉트·중복 실행 방지 (gnb_login_logout_analysis Part V.8) */
+/** 로그아웃 등 — ensureToken 생략 */
+const skipsRequestEnsureToken = (path: string) =>
+  isTokenRefreshPath(path) || /^\/auth\/logout\/?$/i.test(path)
+
+/** 401 수신 시 refresh 후 재시도하지 않는 경로(무한 루프·불필요 갱신 방지) */
+const skips401RefreshRetry = (path: string) =>
+  isTokenRefreshPath(path) ||
+  /^\/auth\/logout\/?$/i.test(path) ||
+  isPublicBoard(path) ||
+  isPublicSyscodePath(path) ||
+  isPublicAuthFlow(path)
+
 let isAuthFailHandled = false
+
+export function resetAuthFailHandled(): void {
+  isAuthFailHandled = false
+}
+
 export function handleAuthFail(): void {
   if (isAuthFailHandled) return
   isAuthFailHandled = true
-  Cookies.remove('accessToken')
-  Cookies.remove('refreshToken')
-  Cookies.remove('userInfo')
+  clearMemoryAccessToken()
+  Cookies.remove('userInfo', { path: '/' })
+  Cookies.remove('accessToken', { path: '/' })
+  Cookies.remove('refreshToken', { path: '/' })
   if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
     window.location.replace('/login?error=UNAUTHORIZED')
   }
 }
 
-/** JWT payload exp 확인 — 만료 또는 만료 임박 시 true (userAuthPlan §3 §15) */
 function isTokenExpired(token: string): boolean {
   try {
     const parts = token.split('.')
@@ -122,147 +128,227 @@ function isTokenExpired(token: string): boolean {
     const exp = payload.exp
     if (exp == null) return true
     const now = Math.floor(Date.now() / 1000)
-    return exp - TOKEN_EXPIRY_BUFFER_SEC <= now
+    return exp - 60 <= now
   } catch {
     return true
   }
 }
 
-/** 공개 API 토큰 갱신: Body에 refresh_token 전송 (로그인 풀림 방지) — ensureToken보다 먼저 정의 */
-const refreshAccessToken = async (): Promise<string> => {
-  try {
-    const refreshToken = Cookies.get('refreshToken')
-    if (!refreshToken) throw new Error('리프레시 토큰이 없습니다.')
+type TokenRefreshPayload = {
+  access_token?: string
+  refresh_token?: string
+  expires_in?: number
+  user?: Record<string, unknown>
+}
 
-    const baseURL = getApiBaseURL()
-    const response = await axios.post<{
-      access_token: string
-      refresh_token: string
-      expires_in?: number
-      user?: Record<string, unknown>
-    }>(
-      `${baseURL}/auth/tokenrefresh`,
-      { refresh_token: refreshToken },
-      { headers: { 'Content-Type': 'application/json' } }
-    )
-    const data = response.data
-    const newAccessToken = data?.access_token
-    const newRefreshToken = data?.refresh_token
-    if (!newAccessToken || !newRefreshToken) throw new Error('토큰 갱신 응답에 토큰이 없습니다.')
+/**
+ * public_api는 core.renderers.IndeJSONRenderer 로 평면 JSON이
+ * `{ IndeAPIResponse: { ErrorCode, Message, Result: { access_token, ... } } }` 로 감싸진다.
+ */
+function parseTokenRefreshResponseBody(raw: unknown): TokenRefreshPayload {
+  if (raw !== null && typeof raw === 'object') {
+    const d = raw as Record<string, unknown>
+    const inde = d.IndeAPIResponse
+    if (inde && typeof inde === 'object' && inde !== null) {
+      const api = inde as { ErrorCode?: string; Message?: string; Result?: unknown }
+      if (api.ErrorCode && api.ErrorCode !== '00') {
+        throw new Error(api.Message || '토큰 갱신에 실패했습니다.')
+      }
+      const r = api.Result
+      if (r && typeof r === 'object' && r !== null) {
+        const result = r as TokenRefreshPayload
+        if (result.access_token) return result
+      }
+    }
+    if ('Result' in d && d.Result && typeof d.Result === 'object' && d.Result !== null) {
+      const result = d.Result as TokenRefreshPayload
+      if (result.access_token) return result
+    }
+    const flat = raw as TokenRefreshPayload
+    if (flat.access_token) return flat
+  }
+  throw new Error('토큰 갱신 응답에 access_token이 없습니다.')
+}
 
-    const opts = {
+/** raw axios만 — apiClient 인터셉터 미적용(규칙: refresh에 재귀 호출 금지) */
+async function postTokenRefreshRequest(): Promise<unknown> {
+  const baseURL = getApiBaseURL()
+  const response = await axios.post(`${baseURL}/auth/tokenrefresh`, {}, {
+    headers: { 'Content-Type': 'application/json' },
+    withCredentials: true,
+  })
+  return response.data
+}
+
+function applyTokenRefreshPayload(data: TokenRefreshPayload): string {
+  const newAccessToken = data?.access_token
+  if (!newAccessToken) throw new Error('토큰 갱신 응답에 access_token이 없습니다.')
+  setMemoryAccessToken(newAccessToken)
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console -- 로컬에서 갱신 후 access 확인용
+    console.log('[auth] accessToken (after refresh)', newAccessToken)
+  }
+  if (data?.user) {
+    Cookies.set('userInfo', JSON.stringify(data.user), {
       expires: 1,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict' as const,
+      sameSite: 'strict',
       path: '/',
-    }
-    Cookies.set('accessToken', newAccessToken, opts)
-    Cookies.set('refreshToken', newRefreshToken, { ...opts, expires: 7 })
-    if (data?.user) {
-      Cookies.set('userInfo', JSON.stringify(data.user), opts)
-    }
-    refreshRetryCount = 0
-    return newAccessToken
+    })
+  }
+  return newAccessToken
+}
+
+/**
+ * POST /auth/tokenrefresh 단일 시도.
+ * 401·403 → refresh 무효로 보고 즉시 handleAuthFail (frontend_wwwRules.md §7).
+ */
+async function executeTokenRefreshOnce(): Promise<string> {
+  try {
+    const raw = await postTokenRefreshRequest()
+    const data = parseTokenRefreshResponseBody(raw)
+    return applyTokenRefreshPayload(data)
   } catch (err) {
-    refreshRetryCount++
-    if (refreshRetryCount >= MAX_REFRESH_RETRIES) {
-      refreshRetryCount = 0
+    const ax = err as AxiosError
+    const st = ax.response?.status
+    if (st === 401 || st === 403) {
       handleAuthFail()
-      throw new Error('토큰 갱신에 실패했습니다. 다시 로그인해 주세요.')
     }
     throw err
   }
 }
 
-/** 요청 전 토큰 유효 보장: 만료 시 refresh 후 진행, 실패 시 throw (userAuthPlan §9 §10 §15 §16) */
-async function ensureToken(): Promise<void> {
-  if (typeof window === 'undefined') return
-  let token = Cookies.get('accessToken')
-  if (!token && Cookies.get('refreshToken')) {
-    await refreshAccessToken()
-    return
-  }
-  if (!token) return
-  if (!isTokenExpired(token)) return
+/** 동시 다발 401·ensureToken 갱신 — refresh는 반드시 1회만 실행, 나머지는 대기 (§8) */
+let sharedRefreshPromise: Promise<string> | null = null
 
-  if (!isRefreshing) {
-    isRefreshing = true
-    refreshPromise = refreshAccessToken().finally(() => {
-      isRefreshing = false
-      refreshPromise = null
+function runRefreshDeduped(): Promise<string> {
+  if (!sharedRefreshPromise) {
+    sharedRefreshPromise = executeTokenRefreshOnce().finally(() => {
+      sharedRefreshPromise = null
     })
   }
-  await refreshPromise
+  return sharedRefreshPromise
 }
 
-// Request Interceptor: ensureToken 후 토큰 첨부, 실패 시 요청 중단 (userAuthPlan §10 §16)
+type EnsureTokenMode = 'strict' | 'lenient'
+
+async function ensureToken(mode: EnsureTokenMode): Promise<void> {
+  if (typeof window === 'undefined') return
+  let token = getMemoryAccessToken()
+
+  if (!token) {
+    if (mode === 'lenient' && !Cookies.get('userInfo')) return
+    await runRefreshDeduped()
+    return
+  }
+  if (!isTokenExpired(token)) return
+
+  await runRefreshDeduped()
+}
+
+/** initAuth — userInfo 있을 때만 조용히 1회 (비로그인은 refresh 호출 안 함) */
+export async function restoreSessionTokens(): Promise<void> {
+  if (typeof window === 'undefined') return
+  const token = getMemoryAccessToken()
+  if (token && !isTokenExpired(token)) return
+  if (!token && !Cookies.get('userInfo')) return
+  try {
+    await runRefreshDeduped()
+  } catch {
+    /* 401/403이면 executeTokenRefreshOnce에서 이미 handleAuthFail */
+  }
+}
+
+function applyAuthorizationHeader(config: InternalAxiosRequestConfig): void {
+  if (!config.headers) return
+  const t = getMemoryAccessToken()
+  if (t) {
+    config.headers.Authorization = `Bearer ${t}`
+  } else {
+    delete config.headers.Authorization
+  }
+}
+
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const reqPath = resolveRequestPath(config)
-    if (isPublicSyscodePath(reqPath)) {
-      const token = Cookies.get('accessToken')
-      if (token && !isTokenExpired(token) && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`
+
+    if (skipsRequestEnsureToken(reqPath)) {
+      if (isTokenRefreshPath(reqPath)) {
+        if (config.headers) delete config.headers.Authorization
+      } else {
+        applyAuthorizationHeader(config)
       }
       return config
     }
 
-    if (isPublicBoard(reqPath) || isPublicAuthFlow(reqPath)) {
-      if (
-        isArticleDetailGet(config) ||
-        isLibraryMemberEndpoint(config) ||
-        isContentQuestionAnswerPost(config)
-      ) {
-        try {
-          await ensureToken()
-        } catch (e) {
-          if (isLibraryMemberEndpoint(config) || isContentQuestionAnswerPost(config)) {
-            handleAuthFail()
-            return Promise.reject(e)
+    if (!isPublicSyscodePath(reqPath)) {
+      if (isPublicBoard(reqPath) || isPublicAuthFlow(reqPath)) {
+        if (
+          isArticleDetailGet(config) ||
+          isLibraryMemberEndpoint(config) ||
+          isContentQuestionAnswerPost(config)
+        ) {
+          try {
+            await ensureToken(
+              isLibraryMemberEndpoint(config) || isContentQuestionAnswerPost(config) ? 'strict' : 'lenient'
+            )
+          } catch (e) {
+            if (isLibraryMemberEndpoint(config) || isContentQuestionAnswerPost(config)) {
+              if (!isAuthFailHandled) handleAuthFail()
+              return Promise.reject(e)
+            }
           }
-          /* 비로그인·갱신 실패: 미리보기 본문만 */
         }
-        const token = Cookies.get('accessToken')
-        if (token && config.headers) {
-          config.headers.Authorization = `Bearer ${token}`
+      } else {
+        try {
+          await ensureToken('strict')
+        } catch (e) {
+          if (!isAuthFailHandled) handleAuthFail()
+          return Promise.reject(e)
         }
       }
-      return config
     }
-    try {
-      await ensureToken()
-    } catch (e) {
-      handleAuthFail()
-      return Promise.reject(e)
-    }
-    const token = Cookies.get('accessToken')
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
+    applyAuthorizationHeader(config)
     return config
   },
   (error: AxiosError) => Promise.reject(error)
 )
 
-// Response Interceptor: 401 시 handleAuthFail 호출 (gnb_login_logout_analysis Part V.9)
 apiClient.interceptors.response.use(
-  (response: AxiosResponse) => {
-    refreshRetryCount = 0
-    return response
-  },
-  (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      const reqPath = error.config ? resolveRequestPath(error.config) : ''
-      if (!isPublicBoard(reqPath) && !isPublicSyscodePath(reqPath) && !isPublicAuthFlow(reqPath)) {
+  (response: AxiosResponse) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined
+    const status = error.response?.status
+
+    if (status !== 401 || !originalRequest) {
+      return Promise.reject(error)
+    }
+
+    const reqPath = resolveRequestPath(originalRequest)
+
+    if (skips401RefreshRetry(reqPath)) {
+      if (isTokenRefreshPath(reqPath) && !isAuthFailHandled) {
         handleAuthFail()
       }
+      return Promise.reject(error)
     }
-    return Promise.reject(error)
+
+    if (originalRequest._retry) {
+      if (!isAuthFailHandled) handleAuthFail()
+      return Promise.reject(error)
+    }
+
+    originalRequest._retry = true
+
+    try {
+      await runRefreshDeduped()
+      return apiClient.request(originalRequest)
+    } catch {
+      if (!isAuthFailHandled) handleAuthFail()
+      return Promise.reject(error)
+    }
   }
 )
 
 export default apiClient
-
-
-
-

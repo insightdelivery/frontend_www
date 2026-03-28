@@ -23,9 +23,9 @@ export default function Header() {
   }, [])
   const cookieUser = clientReady ? getUserInfo() : null
   const tokenPresent = clientReady && !!getAccessToken()
-  /** 세션 검증 중이어도 쿠키 userInfo가 있으면 GNB를 로그인 상태로 표시 (새로고침 시 상단이 '비로그인 스켈레톤'으로 고정되지 않게) */
+  /** accessToken은 메모리 복구 전까지 비어 있을 수 있음 — userInfo 쿠키로 로딩 중 GNB 낙관 표시 */
   const showMemberChrome =
-    status === 'authenticated' || (status === 'loading' && tokenPresent && !!cookieUser)
+    status === 'authenticated' || (status === 'loading' && !!cookieUser) || (status === 'loading' && tokenPresent)
   const displayUser = user ?? (showMemberChrome ? cookieUser : null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)

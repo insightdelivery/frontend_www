@@ -1,5 +1,4 @@
 import api from '@/lib/api'
-import { getAccessToken } from '@/services/auth'
 import type {
   NoticeListResponse,
   NoticeDetail,
@@ -24,13 +23,6 @@ function unwrapResult<T>(data: unknown): T {
   }
   if (d?.Result !== undefined) return d.Result as T
   return data as T
-}
-
-/** 인증 필요 요청용 헤더 (쿠키 토큰을 Authorization에 명시적으로 붙임) */
-function authHeaders(): { headers?: { Authorization: string } } {
-  const token = typeof window !== 'undefined' ? getAccessToken() : undefined
-  if (!token) return {}
-  return { headers: { Authorization: `Bearer ${token}` } }
 }
 
 /** 공지 목록 (검색/정렬/페이지네이션) */
@@ -69,24 +61,24 @@ export async function fetchInquiries(params?: {
   page?: number
   page_size?: number
 }): Promise<InquiryListResponse> {
-  const { data } = await api.get(BASE.inquiries, { ...authHeaders(), params })
+  const { data } = await api.get(BASE.inquiries, { params })
   return unwrapResult<InquiryListResponse>(data)
 }
 
 /** 문의 상세 */
 export async function fetchInquiry(id: number): Promise<InquiryDetail> {
-  const { data } = await api.get(`${BASE.inquiries}/${id}`, authHeaders())
+  const { data } = await api.get(`${BASE.inquiries}/${id}`)
   return unwrapResult<InquiryDetail>(data)
 }
 
 /** 문의 작성 (로그인 필수) */
 export async function createInquiry(body: { title: string; content: string }): Promise<InquiryDetail> {
-  const { data } = await api.post(BASE.inquiries, body, authHeaders())
+  const { data } = await api.post(BASE.inquiries, body)
   return unwrapResult<InquiryDetail>(data)
 }
 
 /** 문의 답변 (관리자) */
 export async function answerInquiry(id: number, answer: string): Promise<InquiryDetail> {
-  const { data } = await api.patch(`${BASE.inquiries}/${id}`, { answer }, authHeaders())
+  const { data } = await api.patch(`${BASE.inquiries}/${id}`, { answer })
   return unwrapResult<InquiryDetail>(data)
 }

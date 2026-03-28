@@ -48,11 +48,12 @@ function AuthCallbackContent() {
         return
       }
 
-      if (accessToken && refreshToken) {
+      // refresh는 API 리다이렉트 응답의 HttpOnly 쿠키에만 둘 수 있음(쿼리의 refresh_token은 선택)
+      if (accessToken) {
         try {
-          saveTokens(accessToken, refreshToken)
+          saveTokens(accessToken, refreshToken || '')
           const user = await getMe()
-          saveTokens(accessToken, refreshToken, user)
+          saveTokens(accessToken, refreshToken || '', user)
           setUser(user)
           const fromSignup = params.get('from') === 'signup'
           router.replace(fromSignup ? '/?welcome=1' : '/')
