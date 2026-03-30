@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import axios from 'axios'
 import {
   deleteHighlightGroup,
   getHighlightsByArticle,
@@ -35,7 +36,13 @@ export default function HighlightTabs() {
       setDateGroups(d)
       setArticleGroups(a)
     } catch (e) {
-      setError(e instanceof Error ? e.message : '데이터를 불러오지 못했습니다.')
+      const status = axios.isAxiosError(e) ? e.response?.status : undefined
+      // 백엔드가 빈 목록에서 5xx를 내는 경우 등: 사용자에게는 빈 목록과 동일 안내
+      if (typeof status === 'number' && status >= 500) {
+        setError(null)
+      } else {
+        setError(e instanceof Error ? e.message : '데이터를 불러오지 못했습니다.')
+      }
       setDateGroups([])
       setArticleGroups([])
     } finally {
@@ -100,12 +107,12 @@ export default function HighlightTabs() {
         <div className="py-20 text-center text-red-500">{error}</div>
       ) : tab === 'date' ? (
         dateEmpty ? (
-          <div className="py-20 text-center text-gray-500">저장된 하이라이트가 없습니다.</div>
+          <div className="py-20 text-center text-gray-500">하이라이트한 콘텐츠가 없습니다.</div>
         ) : (
           <HighlightDateView groups={dateGroups ?? []} onDelete={handleDelete} />
         )
       ) : articleEmpty ? (
-        <div className="py-20 text-center text-gray-500">저장된 하이라이트가 없습니다.</div>
+        <div className="py-20 text-center text-gray-500">하이라이트한 콘텐츠가 없습니다.</div>
       ) : (
         <HighlightArticleView groups={articleGroups ?? []} onDelete={handleDelete} />
       )}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import axios from 'axios'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -46,11 +47,14 @@ export default function MypageAppliedQuestionsPage() {
       setTotal(res.total)
       setPage(res.page)
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : '목록을 불러오지 못했습니다.'
-      const status = (e as { response?: { status?: number } })?.response?.status
+      const status = axios.isAxiosError(e) ? e.response?.status : undefined
       if (status === 401) {
         setError('로그인 후 이용할 수 있습니다.')
+      } else if (typeof status === 'number' && status >= 500) {
+        // 빈 목록과 동일한 안내 (백엔드 5xx 등)
+        setError(null)
       } else {
+        const msg = e instanceof Error ? e.message : '목록을 불러오지 못했습니다.'
         setError(msg)
       }
       setList([])
@@ -85,7 +89,7 @@ export default function MypageAppliedQuestionsPage() {
           <p className="text-[#6b7280]">목록을 불러오는 중...</p>
         </div>
       ) : list.length === 0 && !error ? (
-        <p className="py-12 text-center text-[#6b7280]">작성한 답변이 없습니다.</p>
+        <p className="py-12 text-center text-[#6b7280]">적용질문에 답변있는 콘텐츠가 없습니다.</p>
       ) : (
         <>
           <div
