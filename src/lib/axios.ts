@@ -78,6 +78,28 @@ const isContentQuestionAnswerPost = (config: InternalAxiosRequestConfig) => {
   return m === 'post' && /^\/api\/content\/question-answer\/?$/.test(path)
 }
 
+/** 마이페이지 적용질문 목록 — 로그인 필요 (isPublicBoard 예외) */
+const isContentMyAnsweredContentsGet = (config: InternalAxiosRequestConfig) => {
+  if (String(config.method || 'get').toLowerCase() !== 'get') return false
+  const path = resolveRequestPath(config)
+  return /^\/api\/content\/my-answered-contents\/?$/i.test(path)
+}
+
+/** 콘텐츠별 내 답변 목록 — 로그인 필요 */
+const isContentMyAnswersGet = (config: InternalAxiosRequestConfig) => {
+  if (String(config.method || 'get').toLowerCase() !== 'get') return false
+  const path = resolveRequestPath(config)
+  return /^\/api\/content\/(ARTICLE|VIDEO|SEMINAR)\/\d+\/my-answers\/?$/i.test(path)
+}
+
+/** /api/content/ 이지만 401 시 refresh·재시도 대상 (frontend_wwwRules.md §5·§8) */
+function isAuthRequiredContentPath(path: string): boolean {
+  return (
+    /^\/api\/content\/my-answered-contents\/?$/i.test(path) ||
+    /^\/api\/content\/(ARTICLE|VIDEO|SEMINAR)\/\d+\/my-answers\/?$/i.test(path)
+  )
+}
+
 const isPublicAuthFlow = (url?: string) => {
   const path = pathOnly(url)
   return /^\/auth\/(send-sms|verify-sms|register|login|send-sms-find-id|find-id|send-password-reset-code|verify-password-reset-code|reset-password)(\/|$)/i.test(
@@ -96,7 +118,7 @@ const skipsRequestEnsureToken = (path: string) =>
 const skips401RefreshRetry = (path: string) =>
   isTokenRefreshPath(path) ||
   /^\/auth\/logout\/?$/i.test(path) ||
-  isPublicBoard(path) ||
+  (isPublicBoard(path) && !isAuthRequiredContentPath(path)) ||
   isPublicSyscodePath(path) ||
   isPublicAuthFlow(path)
 
@@ -287,14 +309,26 @@ apiClient.interceptors.request.use(
         if (
           isArticleDetailGet(config) ||
           isLibraryMemberEndpoint(config) ||
-          isContentQuestionAnswerPost(config)
+          isContentQuestionAnswerPost(config) ||
+          isContentMyAnsweredContentsGet(config) ||
+          isContentMyAnswersGet(config)
         ) {
           try {
             await ensureToken(
-              isLibraryMemberEndpoint(config) || isContentQuestionAnswerPost(config) ? 'strict' : 'lenient'
+              isLibraryMemberEndpoint(config) ||
+              isContentQuestionAnswerPost(config) ||
+              isContentMyAnsweredContentsGet(config) ||
+              isContentMyAnswersGet(config)
+                ? 'strict'
+                : 'lenient'
             )
           } catch (e) {
-            if (isLibraryMemberEndpoint(config) || isContentQuestionAnswerPost(config)) {
+            if (
+              isLibraryMemberEndpoint(config) ||
+              isContentQuestionAnswerPost(config) ||
+              isContentMyAnsweredContentsGet(config) ||
+              isContentMyAnswersGet(config)
+            ) {
               if (!isAuthFailHandled) handleAuthFail()
               return Promise.reject(e)
             }
@@ -310,6 +344,9 @@ apiClient.interceptors.request.use(
       }
     }
     applyAuthorizationHeader(config)
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData && config.headers) {
+      delete config.headers['Content-Type']
+    }
     return config
   },
   (error: AxiosError) => Promise.reject(error)

@@ -1,10 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { getMeRatings, type ActivityLogItem, type ContentType } from '@/services/libraryUseractivity'
 
-const PAGE_SIZE = 10
+/** 리스트는 페이지당 최대 7건 (userStarScore.md) */
+const PAGE_SIZE = 7
 
 type SortType = 'latest' | 'high' | 'low'
 
@@ -32,7 +34,37 @@ function formatDate(regDateTime: string | null): string {
 }
 
 function stars(rating: number): string {
-  return '★'.repeat(Math.min(5, Math.max(0, rating)))
+  return '★'.repeat(Math.min(5, Math.max(0, Math.round(rating))))
+}
+
+/** 요약 카드 평균 점수 시각화 (0~5, 소수 반영) */
+function AverageStars({ value }: { value: number }) {
+  const v = Math.min(5, Math.max(0, value))
+  return (
+    <div className="flex gap-1" aria-hidden>
+      {[1, 2, 3, 4, 5].map((i) => {
+        const fill = Math.min(1, Math.max(0, v - (i - 1)))
+        return (
+          <div
+            key={i}
+            className="relative h-5 w-5 shrink-0 text-[20px] leading-none"
+          >
+            <span className="absolute left-0 top-0 text-[#e2e8f0]">★</span>
+            <div
+              className="absolute left-0 top-0 h-full overflow-hidden text-[#e1f800]"
+              style={{ width: `${fill * 100}%` }}
+            >
+              <span className="inline-block w-5">★</span>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function contentTypeLabel(contentType: ContentType): string {
+  return { ARTICLE: '아티클', VIDEO: '비디오', SEMINAR: '세미나' }[contentType] ?? contentType
 }
 
 export default function MypageRatingsPage() {
@@ -73,7 +105,9 @@ export default function MypageRatingsPage() {
       .finally(() => {
         if (!cancelled) setLoading(false)
       })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [page, sortParam])
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
@@ -91,11 +125,7 @@ export default function MypageRatingsPage() {
       <aside className="w-full shrink-0 rounded-2xl bg-[#f8fafc] p-8 lg:w-[384px]">
         <div className="flex flex-col items-center gap-8">
           <p className="text-[60px] font-black leading-[60px] text-[#0f172a]">{avgRating}</p>
-          <div className="flex gap-1" aria-hidden>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <span key={i} className="text-[#0f172a]">★</span>
-            ))}
-          </div>
+          <AverageStars value={avgRating} />
           <p className="text-center text-[16px] leading-6 text-[#64748b]">
             총 <span className="font-bold text-[#0f172a]">{totalCount}개</span>의 별점
           </p>
@@ -122,7 +152,10 @@ export default function MypageRatingsPage() {
         <div className="flex justify-end gap-4">
           <button
             type="button"
-            onClick={() => setSort('latest')}
+            onClick={() => {
+              setSort('latest')
+              setPage(1)
+            }}
             className={`border-b-2 pb-0.5 text-[14px] font-semibold leading-5 ${
               sort === 'latest' ? 'border-[#0f172a] text-[#0f172a]' : 'border-transparent text-[#64748b]'
             }`}
@@ -131,7 +164,10 @@ export default function MypageRatingsPage() {
           </button>
           <button
             type="button"
-            onClick={() => setSort('high')}
+            onClick={() => {
+              setSort('high')
+              setPage(1)
+            }}
             className={`border-b-2 pb-0.5 text-[14px] font-semibold leading-5 ${
               sort === 'high' ? 'border-[#0f172a] text-[#0f172a]' : 'border-transparent text-[#64748b]'
             }`}
@@ -140,7 +176,10 @@ export default function MypageRatingsPage() {
           </button>
           <button
             type="button"
-            onClick={() => setSort('low')}
+            onClick={() => {
+              setSort('low')
+              setPage(1)
+            }}
             className={`border-b-2 pb-0.5 text-[14px] font-semibold leading-5 ${
               sort === 'low' ? 'border-[#0f172a] text-[#0f172a]' : 'border-transparent text-[#64748b]'
             }`}
@@ -164,18 +203,42 @@ export default function MypageRatingsPage() {
               {list.map((item) => (
                 <article
                   key={item.publicUserActivityLogId}
-                  className="rounded-2xl border border-[#f1f5f9] bg-white p-6 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]"
+                  className="rounded-2xl border border-[#f1f5f9] bg-white p-[25px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]"
                 >
                   <div className="flex gap-6">
-                    <div className="aspect-[3/2] w-[128px] shrink-0 overflow-hidden rounded-lg bg-[#f1f5f9]" />
+                    <div className="relative aspect-[4/3] w-[160px] shrink-0 overflow-hidden rounded-lg bg-[#f1f5f9]">
+                      {item.thumbnail ? (
+                        <Image
+                          src={item.thumbnail}
+                          alt=""
+                          fill
+                          className="object-cover"
+                          sizes="160px"
+                          unoptimized
+                        />
+                      ) : null}
+                    </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h3 className="text-[18px] font-bold leading-7 text-[#0f172a]">
+                        <div className="min-w-0">
+                          <p className="text-[14px] leading-5 text-[#64748b]">
+                            {contentTypeLabel(item.contentType)}
+                          </p>
+                          {item.category ? (
+                            <p className="mt-1 text-[14px] leading-5 text-[#64748b]">
+                              {item.category}
+                            </p>
+                          ) : null}
+                          <h3 className="mt-2 text-[18px] font-bold leading-7 text-[#0f172a]">
                             {item.title || item.contentCode}
                           </h3>
-                          <div className="mt-1 flex items-center gap-2">
-                            <span className="text-[#0f172a]">
+                          {(item.subtitle ?? '').trim() ? (
+                            <p className="mt-2 line-clamp-2 text-[14px] leading-5 text-[#64748b]">
+                              {(item.subtitle ?? '').trim()}
+                            </p>
+                          ) : null}
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="text-[#0f172a]" aria-label={`${item.ratingValue ?? 0}점`}>
                               {stars(item.ratingValue ?? 0)}
                             </span>
                             <span className="text-[12px] leading-4 text-[#94a3b8]">
@@ -183,12 +246,18 @@ export default function MypageRatingsPage() {
                             </span>
                           </div>
                         </div>
-                        <Link
-                          href={contentHref(item.contentType, item.contentCode)}
-                          className="shrink-0 rounded bg-[#e1f800] px-2 py-1 text-[12px] font-bold text-black"
-                        >
-                          콘텐츠 보기
-                        </Link>
+                        {item.contentMissing ? (
+                          <span className="shrink-0 rounded bg-[#e2e8f0] px-2 py-1 text-[12px] font-bold text-[#64748b]">
+                            콘텐츠 보기
+                          </span>
+                        ) : (
+                          <Link
+                            href={contentHref(item.contentType, item.contentCode)}
+                            className="shrink-0 rounded bg-[#e1f800] px-2 py-1 text-[12px] font-bold text-black"
+                          >
+                            콘텐츠 보기
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -22,7 +22,7 @@
 |------------|----------------|------|
 | `/article/category` | `category` | 아티클 카테고리 (예: `?category=브랜딩`, `?category=서적`) |
 | `/notice` | `id` | 공지 상세 (예: `?id=1`) |
-| `/inquiry` | `id` | 1:1 문의 상세 (예: `?id=1`) |
+| `/mypage/support` | — | 1:1 문의 목록(마이페이지). 상세는 `/mypage/support/[id]`, 작성은 `/mypage/support/write`. 예전 `/inquiry`·`/inquiry?id=`는 리다이렉트 |
 | `/video` | (추가 시) `category`, `sort`, `page` 등 | 비디오 필터/정렬/페이지는 쿼리로 확장 |
 | `/seminar` | (추가 시) `category`, `sort`, `page` 등 | 세미나 필터/정렬/페이지는 쿼리로 확장 |
 | `/article` | (추가 시) | 아티클 메인에서 필터/정렬 추가 시 쿼리 사용 |

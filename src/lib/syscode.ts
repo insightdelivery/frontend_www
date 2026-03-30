@@ -37,6 +37,9 @@ export const DISPLAY_EVENT_TYPE_PARENT = 'SYS26320B003'
 /** Display Event — contentTypeCode */
 export const DISPLAY_CONTENT_TYPE_PARENT = 'SYS26320B009'
 
+/** 1:1 문의 유형 부모 코드 (userSupport.md — inquiry_inquiry.inquiry_type에 sysCodeSid 저장) */
+export const INQUIRY_TYPE_PARENT = 'SYS26330B001'
+
 /** 로그인 시 및 접속 시 공통으로 로드하는 부모 코드 ID 목록 */
 
 export const SYSCODE_PARENT_IDS = [
@@ -53,6 +56,7 @@ export const SYSCODE_PARENT_IDS = [
   'SYS26209B015', // 아티클 공개범위설정
   'SYS26312B001', // 아티클 하이라이트
   SYSCODE_SITE_COPY_PARENT, // 저작권 문구 B003~B005 (localStorage.md)
+  INQUIRY_TYPE_PARENT, // 1:1 문의 유형
 ] as const
 
 /** 지역: 국내 = SYS26127B018, 해외 = SYS26127B019 */
@@ -256,12 +260,12 @@ export const ensureSysCodeLoaded = async (): Promise<void> => {
   }
 }
 
-/** 캐시 우선으로 syscode 조회 (없으면 API 호출 후 캐시) */
+/** 캐시 우선으로 syscode 조회 (없으면 API 호출 후 캐시). 빈 배열([])도 캐시 히트로 본다. */
 export const getSysCode = async (sysCodeGubn: string): Promise<SysCodeItem[]> => {
   const cached = getSysCodeFromCache(sysCodeGubn)
-  if (cached?.length) return cached
+  if (cached !== null) return cached
   const apiData = await fetchSysCodeFromAPI(sysCodeGubn)
-  if (apiData.length > 0) setSysCodeToCache(sysCodeGubn, apiData)
+  setSysCodeToCache(sysCodeGubn, apiData)
   return apiData
 }
 

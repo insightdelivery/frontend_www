@@ -42,6 +42,6 @@ export const MYPAGE_TABS = [
     label: '1:1 문의',
     path: '/mypage/support',
     title: '1:1 문의',
-    subtitle: '궁금한 점은 문의를 남겨주세요.',
+    subtitle: '내 문의 목록을 보고, 새 문의를 등록할 수 있어요.',
   },
 ] as const

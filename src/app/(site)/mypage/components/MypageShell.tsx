@@ -5,11 +5,12 @@ import { usePathname } from 'next/navigation'
 import { MYPAGE_TABS } from './MypageTabs'
 import { ChevronRight } from 'lucide-react'
 
-/** 현재 pathname에 해당하는 탭이 활성인지 (회원정보는 /mypage, /mypage/info 모두 활성) */
+/** 현재 pathname에 해당하는 탭이 활성인지 (회원정보는 /mypage, /mypage/info 모두 활성, 1:1 문의는 /mypage/support 하위 전부) */
 function isTabActive(pathname: string | null, tabPath: string): boolean {
   const p = (pathname ?? '').replace(/\/$/, '')
   if (p === tabPath) return true
   if (tabPath === '/mypage/info' && (p === '/mypage' || p === '/mypage/info')) return true
+  if (tabPath === '/mypage/support' && p.startsWith('/mypage/support')) return true
   return false
 }
 

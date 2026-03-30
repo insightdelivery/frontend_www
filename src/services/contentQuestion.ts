@@ -75,3 +75,41 @@ export async function deleteQuestionAnswer(answerId: number): Promise<{ question
   const { data } = await api.delete(`/api/content/question-answer/${answerId}`)
   return unwrapResult(data)
 }
+
+/** 마이페이지 적용질문 — 답변한 콘텐츠 목록 (GET /api/content/my-answered-contents) */
+export interface MyAnsweredContentItem {
+  contentType: ContentType
+  contentTypeLabel: string
+  contentId: number
+  categoryName: string | null
+  title: string
+  subtitle?: string | null
+  thumbnailUrl: string | null
+  lastAnsweredAt: string | null
+  answerCount: number
+  contentUrl: string
+}
+
+export interface MyAnsweredContentsListResult {
+  list: MyAnsweredContentItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export async function getMyAnsweredContents(params?: {
+  page?: number
+  page_size?: number
+}): Promise<MyAnsweredContentsListResult> {
+  const { data } = await api.get('/api/content/my-answered-contents', {
+    params: {
+      page: params?.page ?? 1,
+      page_size: params?.page_size ?? 9,
+    },
+  })
+  const out = unwrapResult<MyAnsweredContentsListResult>(data)
+  if (out == null || !Array.isArray(out.list)) {
+    throw new Error('목록 형식이 올바르지 않습니다.')
+  }
+  return out
+}

@@ -41,10 +41,14 @@ export interface FAQListResponse {
 /** 1:1 문의 상태 */
 export type InquiryStatus = 'waiting' | 'answered'
 
+/** 문의 유형 — DB에는 sysCodeSid (부모 SYS26330B001 하위) */
+export type InquiryTypeCode = string
+
 /** 1:1 문의 목록 항목 */
 export interface InquiryListItem {
   id: number
   title: string
+  inquiry_type: InquiryTypeCode
   status: InquiryStatus
   created_at: string
 }
@@ -52,6 +56,8 @@ export interface InquiryListItem {
 /** 1:1 문의 상세 */
 export interface InquiryDetail extends InquiryListItem {
   content: string
+  /** 첨부 파일 절대 URL (없으면 null) */
+  attachment: string | null
   answer: string | null
 }
 

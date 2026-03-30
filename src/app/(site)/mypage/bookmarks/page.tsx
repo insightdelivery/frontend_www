@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { getMeBookmarks, type ActivityLogItem, type ContentType } from '@/services/libraryUseractivity'
 
@@ -65,6 +66,13 @@ export default function MypageBookmarksPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
+  const displayedList = useMemo(() => {
+    if (sort === 'latest') return list
+    return [...list].sort((a, b) =>
+      (a.title || a.contentCode || '').localeCompare(b.title || b.contentCode || '', 'ko')
+    )
+  }, [list, sort])
+
   return (
     <div className="flex flex-col">
       <div className="flex justify-end gap-2 pb-4">
@@ -97,34 +105,56 @@ export default function MypageBookmarksPage() {
       ) : (
         <>
           <div className="divide-y divide-[#e2e8f0]">
-            {list.map((item) => (
+            {displayedList.map((item) => (
               <div
                 key={item.publicUserActivityLogId}
                 className="flex flex-wrap items-center gap-6 py-6 sm:flex-nowrap"
               >
                 <div className="flex min-w-0 flex-1 gap-6">
-                  <div className="aspect-[3/2] w-[192px] shrink-0 overflow-hidden rounded-lg bg-[#e2e8f0]" />
+                  <div className="relative h-[144px] w-[192px] shrink-0 overflow-hidden rounded-lg bg-[#e2e8f0]">
+                    {item.thumbnail ? (
+                      <Image
+                        src={item.thumbnail}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        sizes="192px"
+                        unoptimized
+                      />
+                    ) : null}
+                  </div>
                   <div className="flex min-w-0 flex-1 flex-col justify-center">
                     <p className="text-[14px] leading-5 text-[#64748b]">
                       {contentTypeLabel(item.contentType)}
                     </p>
-                    {item.category && (
+                    {item.category ? (
                       <p className="mt-1 text-[14px] leading-5 text-[#64748b]">{item.category}</p>
-                    )}
+                    ) : null}
                     <h3 className="mt-2 text-[18px] font-bold leading-7 text-[#0f172a]">
                       {item.title || item.contentCode}
                     </h3>
+                    {(item.subtitle ?? '').trim() ? (
+                      <p className="mt-2 line-clamp-2 text-[14px] font-normal leading-5 text-[#64748b]">
+                        {(item.subtitle ?? '').trim()}
+                      </p>
+                    ) : null}
                     <p className="mt-3 text-[14px] leading-5 text-[#94a3b8]">
                       북마크 날짜 : {formatDate(item.regDateTime)}
                     </p>
                   </div>
                 </div>
-                <Link
-                  href={contentHref(item.contentType, item.contentCode)}
-                  className="shrink-0 rounded-lg bg-[#e1f800] px-6 py-3 text-[16px] font-medium leading-6 text-black"
-                >
-                  콘텐츠 보러가기
-                </Link>
+                {item.contentMissing ? (
+                  <span className="shrink-0 rounded-lg bg-[#e2e8f0] px-6 py-3 text-[16px] font-medium leading-6 text-[#64748b]">
+                    콘텐츠 보러가기
+                  </span>
+                ) : (
+                  <Link
+                    href={contentHref(item.contentType, item.contentCode)}
+                    className="shrink-0 rounded-lg bg-[#e1f800] px-6 py-3 text-[16px] font-medium leading-6 text-black"
+                  >
+                    콘텐츠 보러가기
+                  </Link>
+                )}
               </div>
             ))}
           </div>

@@ -6,6 +6,7 @@ import type {
   FAQItem,
   InquiryListResponse,
   InquiryDetail,
+  InquiryTypeCode,
 } from '@/types/board'
 
 const BASE = {
@@ -71,9 +72,27 @@ export async function fetchInquiry(id: number): Promise<InquiryDetail> {
   return unwrapResult<InquiryDetail>(data)
 }
 
-/** 문의 작성 (로그인 필수) */
-export async function createInquiry(body: { title: string; content: string }): Promise<InquiryDetail> {
-  const { data } = await api.post(BASE.inquiries, body)
+/** 문의 작성 (로그인 필수, 첨부 있으면 multipart) */
+export async function createInquiry(body: {
+  title: string
+  content: string
+  inquiry_type: InquiryTypeCode
+  attachment?: File | null
+}): Promise<InquiryDetail> {
+  if (body.attachment) {
+    const fd = new FormData()
+    fd.append('title', body.title)
+    fd.append('content', body.content)
+    fd.append('inquiry_type', body.inquiry_type)
+    fd.append('attachment', body.attachment)
+    const { data } = await api.post(BASE.inquiries, fd)
+    return unwrapResult<InquiryDetail>(data)
+  }
+  const { data } = await api.post(BASE.inquiries, {
+    title: body.title,
+    content: body.content,
+    inquiry_type: body.inquiry_type,
+  })
   return unwrapResult<InquiryDetail>(data)
 }
 
