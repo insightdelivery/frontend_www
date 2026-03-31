@@ -3,6 +3,7 @@ export interface ArticleListItem {
   id: number
   title: string
   subtitle: string | null
+  sermonHighlight?: string | null
   thumbnail: string | null
   category: string
   author: string
@@ -33,6 +34,7 @@ export interface ArticleDetail {
   title: string
   subtitle: string | null
   content: string
+  sermonHighlight?: string | null
   thumbnail: string | null
   category: string
   author: string

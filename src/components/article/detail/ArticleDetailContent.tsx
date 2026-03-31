@@ -10,7 +10,8 @@ import { HOMEPAGE_DOC_DEFAULT_TITLES } from '@/constants/homepageDoc'
 import { sanitizeHomepageHtml } from '@/lib/sanitizeHomepageHtml'
 import type { HomepageDocPayload } from '@/types/homepageDoc'
 import AppliedQuestionsSection from '@/components/content-detail/AppliedQuestionsSection'
-import { postView, postRating, postBookmark, deleteBookmark } from '@/services/libraryUseractivity'
+import CommentSection from '@/components/comments/CommentSection'
+import { postView, postRating, postBookmark, deleteBookmark, getMeRatings } from '@/services/libraryUseractivity'
 import ArticleShareModal from '@/components/article/detail/ArticleShareModal'
 import ArticleGuestShareModal from '@/components/article/detail/ArticleGuestShareModal'
 import ArticleEntitlementShareModal from '@/components/article/detail/ArticleEntitlementShareModal'
@@ -369,6 +370,50 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
     [id, idValid, status]
   )
 
+  useEffect(() => {
+    if (!idValid || !authenticated) {
+      setRatingValue(null)
+      return
+    }
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const pageSize = 50
+        let page = 1
+        let matched: number | null = null
+
+        while (page <= 20) {
+          const result = await getMeRatings({
+            page,
+            page_size: pageSize,
+            sort: 'regDateTime_desc',
+          })
+          const found = (result.list ?? []).find(
+            (item) =>
+              item.contentType === 'ARTICLE' &&
+              String(item.contentCode) === id &&
+              typeof item.ratingValue === 'number'
+          )
+          if (found) {
+            matched = found.ratingValue ?? null
+            break
+          }
+          if (!result.list?.length || page * pageSize >= (result.total ?? 0)) break
+          page += 1
+        }
+
+        if (!cancelled) setRatingValue(matched)
+      } catch {
+        if (!cancelled) setRatingValue(null)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [id, idValid, authenticated])
+
   // §2.2 id 없으면/숫자 검증 실패 시 Not Found (detail.md)
   if (!idValid) {
     return (
@@ -438,6 +483,8 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
   const displayTags = (article.tags ?? []).map((t) => formatArticleTagLabel(t)).filter(Boolean)
   const authorAvatarSrc =
     (article.authorProfileImage && article.authorProfileImage.trim()) || '/editorDefault.png'
+  const showPreviewFade = article.contentTruncated && !shareAsMember
+  const sermonHighlightText = article.sermonHighlight?.trim() ?? ''
 
   return (
     <div className={`${DETAIL_MAX} px-4 sm:px-6 md:px-[54px] pt-6 pb-20`}>
@@ -535,7 +582,7 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
         </div>
       </header>
 
-      <div ref={contentRootRef} className="relative">
+      <div ref={contentRootRef} className={`relative ${showPreviewFade ? 'overflow-hidden' : ''}`}>
         <HighlightRenderer
           contentHtml={contentWithLineBreaks(article.content || '')}
           className={ARTICLE_DETAIL_PROSE_CLASS}
@@ -556,17 +603,51 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
             if (payloads.length) await highlightContext.create(payloads)
           }}
         />
+        {showPreviewFade ? (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white via-white/80 to-transparent"
+          />
+        ) : null}
       </div>
 
-      {article.contentTruncated && !shareAsMember && (
-        <div className="mt-4 mb-2 p-4 rounded-xl border border-amber-200 bg-amber-50/90 text-[14px] leading-snug text-[#0f172a]">
-          미리보기만 표시 중입니다. 회원 로그인 시{' '}
-          <span className="font-semibold">전체 본문</span>을 읽을 수 있습니다.{' '}
-          <Link href="/login" className="font-bold text-[#0f172a] underline underline-offset-2">
-            로그인
-          </Link>
-          후 페이지를 새로고침해 주세요.
-        </div>
+      {sermonHighlightText ? (
+        <section className="mt-8 rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-6">
+          <p className="mb-2 text-[14px] font-bold text-[#0f172a]">말씀 돋보기</p>
+          <p className="whitespace-pre-wrap break-words text-[16px] leading-7 text-[#334155]">
+            {sermonHighlightText}
+          </p>
+        </section>
+      ) : null}
+
+      {showPreviewFade && (
+        <section className="mt-8 mb-2 border-t border-[#e2e8f0] pt-12 text-center">
+          <p className="text-[28px] leading-[1.25] font-extrabold tracking-[-0.02em] text-[#0f172a]">
+            지금 인디에 가입하시고
+            <br />
+            이 글을 무료로 읽어보세요.
+          </p>
+          <div className="mt-8 mx-auto w-full max-w-[520px] space-y-3">
+            <Link
+              href="/register"
+              className="flex h-14 w-full items-center justify-center border border-[#d1d5db] bg-white text-[18px] md:text-[20px] font-bold text-[#111827] transition hover:bg-[#f8fafc]"
+            >
+              무료 계정 만들기
+            </Link>
+            <Link
+              href="/register"
+              className="flex h-14 w-full items-center justify-center bg-[#fee500] text-[18px] md:text-[20px] font-bold text-[#111827] transition hover:brightness-95"
+            >
+              카카오로 무료 계정 만들기
+            </Link>
+          </div>
+          <p className="mt-8 text-[18px] md:text-[20px] text-[#6b7280]">
+            이미 계정이 있으신가요?{' '}
+            <Link href="/login" className="font-bold text-[#111827] underline underline-offset-2">
+              로그인하기
+            </Link>
+          </p>
+        </section>
       )}
 
       {articleCopyright != null && (
@@ -626,6 +707,13 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
           setShareToast(true)
           setTimeout(() => setShareToast(false), 2000)
         }}
+      />
+
+      <CommentSection
+        className="mb-12"
+        contentType="ARTICLE"
+        contentId={article.id}
+        allowComment={Boolean((article as unknown as { allowComment?: boolean }).allowComment)}
       />
 
       <AppliedQuestionsSection contentType="ARTICLE" contentId={article.id} className="mb-12">

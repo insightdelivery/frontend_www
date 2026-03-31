@@ -46,7 +46,7 @@ const resolveRequestPath = (config: InternalAxiosRequestConfig): string => {
 
 const isPublicBoard = (url?: string) => {
   const path = pathOnly(url)
-  return /^\/api\/(notices|faqs|articles|content|events|videos|search|homepage-docs|library)(\/|$)/.test(
+  return /^\/api\/(notices|faqs|articles|content|events|videos|search|homepage-docs|library|comments)(\/|$)/.test(
     path
   )
 }

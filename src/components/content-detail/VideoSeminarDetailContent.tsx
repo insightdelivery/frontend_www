@@ -14,6 +14,7 @@ import ArticleShareModal from '@/components/article/detail/ArticleShareModal'
 import ArticleGuestShareModal from '@/components/article/detail/ArticleGuestShareModal'
 import ArticleEntitlementShareModal from '@/components/article/detail/ArticleEntitlementShareModal'
 import AppliedQuestionsSection from '@/components/content-detail/AppliedQuestionsSection'
+import CommentSection from '@/components/comments/CommentSection'
 import type { SysCodeItem } from '@/lib/syscode'
 import {
   getSysCode,
@@ -422,6 +423,13 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
           setShareToast(true)
           setTimeout(() => setShareToast(false), 2000)
         }}
+      />
+
+      <CommentSection
+        className="mb-12"
+        contentType={apiContentType}
+        contentId={detail.id}
+        allowComment={Boolean((detail as unknown as { allowComment?: boolean }).allowComment)}
       />
 
       <AppliedQuestionsSection contentType={apiContentType} contentId={detail.id} className="mb-12">
