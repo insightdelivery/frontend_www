@@ -106,6 +106,7 @@ export default function Footer() {
               <li><Link href="/mypage/support" className="hover:text-gray-900 transition-colors">1:1 문의</Link></li>
               <li><Link href="/terms" className="hover:text-gray-900 transition-colors">이용약관</Link></li>
               <li><Link href="/privacy" className="hover:text-gray-900 transition-colors">개인정보처리방침</Link></li>
+              <li><Link href="/membership/checkout" className="hover:text-gray-900 transition-colors">결제</Link></li>
             </ul>
           </div>
         </div>
