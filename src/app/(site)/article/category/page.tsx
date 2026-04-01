@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { getSysCode, getSysCodeName, ARTICLE_CATEGORY_PARENT } from '@/lib/syscode'
 import type { SysCodeItem } from '@/lib/syscode'
 import { fetchArticleList } from '@/services/article'
@@ -10,6 +10,7 @@ import { fetchArticleRankingShare } from '@/services/libraryRanking'
 import type { ArticleListItem } from '@/types/article'
 import { ArticleCard } from '@/components/article/ArticleCard'
 import { articleCardBadges, sharedTopIdsFromRankingList } from '@/components/article/articleBadges'
+import WwwPagination from '@/components/common/WwwPagination'
 
 const SORT_OPTIONS = [
   { value: 'latest' as const, label: '최신순' },
@@ -32,7 +33,9 @@ function getGradient(index: number) {
 function ArticleCategoryContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const categorySid = searchParams.get('category') ?? ''
+  const rawCategorySid = searchParams.get('category') ?? ''
+  const isAllSelected = rawCategorySid.toLowerCase() === 'all'
+  const categorySid = isAllSelected ? '' : rawCategorySid
 
   const [categories, setCategories] = useState<SysCodeItem[]>([])
   const [categoriesLoading, setCategoriesLoading] = useState(true)
@@ -114,13 +117,15 @@ function ArticleCategoryContent() {
     return () => document.removeEventListener('click', handleClickOutside)
   }, [])
 
-  const categoryName = categorySid
-    ? getSysCodeName(categories, categorySid)
-    : '아티클'
+  const categoryName = isAllSelected ? '전체' : (categorySid ? getSysCodeName(categories, categorySid) : '아티클')
 
   const handleSelectCategory = (sid: string) => {
     setCategoryDropdownOpen(false)
     setCurrentPage(1)
+    if (sid === 'all') {
+      router.push('/article/category?category=all')
+      return
+    }
     router.push(`/article/category?category=${encodeURIComponent(sid)}`)
   }
 
@@ -148,6 +153,13 @@ function ArticleCategoryContent() {
                 </button>
                 {categoryDropdownOpen && (
                   <div className="absolute left-0 top-full z-20 mt-1 min-w-[160px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectCategory('all')}
+                      className={`block w-full px-4 py-2.5 text-left text-[13px] hover:bg-gray-50 ${isAllSelected ? 'font-bold text-black bg-neon-yellow/20' : 'text-gray-700'}`}
+                    >
+                      전체
+                    </button>
                     {categories.map((item) => (
                       <button
                         key={item.sysCodeSid}
@@ -213,37 +225,8 @@ function ArticleCategoryContent() {
           </section>
         )}
 
-        {!articlesLoading && totalPages > 1 && (
-          <div className="mt-10 flex items-center justify-center gap-1">
-            <button
-              type="button"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="rounded-lg p-2 hover:bg-gray-100 disabled:opacity-50"
-              disabled={currentPage === 1}
-              aria-label="이전 페이지"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setCurrentPage(n)}
-                className={`h-9 min-w-[36px] rounded-lg text-[14px] font-bold transition-colors ${currentPage === n ? 'bg-neon-yellow text-black' : 'hover:bg-gray-100'}`}
-              >
-                {n}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="rounded-lg p-2 hover:bg-gray-100 disabled:opacity-50"
-              disabled={currentPage === totalPages}
-              aria-label="다음 페이지"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </div>
+        {!articlesLoading && (
+          <WwwPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         )}
       </div>
     </main>

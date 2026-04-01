@@ -1,5 +1,9 @@
+'use client'
+
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Facebook, Instagram, Youtube, BookOpen } from 'lucide-react'
+import { fetchHomepageDocPublic } from '@/services/homepageDoc'
 
 const SNS_LINKS = [
   { href: 'https://www.facebook.com/indemgz/?locale=ko_KR', label: 'Facebook', Icon: Facebook },
@@ -9,6 +13,37 @@ const SNS_LINKS = [
 ] as const
 
 export default function Footer() {
+  const [externalLinks, setExternalLinks] = useState<{ recruitUrl: string; partnershipUrl: string }>({
+    recruitUrl: '',
+    partnershipUrl: '',
+  })
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const doc = await fetchHomepageDocPublic('external_links')
+        if (cancelled || !doc?.bodyHtml) return
+        const parsed = JSON.parse(doc.bodyHtml) as {
+          recruitUrl?: string
+          partnershipUrl?: string
+        }
+        setExternalLinks({
+          recruitUrl: typeof parsed.recruitUrl === 'string' ? parsed.recruitUrl : '',
+          partnershipUrl: typeof parsed.partnershipUrl === 'string' ? parsed.partnershipUrl : '',
+        })
+      } catch {
+        // ignore
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const recruitHref = useMemo(() => externalLinks.recruitUrl.trim(), [externalLinks.recruitUrl])
+  const partnershipHref = useMemo(() => externalLinks.partnershipUrl.trim(), [externalLinks.partnershipUrl])
+
   return (
     <footer className="mt-8 sm:mt-10 bg-[#F8F8F8]">
       <div className="mx-auto max-w-[1220px] px-4 sm:px-6 md:px-8 py-10 sm:py-16 md:py-20">
@@ -40,8 +75,24 @@ export default function Footer() {
             <p className="text-[12px] font-extrabold text-gray-700">소개</p>
             <ul className="mt-4 sm:mt-5 space-y-2 text-[12px] text-gray-600">
               <li><Link href="/about/companyInfo" className="hover:text-gray-900 transition-colors">인디소개</Link></li>
-              <li><Link href="/" className="hover:text-gray-900 transition-colors">인재 채용</Link></li>
-              <li><Link href="/" className="hover:text-gray-900 transition-colors">광고 및 협업 문의</Link></li>
+              <li>
+                {recruitHref ? (
+                  <a href={recruitHref} target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
+                    인재채용
+                  </a>
+                ) : (
+                  <span className="text-gray-400">인재채용</span>
+                )}
+              </li>
+              <li>
+                {partnershipHref ? (
+                  <a href={partnershipHref} target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
+                    광고 및 협업 문의
+                  </a>
+                ) : (
+                  <span className="text-gray-400">광고 및 협업 문의</span>
+                )}
+              </li>
               <li><Link href="/" className="hover:text-gray-900 transition-colors">협력 업체</Link></li>
             </ul>
           </div>

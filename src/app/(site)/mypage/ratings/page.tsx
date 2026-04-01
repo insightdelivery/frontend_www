@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getMeRatings, type ActivityLogItem, type ContentType } from '@/services/libraryUseractivity'
+import WwwPagination from '@/components/common/WwwPagination'
 
 /** 리스트는 페이지당 최대 7건 (userStarScore.md) */
 const PAGE_SIZE = 7
@@ -265,46 +266,7 @@ export default function MypageRatingsPage() {
               ))}
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e2e8f0] disabled:opacity-50"
-                  aria-label="이전"
-                >
-                  ‹
-                </button>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const p = page <= 3 ? i + 1 : Math.max(1, page - 2 + i)
-                  if (p > totalPages) return null
-                  return (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setPage(p)}
-                      className={`flex h-9 w-9 items-center justify-center rounded-lg text-[16px] ${
-                        p === page
-                          ? 'bg-[#e1f800] font-bold text-[#0f172a]'
-                          : 'border border-[#e2e8f0] font-normal text-[#475569]'
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  )
-                })}
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e2e8f0] disabled:opacity-50"
-                  aria-label="다음"
-                >
-                  ›
-                </button>
-              </div>
-            )}
+            <WwwPagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
           </>
         )}
       </div>

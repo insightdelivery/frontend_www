@@ -8,6 +8,7 @@ import {
   getMyAnsweredContents,
   type MyAnsweredContentItem,
 } from '@/services/contentQuestion'
+import WwwPagination from '@/components/common/WwwPagination'
 
 const PAGE_SIZE = 9
 
@@ -142,47 +143,7 @@ export default function MypageAppliedQuestionsPage() {
             ))}
           </div>
 
-          {totalPages > 1 && (
-            <div className="mt-20 flex justify-center gap-2 pb-20">
-              <button
-                type="button"
-                onClick={() => goPage(page - 1)}
-                disabled={page <= 1 || loading}
-                className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#e2e8f0] disabled:opacity-50"
-                aria-label="이전"
-              >
-                <span className="text-[#475569]">‹</span>
-              </button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const p = page <= 3 ? i + 1 : Math.max(1, page - 2 + i)
-                if (p > totalPages) return null
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => goPage(p)}
-                    disabled={loading}
-                    className={`flex h-10 w-10 items-center justify-center rounded-lg text-[16px] ${
-                      p === page
-                        ? 'bg-[#e1f800] font-bold text-black'
-                        : 'border border-transparent font-medium text-[#475569]'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                )
-              })}
-              <button
-                type="button"
-                onClick={() => goPage(page + 1)}
-                disabled={page >= totalPages || loading}
-                className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#e2e8f0] disabled:opacity-50"
-                aria-label="다음"
-              >
-                <span className="text-[#475569]">›</span>
-              </button>
-            </div>
-          )}
+          <WwwPagination currentPage={page} totalPages={totalPages} onPageChange={goPage} className="mt-20 pb-20" />
         </>
       )}
     </div>

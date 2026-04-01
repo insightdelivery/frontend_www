@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import HomeHeroCarousel from '@/components/home/HomeHeroCarousel'
 import { fetchPublicVideoList } from '@/services/video'
 import type { PublicVideoListItem } from '@/types/video'
@@ -14,6 +14,7 @@ import {
   SEMINAR_CATEGORY_PARENT,
   VIDEO_CATEGORY_PARENT,
 } from '@/lib/syscode'
+import WwwPagination from '@/components/common/WwwPagination'
 
 const PAGE_SIZE = 12
 
@@ -141,17 +142,6 @@ export default function PublicVideoSeminarListPage({
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const sortLabel = SORT_OPTIONS.find((o) => o.api === sortApi)?.label ?? '최신'
 
-  const pageNumbers = useMemo(() => {
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1)
-    }
-    const window: number[] = []
-    const start = Math.max(1, page - 2)
-    const end = Math.min(totalPages, page + 2)
-    for (let i = start; i <= end; i++) window.push(i)
-    return window
-  }, [totalPages, page])
-
   return (
     <main className="bg-white text-black">
       <div className="mx-auto max-w-[1220px] px-4 py-6 sm:px-6 md:px-8 md:py-10">
@@ -272,53 +262,7 @@ export default function PublicVideoSeminarListPage({
         )}
 
         {!loading && !error && items.length > 0 ? (
-          <div className="mt-10 flex items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="rounded-lg border border-gray-200 p-2 hover:bg-gray-50 disabled:opacity-50"
-              disabled={page === 1}
-              aria-label="이전 페이지"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <div className="flex items-center gap-1">
-              {pageNumbers.map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setPage(n)}
-                  className={[
-                    'h-9 w-9 rounded-lg text-[14px] font-bold transition-colors',
-                    page === n ? 'bg-black text-white' : 'hover:bg-gray-100',
-                  ].join(' ')}
-                >
-                  {n}
-                </button>
-              ))}
-              {totalPages > 7 && page < totalPages - 2 ? (
-                <>
-                  <span className="px-1 text-gray-400">...</span>
-                  <button
-                    type="button"
-                    onClick={() => setPage(totalPages)}
-                    className="h-9 w-9 rounded-lg text-[14px] font-bold hover:bg-gray-100"
-                  >
-                    {totalPages}
-                  </button>
-                </>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="rounded-lg border border-gray-200 p-2 hover:bg-gray-50 disabled:opacity-50"
-              disabled={page === totalPages}
-              aria-label="다음 페이지"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </div>
+          <WwwPagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
         ) : null}
       </div>
     </main>

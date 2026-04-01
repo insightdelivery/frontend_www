@@ -18,6 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
+import WwwPagination from '@/components/common/WwwPagination'
 import { getAccessToken } from '@/services/auth'
 import {
   formatInquiryDate,
@@ -251,29 +252,7 @@ function MypageSupportInner() {
                   )}
                 </TableBody>
               </Table>
-              {totalPages > 1 && (
-                <div className="mt-4 flex items-center justify-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  >
-                    이전
-                  </Button>
-                  <span className="text-sm text-gray-600">
-                    {page} / {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    다음
-                  </Button>
-                </div>
-              )}
+              <WwwPagination currentPage={page} totalPages={totalPages} onPageChange={setPage} className="mt-4" />
             </>
           )}
         </CardContent>

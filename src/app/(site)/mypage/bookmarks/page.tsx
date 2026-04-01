@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getMeBookmarks, type ActivityLogItem, type ContentType } from '@/services/libraryUseractivity'
+import WwwPagination from '@/components/common/WwwPagination'
 
 const PAGE_SIZE = 10
 
@@ -159,46 +160,7 @@ export default function MypageBookmarksPage() {
             ))}
           </div>
 
-          {totalPages > 1 && (
-            <div className="mt-20 flex justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#e2e8f0] disabled:opacity-50"
-                aria-label="이전"
-              >
-                <span className="text-[#475569]">‹</span>
-              </button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const p = page <= 3 ? i + 1 : Math.max(1, page - 2 + i)
-                if (p > totalPages) return null
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setPage(p)}
-                    className={`flex h-10 w-10 items-center justify-center rounded-lg text-[16px] ${
-                      p === page
-                        ? 'bg-[#e1f800] font-bold text-black'
-                        : 'border border-transparent font-medium text-[#475569]'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                )
-              })}
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#e2e8f0] disabled:opacity-50"
-                aria-label="다음"
-              >
-                <span className="text-[#475569]">›</span>
-              </button>
-            </div>
-          )}
+          <WwwPagination currentPage={page} totalPages={totalPages} onPageChange={setPage} className="mt-20" />
         </>
       )}
     </div>

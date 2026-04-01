@@ -120,9 +120,17 @@ export function ArticleListContent() {
 
   return (
     <div className="mx-auto max-w-[1220px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
-      <h1 className="text-[28px] sm:text-[34px] md:text-[42px] font-black text-gray-900 mb-8 sm:mb-10">
-        아티클
-      </h1>
+      <div className="mb-8 sm:mb-10 flex items-center justify-between gap-3">
+        <h1 className="text-[28px] sm:text-[34px] md:text-[42px] font-black text-gray-900">
+          아티클
+        </h1>
+        <Link
+          href="/article/category?category=all"
+          className="shrink-0 text-[14px] sm:text-[15px] font-bold text-gray-700 hover:text-black underline underline-offset-4"
+        >
+          전체보기
+        </Link>
+      </div>
 
       <section>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
@@ -149,6 +157,12 @@ export function ArticleListContent() {
           아티클 카테고리
         </h2>
         <div className="flex flex-wrap gap-2 justify-center">
+          <Link
+            href="/article/category?category=all"
+            className="inline-flex px-4 py-2.5 rounded-full text-[13px] sm:text-[14px] font-bold text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+          >
+            전체
+          </Link>
           {categories.map((cat) => (
             <Link
               key={cat.sysCodeSid}

@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getSysCode, getSysCodeName, ARTICLE_CATEGORY_PARENT } from '@/lib/syscode'
 import type { SysCodeItem } from '@/lib/syscode'
 import { fetchArticleList } from '@/services/article'
@@ -11,6 +10,7 @@ import { fetchArticleRankingShare } from '@/services/libraryRanking'
 import type { ArticleListItem } from '@/types/article'
 import { ArticleCard } from '@/components/article/ArticleCard'
 import { articleCardBadges, sharedTopIdsFromRankingList } from '@/components/article/articleBadges'
+import WwwPagination from '@/components/common/WwwPagination'
 
 const PLACEHOLDER_GRADIENTS = [
   'bg-gradient-to-br from-amber-100 to-amber-600',
@@ -199,37 +199,8 @@ function ArticleEditorContent() {
           </section>
         )}
 
-        {!articlesLoading && totalPages > 1 && (
-          <div className="mt-10 flex items-center justify-center gap-1">
-            <button
-              type="button"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="rounded-lg p-2 hover:bg-gray-100 disabled:opacity-50"
-              disabled={currentPage === 1}
-              aria-label="이전 페이지"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setCurrentPage(n)}
-                className={`h-9 min-w-[36px] rounded-lg text-[14px] font-bold transition-colors ${currentPage === n ? 'bg-neon-yellow text-black' : 'hover:bg-gray-100'}`}
-              >
-                {n}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="rounded-lg p-2 hover:bg-gray-100 disabled:opacity-50"
-              disabled={currentPage === totalPages}
-              aria-label="다음 페이지"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </div>
+        {!articlesLoading && (
+          <WwwPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         )}
       </div>
     </main>
