@@ -425,37 +425,38 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
         }}
       />
 
+      <AppliedQuestionsSection contentType={apiContentType} contentId={detail.id} className="mb-12" />
+
+      <section className={`${COLORS.bgLight} mb-12 rounded-2xl border p-8 text-center ${COLORS.border}`}>
+        <h3 className={`mb-3 text-[20px] font-bold ${COLORS.text}`}>별점</h3>
+        <p className={`mb-3 text-[16px] font-bold ${COLORS.text}`}>콘텐츠가 도움이 되었나요?</p>
+        <div className="flex justify-center gap-2">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              type="button"
+              className="p-1 hover:opacity-70"
+              aria-label={`${n}점`}
+              onClick={() => void handleRatingClick(n)}
+            >
+              <Star
+                className={`h-6 w-6 ${
+                  ratingValue !== null && n <= ratingValue
+                    ? 'fill-amber-400 text-amber-400'
+                    : 'text-[#e2e8f0] hover:text-amber-400'
+                }`}
+              />
+            </button>
+          ))}
+        </div>
+      </section>
+
       <CommentSection
         className="mb-12"
         contentType={apiContentType}
         contentId={detail.id}
         allowComment={Boolean((detail as unknown as { allowComment?: boolean }).allowComment)}
       />
-
-      <AppliedQuestionsSection contentType={apiContentType} contentId={detail.id} className="mb-12">
-        <div className={`mt-8 border-t pt-10 text-center ${COLORS.border}`}>
-          <p className={`mb-3 text-[16px] font-bold ${COLORS.text}`}>콘텐츠가 도움이 되었나요?</p>
-          <div className="flex justify-center gap-2">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                type="button"
-                className="p-1 hover:opacity-70"
-                aria-label={`${n}점`}
-                onClick={() => void handleRatingClick(n)}
-              >
-                <Star
-                  className={`h-6 w-6 ${
-                    ratingValue !== null && n <= ratingValue
-                      ? 'fill-amber-400 text-amber-400'
-                      : 'text-[#e2e8f0] hover:text-amber-400'
-                  }`}
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-      </AppliedQuestionsSection>
 
       <section className="pt-8">
         <h2 className={`mb-8 text-[24px] font-bold tracking-[-0.6px] ${COLORS.text}`}>추천 콘텐츠</h2>

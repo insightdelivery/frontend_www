@@ -709,35 +709,36 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
         }}
       />
 
+      <AppliedQuestionsSection contentType="ARTICLE" contentId={article.id} className="mb-12" />
+
+      <section className={`${COLORS.bgLight} border ${COLORS.border} rounded-2xl p-8 mb-12 text-center`}>
+        <h3 className={`mb-3 font-bold text-[20px] ${COLORS.text}`}>별점</h3>
+        <p className={`mb-3 font-bold text-[16px] ${COLORS.text}`}>콘텐츠가 도움이 되었나요?</p>
+        <div className="flex justify-center gap-2">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              type="button"
+              className="p-1 hover:opacity-70"
+              aria-label={`${n}점`}
+              onClick={() => handleRatingClick(n)}
+            >
+              <Star
+                className={`h-6 w-6 ${
+                  ratingValue !== null && n <= ratingValue ? 'fill-amber-400 text-amber-400' : 'text-[#e2e8f0] hover:text-amber-400'
+                }`}
+              />
+            </button>
+          ))}
+        </div>
+      </section>
+
       <CommentSection
         className="mb-12"
         contentType="ARTICLE"
         contentId={article.id}
         allowComment={Boolean((article as unknown as { allowComment?: boolean }).allowComment)}
       />
-
-      <AppliedQuestionsSection contentType="ARTICLE" contentId={article.id} className="mb-12">
-        <div className="mt-8 border-t border-[#e2e8f0] pt-10 text-center">
-          <p className={`mb-3 font-bold text-[16px] ${COLORS.text}`}>콘텐츠가 도움이 되었나요?</p>
-          <div className="flex justify-center gap-2">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                type="button"
-                className="p-1 hover:opacity-70"
-                aria-label={`${n}점`}
-                onClick={() => handleRatingClick(n)}
-              >
-                <Star
-                  className={`h-6 w-6 ${
-                    ratingValue !== null && n <= ratingValue ? 'fill-amber-400 text-amber-400' : 'text-[#e2e8f0] hover:text-amber-400'
-                  }`}
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-      </AppliedQuestionsSection>
 
       {detailBlocksLoading ? (
         <>
