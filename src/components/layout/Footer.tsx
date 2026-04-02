@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Facebook, Instagram, Youtube, BookOpen } from 'lucide-react'
 import { fetchHomepageDocPublic } from '@/services/homepageDoc'
+import { siteShellMaxWidthClass } from '@/lib/siteLayoutWidth'
 
 const SNS_LINKS = [
   { href: 'https://www.facebook.com/indemgz/?locale=ko_KR', label: 'Facebook', Icon: Facebook },
@@ -13,6 +15,8 @@ const SNS_LINKS = [
 ] as const
 
 export default function Footer() {
+  const pathname = usePathname()
+  const shellMax = siteShellMaxWidthClass(pathname)
   const [externalLinks, setExternalLinks] = useState<{ recruitUrl: string; partnershipUrl: string }>({
     recruitUrl: '',
     partnershipUrl: '',
@@ -46,7 +50,7 @@ export default function Footer() {
 
   return (
     <footer className="mt-8 sm:mt-10 bg-[#F8F8F8]">
-      <div className="mx-auto max-w-[1220px] px-4 sm:px-6 md:px-8 py-10 sm:py-16 md:py-20">
+      <div className={`mx-auto ${shellMax} px-4 sm:px-6 md:px-8 py-10 sm:py-16 md:py-20`}>
         {/* Top Section - Three Columns */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
           {/* Left Column - Company Introduction */}

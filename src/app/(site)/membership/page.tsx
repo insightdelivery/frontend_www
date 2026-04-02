@@ -8,7 +8,7 @@ import PricingTable from './components/PricingTable'
 
 export default function MembershipPage() {
   return (
-    <main className="mx-auto max-w-[1200px] space-y-16 px-4 py-10">
+    <main className="mx-auto max-w-[900px] space-y-16 px-4 py-10">
       <Hero />
       <ContentPreview />
       <PricingTable />

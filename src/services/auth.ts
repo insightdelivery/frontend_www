@@ -74,6 +74,8 @@ export interface UserInfo {
   region_foreign?: string
   profile_completed: boolean
   email_verified?: boolean
+  /** 뉴스레터·이벤트/혜택 정보 수신 동의 */
+  newsletter_agree?: boolean
   joined_via?: 'LOCAL' | 'KAKAO' | 'NAVER' | 'GOOGLE'
   is_staff?: boolean
   created_at?: string

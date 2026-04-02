@@ -8,9 +8,11 @@ type HeaderSearchProps = {
   isOpen: boolean
   onClose: () => void
   onSearch?: (query: string) => void
+  /** Toolbar·MainBar와 동일 — `siteShellMaxWidthClass` */
+  shellMaxClass: string
 }
 
-export default function HeaderSearch({ isOpen, onClose, onSearch }: HeaderSearchProps) {
+export default function HeaderSearch({ isOpen, onClose, onSearch, shellMaxClass }: HeaderSearchProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
@@ -92,7 +94,7 @@ export default function HeaderSearch({ isOpen, onClose, onSearch }: HeaderSearch
       className={`w-full ${shellClasses}`}
     >
       <div ref={panelRef} className="w-full border-t border-black/10 bg-gray-100 text-black">
-        <div className="mx-auto w-full max-w-[1220px]">
+        <div className={`mx-auto w-full ${shellMaxClass}`}>
           <div className="px-6 py-4">
             <div className="flex items-center gap-2 rounded-full bg-white px-4 py-3 shadow-sm">
               <Search className="h-4 w-4 shrink-0 text-black/50" aria-hidden />

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Eye, EyeOff } from 'lucide-react'
@@ -28,6 +28,7 @@ const profileSchema = z.object({
   phone: z.string().min(1, '핸드폰 번호를 입력해주세요.'),
   name: z.string().min(1, '이름을 입력해주세요.'),
   nickname: z.string().min(1, '닉네임을 입력해주세요.'),
+  newsletter_agree: z.boolean(),
 }).refine((data) => !data.password || data.password.length >= 8, {
   message: '비밀번호는 8자 이상 입력해주세요.',
   path: ['password'],
@@ -65,6 +66,7 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
 
   const {
     register,
+    control,
     handleSubmit,
     watch,
     reset,
@@ -72,6 +74,9 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
     formState: { errors },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
+    defaultValues: {
+      newsletter_agree: false,
+    },
   })
 
   const watchedPhone = watch('phone')
@@ -102,6 +107,7 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
         phone: user.phone || '',
         name: user.name || '',
         nickname: user.nickname || '',
+        newsletter_agree: user.newsletter_agree ?? false,
       })
     },
     [reset],
@@ -163,6 +169,7 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
         region_type: null,
         region_domestic: null,
         region_foreign: null,
+        newsletter_agree: data.newsletter_agree,
         ...(joinedVia === 'LOCAL' && data.password?.trim()
           ? { password: data.password.trim() }
           : {}),
@@ -435,6 +442,27 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
           {errors.phone && (
             <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
           )}
+        </div>
+
+        <div className="pt-1">
+          <Controller
+            name="newsletter_agree"
+            control={control}
+            render={({ field }) => (
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                  onBlur={field.onBlur}
+                  className="mt-0.5 h-5 w-5 shrink-0 rounded border border-orange-300 bg-orange-50 text-orange-600 accent-orange-500 focus:ring-2 focus:ring-orange-200"
+                />
+                <span className="text-sm leading-snug text-gray-900">
+                  뉴스레터 및 이벤트/혜택 정보 수신동의
+                </span>
+              </label>
+            )}
+          />
         </div>
       </div>
 

@@ -37,7 +37,7 @@ export default function FAQPage() {
 
   return (
     <main className="min-h-screen bg-white">
-      <div className="mx-auto max-w-[1220px] px-4 sm:px-6 py-8 sm:py-12">
+      <div className="mx-auto max-w-[900px] px-4 sm:px-6 py-8 sm:py-12">
         <h1 className="text-2xl sm:text-3xl font-black text-gray-900">FAQ</h1>
         <p className="mt-1 text-sm text-gray-500">자주 묻는 질문입니다.</p>
 

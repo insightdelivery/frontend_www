@@ -2,7 +2,7 @@
 
 export default function SearchSkeleton() {
   return (
-    <div className="mx-auto max-w-[1220px] animate-pulse space-y-8 px-4 py-10 md:px-8">
+    <div className="mx-auto max-w-[900px] animate-pulse space-y-8 px-4 py-10 md:px-8">
       <div className="h-10 w-48 rounded bg-gray-200" />
       <div className="h-12 w-full max-w-xl rounded-lg bg-gray-100" />
       {[1, 2, 3].map((i) => (

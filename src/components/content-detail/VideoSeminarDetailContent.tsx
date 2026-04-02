@@ -23,7 +23,7 @@ import {
   VIDEO_CATEGORY_PARENT,
 } from '@/lib/syscode'
 
-const CONTAINER = 'max-w-[1220px] mx-auto'
+const CONTAINER = 'max-w-[900px] mx-auto'
 const COLORS = {
   text: 'text-[#0f172a]',
   textSecondary: 'text-[#64748b]',

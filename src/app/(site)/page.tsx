@@ -14,7 +14,7 @@ import HomeUpcomingSeminars from '@/components/home/HomeUpcomingSeminars'
 export default function Home() {
   return (
     <main className="bg-white text-black">
-      <div className="mx-auto max-w-[1220px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
+      <div className="mx-auto max-w-[900px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
         <HomeHeroCarousel />
 
         <SeminarHomeProvider>

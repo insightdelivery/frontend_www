@@ -144,7 +144,7 @@ export default function PublicVideoSeminarListPage({
 
   return (
     <main className="bg-white text-black">
-      <div className="mx-auto max-w-[1220px] px-4 py-6 sm:px-6 md:px-8 md:py-10">
+      <div className="mx-auto max-w-[900px] px-4 py-6 sm:px-6 md:px-8 md:py-10">
         <header className="mb-8 sm:mb-10">
           <h1 className="text-[28px] font-black uppercase tracking-tight text-gray-900 sm:text-[34px] md:text-[42px]">
             {pageTitle}

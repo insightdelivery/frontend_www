@@ -83,7 +83,7 @@ export function ArticleListContent() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[1220px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
+      <div className="mx-auto max-w-[900px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
         <h1 className="text-[28px] sm:text-[34px] md:text-[42px] font-black text-gray-900 mb-8 sm:mb-10">
           아티클
         </h1>
@@ -102,7 +102,7 @@ export function ArticleListContent() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-[1220px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
+      <div className="mx-auto max-w-[900px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
         <h1 className="text-[28px] sm:text-[34px] md:text-[42px] font-black text-gray-900 mb-8 sm:mb-10">
           아티클
         </h1>
@@ -119,7 +119,7 @@ export function ArticleListContent() {
   }
 
   return (
-    <div className="mx-auto max-w-[1220px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
+    <div className="mx-auto max-w-[900px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
       <div className="mb-8 sm:mb-10 flex items-center justify-between gap-3">
         <h1 className="text-[28px] sm:text-[34px] md:text-[42px] font-black text-gray-900">
           아티클

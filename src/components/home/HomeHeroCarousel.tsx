@@ -9,7 +9,8 @@ import { heroInternalHref } from '@/lib/heroRoutes'
 import { resolveHeroEventTypeCode } from '@/lib/heroEventType'
 import { getApiBaseURL } from '@/lib/axios'
 
-const MIN_HEIGHT = 'min-h-[320px] sm:min-h-[400px] md:min-h-[521px]'
+/** 히어로(메인·비디오·세미나 리스트) 배너 비율 16:9 — 컨테이너 너비에 맞춰 높이 자동 */
+const HERO_ASPECT = 'aspect-[16/9]'
 /** 슬라이드가 멈춰 있는 시간(다음 장으로 넘어가기 전) */
 const SLIDE_HOLD_MS = 5000
 /** 왼쪽으로 넘어가는 트랜지션 시간 */
@@ -141,7 +142,10 @@ function HeroSlideCell({
   const w = cellWidth > 0 ? cellWidth : undefined
 
   const shell = (
-    <div className={`relative ${MIN_HEIGHT} shrink-0 overflow-hidden`} style={{ width: w ?? '100%' }}>
+    <div
+      className={`relative ${HERO_ASPECT} shrink-0 overflow-hidden`}
+      style={{ width: w ?? '100%' }}
+    >
       <SlideVisual slide={slide} />
     </div>
   )
@@ -178,7 +182,7 @@ function HeroSlideCell({
 function StaticHero() {
   return (
     <section className="mb-16 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
-      <div className={`relative ${MIN_HEIGHT} w-full`}>
+      <div className={`relative ${HERO_ASPECT} w-full`}>
         <div
           className="absolute inset-0 opacity-90"
           style={{
@@ -222,7 +226,7 @@ function ReducedMotionHero({ slides }: { slides: DisplayEventHeroItem[] }) {
   )
   return (
     <section className="mb-16 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
-      <div className={`relative ${MIN_HEIGHT} w-full`}>
+      <div className={`relative ${HERO_ASPECT} w-full`}>
         {href?.kind === 'internal' ? (
           <Link href={href.path} className="absolute inset-0 block" aria-label={title}>
             {body}
@@ -396,7 +400,9 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
     if (variant === 'inner') {
       return (
         <section className="mb-8 sm:mb-10 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
-          <div className="relative min-h-[160px] sm:min-h-[200px] w-full flex items-center justify-center bg-gradient-to-b from-gray-200 to-gray-300 text-gray-600 text-sm animate-pulse">
+          <div
+            className={`relative ${HERO_ASPECT} w-full flex items-center justify-center bg-gradient-to-b from-gray-200 to-gray-300 text-gray-600 text-sm animate-pulse`}
+          >
             상단 배너 불러오는 중…
           </div>
         </section>
@@ -405,7 +411,7 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
     return (
       <section className="mb-16 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
         <div
-          className={`relative ${MIN_HEIGHT} w-full flex items-center justify-center bg-gradient-to-b from-gray-700 to-gray-900 text-white/70 text-sm`}
+          className={`relative ${HERO_ASPECT} w-full flex items-center justify-center bg-gradient-to-b from-gray-700 to-gray-900 text-white/70 text-sm`}
         >
           배너 불러오는 중…
         </div>
@@ -420,7 +426,9 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
   if (slides.length === 0) {
     return (
       <section className="mb-16 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
-        <div className="relative min-h-[200px] flex items-center justify-center rounded-[12px] bg-gray-100 text-gray-500 text-sm">
+        <div
+          className={`relative ${HERO_ASPECT} flex items-center justify-center rounded-[12px] bg-gray-100 px-4 text-center text-gray-500 text-sm`}
+        >
           등록된 Hero 배너가 없습니다. (eventTypeCode: {resolvedEventTypeCode})
         </div>
       </section>
@@ -439,7 +447,7 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
           {containerW > 0 ? (
             <HeroSlideCell slide={slides[0]!} cellWidth={containerW} />
           ) : (
-            <div className={`${MIN_HEIGHT} w-full bg-gradient-to-b from-gray-700 to-gray-900`} aria-hidden />
+            <div className={`${HERO_ASPECT} w-full bg-gradient-to-b from-gray-700 to-gray-900`} aria-hidden />
           )}
         </div>
       </section>
@@ -508,7 +516,7 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
             </div>
           </>
         ) : (
-          <div className={`${MIN_HEIGHT} w-full bg-gradient-to-b from-gray-700 to-gray-900`} aria-hidden />
+          <div className={`${HERO_ASPECT} w-full bg-gradient-to-b from-gray-700 to-gray-900`} aria-hidden />
         )}
       </div>
     </section>

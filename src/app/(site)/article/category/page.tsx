@@ -131,7 +131,7 @@ function ArticleCategoryContent() {
 
   return (
     <main className="bg-white text-black">
-      <div className="mx-auto max-w-[1220px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
+      <div className="mx-auto max-w-[900px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
         <div className="mb-6">
           <p className="text-[12px] sm:text-[13px] text-gray-500 mb-1">아티클 카테고리</p>
           <div className="flex flex-wrap items-center justify-between gap-4">

@@ -38,7 +38,7 @@ export function HomepageDocClientView({ docType }: { docType: HomepageDocType })
   if (doc === undefined) {
     return (
       <main className="bg-white text-black min-h-screen">
-        <div className="mx-auto max-w-[1220px] px-4 sm:px-6 md:px-8 py-10 sm:py-16">
+        <div className="mx-auto max-w-[900px] px-4 sm:px-6 md:px-8 py-10 sm:py-16">
           <p className="text-gray-500">불러오는 중…</p>
         </div>
       </main>
@@ -48,7 +48,7 @@ export function HomepageDocClientView({ docType }: { docType: HomepageDocType })
   if (error) {
     return (
       <main className="bg-white text-black min-h-screen">
-        <div className="mx-auto max-w-[1220px] px-4 sm:px-6 md:px-8 py-10 sm:py-16">
+        <div className="mx-auto max-w-[900px] px-4 sm:px-6 md:px-8 py-10 sm:py-16">
           <p className="text-red-600">{error}</p>
         </div>
       </main>
@@ -58,7 +58,7 @@ export function HomepageDocClientView({ docType }: { docType: HomepageDocType })
   if (!doc) {
     return (
       <main className="bg-white text-black min-h-screen">
-        <div className="mx-auto max-w-[1220px] px-4 sm:px-6 md:px-8 py-10 sm:py-16">
+        <div className="mx-auto max-w-[900px] px-4 sm:px-6 md:px-8 py-10 sm:py-16">
           <p className="text-gray-600">문서를 찾을 수 없습니다.</p>
         </div>
       </main>

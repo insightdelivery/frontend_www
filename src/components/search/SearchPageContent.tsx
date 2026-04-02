@@ -90,7 +90,7 @@ export default function SearchPageContent() {
   if (!data) {
     return (
       <main className="min-h-[40vh] bg-white px-4 py-10 text-black md:px-8">
-        <div className="mx-auto max-w-[1220px]">
+        <div className="mx-auto max-w-[900px]">
           <h1 className="text-xl font-bold">검색</h1>
           <SearchBar defaultValue={query} />
           <p className="mt-8 text-gray-600">검색 결과를 불러오지 못했습니다.</p>
@@ -104,7 +104,7 @@ export default function SearchPageContent() {
 
   return (
     <main className="min-h-[40vh] bg-white px-4 py-10 text-black md:px-8">
-      <div className="mx-auto max-w-[1220px]">
+      <div className="mx-auto max-w-[900px]">
         <h1 className="text-2xl font-black text-gray-900">검색</h1>
         <SearchBar defaultValue={query} />
 

@@ -9,6 +9,7 @@ import { getAccessToken, getUserInfo } from '@/services/auth'
 import { Search, Menu, X, Home } from 'lucide-react'
 import MainBar from '@/components/layout/MainBar'
 import HeaderSearch from '@/components/layout/HeaderSearch'
+import { siteShellMaxWidthClass } from '@/lib/siteLayoutWidth'
 import { normalizeSearchQuery } from '@/lib/searchQuery'
 import { fetchNotices } from '@/services/board'
 import type { NoticeListItem } from '@/types/board'
@@ -69,10 +70,12 @@ export default function Header() {
     closeSearch()
   }
 
+  const shellMax = siteShellMaxWidthClass(pathname)
+
   if (status === 'loading' && !showMemberChrome) {
     return (
       <div className="sticky top-0 z-50">
-        <MainBar notice={gnbNotice} />
+        <MainBar notice={gnbNotice} shellMaxClass={shellMax} />
         <div className="h-[52px] bg-neon-yellow" aria-hidden />
       </div>
     )
@@ -85,7 +88,7 @@ export default function Header() {
 
   return (
     <div className="sticky top-0 z-50">
-      <MainBar notice={gnbNotice} />
+      <MainBar notice={gnbNotice} shellMaxClass={shellMax} />
       <header className="relative bg-neon-yellow text-black">
         {mobileMenuOpen && (
           <button
@@ -95,7 +98,7 @@ export default function Header() {
             onClick={() => setMobileMenuOpen(false)}
           />
         )}
-        <div className="relative z-[101] mx-auto max-w-[1220px] px-4 md:px-8">
+        <div className={`relative z-[101] mx-auto ${shellMax} px-4 md:px-8`}>
           <div className="flex h-[52px] items-center">
             <nav className="hidden flex-1 items-center gap-10 text-[14px] font-bold lg:flex">
               {!isMainPage && (
@@ -291,7 +294,12 @@ export default function Header() {
         </div>
       </header>
 
-      <HeaderSearch isOpen={isSearchOpen} onClose={closeSearch} onSearch={handleSearchSubmit} />
+      <HeaderSearch
+        isOpen={isSearchOpen}
+        onClose={closeSearch}
+        onSearch={handleSearchSubmit}
+        shellMaxClass={shellMax}
+      />
     </div>
   )
 }

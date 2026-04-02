@@ -21,7 +21,7 @@ export default function MypageShell({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="mx-auto max-w-[1220px] px-6 md:px-8">
+      <div className="mx-auto max-w-[900px] px-6 md:px-8">
         {/* Breadcrumb */}
         <div className="flex flex-col gap-2 pt-10">
           <div className="flex items-center gap-2">

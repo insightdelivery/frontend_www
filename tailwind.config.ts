@@ -2,6 +2,8 @@ import type { Config } from "tailwindcss"
 
 const config = {
   darkMode: ["class"],
+  /** siteLayoutWidth.ts — 동적 className 대비 */
+  safelist: ["max-w-[900px]", "aspect-[16/9]"],
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',

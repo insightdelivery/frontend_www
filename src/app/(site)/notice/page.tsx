@@ -109,7 +109,7 @@ function NoticeInner() {
     if (detailError) {
       return (
         <main className="min-h-screen bg-white">
-          <div className="mx-auto max-w-[1220px] px-4 py-12">
+          <div className="mx-auto max-w-[900px] px-4 py-12">
             <div className="rounded-md bg-red-50 p-4 text-red-800">{detailError}</div>
             <Button variant="outline" className="mt-4" asChild>
               <Link href="/notice">목록으로</Link>
@@ -120,7 +120,7 @@ function NoticeInner() {
     }
     return (
       <main className="min-h-screen bg-white">
-        <div className="mx-auto max-w-[1220px] px-4 sm:px-6 py-8 sm:py-12">
+        <div className="mx-auto max-w-[900px] px-4 sm:px-6 py-8 sm:py-12">
           <div className="mb-4">
             <Link href="/notice" className="text-sm text-gray-500 hover:text-gray-900">
               ← 공지사항 목록
@@ -162,7 +162,7 @@ function NoticeInner() {
 
   return (
     <main className="min-h-screen bg-white">
-      <div className="mx-auto max-w-[1220px] px-4 sm:px-6 py-8 sm:py-12">
+      <div className="mx-auto max-w-[900px] px-4 sm:px-6 py-8 sm:py-12">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900">공지사항</h1>
           <p className="mt-1 text-sm text-gray-500">InDe 공지사항을 확인하세요.</p>
