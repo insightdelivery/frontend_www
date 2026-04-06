@@ -7,6 +7,8 @@ export interface PublicVideoListItem {
   subtitle: string | null
   thumbnail: string | null
   speaker: string | null
+  /** Content Author FK (관리자 연동) */
+  speaker_id?: number | null
   speakerAffiliation: string | null
   viewCount: number
   createdAt: string
@@ -42,6 +44,7 @@ export interface PublicVideoDetail {
   body?: string | null
   thumbnail?: string | null
   speaker?: string | null
+  speaker_id?: number | null
   speakerAffiliation?: string | null
   editor?: string | null
   director?: string | null

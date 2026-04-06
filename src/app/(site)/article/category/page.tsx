@@ -178,7 +178,6 @@ function ArticleCategoryContent() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[13px] text-gray-500">정렬 기준:</span>
               {SORT_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}

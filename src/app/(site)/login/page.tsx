@@ -92,7 +92,7 @@ function LoginForm() {
               className="mx-auto object-contain"
               priority
             />
-            <p className="mt-2 text-sm text-gray-500">기독교 인사이트 콘텐츠 플랫폼</p>
+            <p className="mt-2 text-sm text-gray-500">크리스천 인사이트 플랫폼</p>
           </div>
 
           <form className="w-full space-y-4" onSubmit={handleSubmit(onSubmit)}>

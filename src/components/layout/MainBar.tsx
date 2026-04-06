@@ -26,14 +26,14 @@ export default function MainBar({ notice, shellMaxClass = 'max-w-[900px]' }: Mai
           <>
             <Link
               href={href}
-              className="min-w-0 flex-1 truncate text-left hover:opacity-90 hover:underline"
+              className="min-w-0 flex-1 truncate text-left no-underline hover:no-underline hover:opacity-90"
               aria-live="polite"
             >
               {notice.title}
             </Link>
             <Link
               href={href}
-              className="shrink-0 tracking-tight hover:opacity-90"
+              className="shrink-0 tracking-tight no-underline hover:no-underline hover:opacity-90"
               aria-label={`공지 상세: ${notice.title}`}
             >
               &gt;&gt;&gt;

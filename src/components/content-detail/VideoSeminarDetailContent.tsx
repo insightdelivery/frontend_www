@@ -22,6 +22,10 @@ import {
   SEMINAR_CATEGORY_PARENT,
   VIDEO_CATEGORY_PARENT,
 } from '@/lib/syscode'
+import { fetchHomepageDocPublic } from '@/services/homepageDoc'
+import { HOMEPAGE_DOC_DEFAULT_TITLES } from '@/constants/homepageDoc'
+import type { HomepageDocPayload } from '@/types/homepageDoc'
+import { sanitizeHomepageHtml } from '@/lib/sanitizeHomepageHtml'
 
 const CONTAINER = 'max-w-[900px] mx-auto'
 const COLORS = {
@@ -105,6 +109,8 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
   const [isBookmarked, setIsBookmarked] = useState(false)
   /** 로그인 후 별점 제출 시만 설정 (article/detail과 동일 — 서버 개인 별점 조회 없음) */
   const [ratingValue, setRatingValue] = useState<number | null>(null)
+  /** wwwDocEtc.md §8.2 — 비디오/세미나 상세 각각 `video_copyright` / `seminar_copyright` */
+  const [copyrightDoc, setCopyrightDoc] = useState<HomepageDocPayload | null | undefined>(undefined)
 
   const apiContentType = useMemo(() => toApiContentType(type), [type])
 
@@ -116,6 +122,31 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
   useEffect(() => {
     void getSysCode(categoryParent).then(setCategoryCodes)
   }, [categoryParent])
+
+  const copyrightDocType = type === 'video' ? 'video_copyright' : 'seminar_copyright'
+  const idValidForCopyright = useMemo(() => {
+    const trimmed = id.trim()
+    const n = Number(trimmed)
+    return Boolean(trimmed && !Number.isNaN(n) && n > 0)
+  }, [id])
+
+  useEffect(() => {
+    if (!idValidForCopyright) {
+      setCopyrightDoc(undefined)
+      return
+    }
+    let cancelled = false
+    fetchHomepageDocPublic(copyrightDocType)
+      .then((doc) => {
+        if (!cancelled) setCopyrightDoc(doc ?? null)
+      })
+      .catch(() => {
+        if (!cancelled) setCopyrightDoc(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [idValidForCopyright, copyrightDocType])
 
   const shareEntitlementOnly = detail ? !authenticated && detail.shareEntitlement === true : false
 
@@ -374,6 +405,23 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
           <p className={`text-[18px] leading-[29px] ${COLORS.body}`}>본문이 없습니다.</p>
         )}
       </div>
+
+      {copyrightDoc != null && (
+        <section className="my-10 rounded-xl border-2 border-blue-200 bg-blue-50/50 p-6">
+          <p className="mb-2 text-[12px] font-bold text-[#0f172a]">
+            {copyrightDoc.title?.trim() || HOMEPAGE_DOC_DEFAULT_TITLES[copyrightDocType]}
+          </p>
+          {(() => {
+            const safeHtml = sanitizeHomepageHtml(copyrightDoc.bodyHtml || '')
+            return safeHtml.trim() ? (
+              <div
+                className="text-[12px] leading-[19.5px] text-[#475569] [&_p]:mb-2 [&_p:last-child]:mb-0 [&_a]:text-[#2563eb] [&_a]:underline"
+                dangerouslySetInnerHTML={{ __html: safeHtml }}
+              />
+            ) : null
+          })()}
+        </section>
+      )}
 
       <section className={`${COLORS.accent} mb-12 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-8`}>
         <div>
