@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ChevronRight, Bookmark, Share2, Star } from 'lucide-react'
 import VideoPlayer from '@/components/video/VideoPlayer'
 import { fetchPublicVideoDetail, fetchPublicVideoList } from '@/services/video'
@@ -64,11 +65,39 @@ function resolveThumbnailUrl(url: string | null | undefined): string | null {
   return u
 }
 
-function formatListedAt(iso: string | undefined): string {
+/** 상세 메타 행 — 스크린 기준 `2026. 02. 13.` 형태 */
+function formatDetailMetaDate(iso: string | undefined): string {
   if (!iso) return ''
   const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+  if (Number.isNaN(d.getTime())) return ''
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}. ${m}. ${day}.`
+}
+
+/** 공개 API 필드명이 camelCase / snake_case 혼용될 때 한 곳에서만 보정 */
+function getVideoSpeakerDisplayFields(detail: PublicVideoDetail) {
+  const r = detail as unknown as Record<string, unknown>
+  const affiliation =
+    (typeof detail.speakerAffiliation === 'string' ? detail.speakerAffiliation : '') ||
+    (typeof r.speaker_affiliation === 'string' ? r.speaker_affiliation : '') ||
+    ''
+  const profileRaw =
+    (typeof detail.speakerProfileImage === 'string' ? detail.speakerProfileImage : '') ||
+    (typeof r.speaker_profile_image === 'string' ? r.speaker_profile_image : '') ||
+    ''
+  const profileResolved = resolveThumbnailUrl(profileRaw) || profileRaw.trim() || null
+  const name =
+    detail.speaker?.trim() ||
+    detail.editor?.trim() ||
+    (typeof r.speaker === 'string' ? r.speaker.trim() : '') ||
+    '—'
+  return {
+    name,
+    affiliation: affiliation.trim() || undefined,
+    profileUrl: profileResolved,
+  }
 }
 
 function attachmentLabel(a: VideoAttachment) {
@@ -296,8 +325,8 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
 
   const listLabel = getListLabel(type)
   const listUrl = getListUrl(type)
-  const editorLine = detail.editor?.trim() || detail.speaker?.trim() || '—'
-  const metaDate = formatListedAt(detail.createdAt)
+  const speakerDisplay = getVideoSpeakerDisplayFields(detail)
+  const metaDateLine = formatDetailMetaDate(detail.createdAt)
   const tags = Array.isArray(detail.tags) ? detail.tags.filter((t): t is string => Boolean(t && String(t).trim())) : []
   const attachments = Array.isArray(detail.attachments) ? detail.attachments.filter((a) => a?.url?.trim()) : []
   const bodyHtml = (detail.body ?? '').trim()
@@ -312,9 +341,11 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
       <section className="mb-10 flex flex-col gap-8">
         <div className="aspect-video w-full overflow-hidden rounded-[12px] bg-black">
           <VideoPlayer
-            sourceType={detail.sourceType}
+            sourceType={
+              type === 'seminar' ? 'FILE_UPLOAD' : (detail.sourceType ?? 'FILE_UPLOAD')
+            }
             videoStreamId={detail.videoStreamId}
-            videoUrl={detail.videoUrl}
+            videoUrl={type === 'seminar' ? undefined : detail.videoUrl}
           />
         </div>
 
@@ -352,11 +383,34 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
             ) : null}
 
             <div className={`flex flex-wrap items-center justify-between gap-4 border-y py-6 ${COLORS.border}`}>
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 flex-shrink-0 rounded-full bg-[#cbd5e1]" />
-                <div>
-                  <div className={`text-[16px] font-bold ${COLORS.text}`}>{editorLine}</div>
-                  <div className={`mt-0.5 text-sm ${COLORS.textSecondary}`}>{metaDate || '—'}</div>
+              <div className="flex min-w-0 items-start gap-3">
+                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-[#cbd5e1]">
+                  {speakerDisplay.profileUrl ? (
+                    <Image
+                      src={speakerDisplay.profileUrl}
+                      alt={speakerDisplay.name === '—' ? '' : speakerDisplay.name}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : null}
+                </div>
+                <div className="min-w-0 leading-tight">
+                  <p className={`text-[16px] font-bold leading-6 ${COLORS.text}`}>{speakerDisplay.name}</p>
+                  {speakerDisplay.affiliation ? (
+                    <p className={`mt-1 text-[14px] font-normal leading-5 ${COLORS.textSecondary}`}>
+                      {speakerDisplay.affiliation}
+                    </p>
+                  ) : null}
+                  {metaDateLine ? (
+                    <p
+                      className={`text-[14px] font-normal leading-5 ${COLORS.textSecondary} ${
+                        speakerDisplay.affiliation ? 'mt-0.5' : 'mt-1'
+                      }`}
+                    >
+                      {metaDateLine}
+                    </p>
+                  ) : null}
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">

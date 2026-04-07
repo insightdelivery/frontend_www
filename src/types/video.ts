@@ -7,9 +7,10 @@ export interface PublicVideoListItem {
   subtitle: string | null
   thumbnail: string | null
   speaker: string | null
-  /** Content Author FK (관리자 연동) */
+  /** 레거시 Content Author FK */
   speaker_id?: number | null
   speakerAffiliation: string | null
+  speakerProfileImage?: string | null
   viewCount: number
   createdAt: string
   updatedAt: string
@@ -46,6 +47,7 @@ export interface PublicVideoDetail {
   speaker?: string | null
   speaker_id?: number | null
   speakerAffiliation?: string | null
+  speakerProfileImage?: string | null
   editor?: string | null
   director?: string | null
   tags?: string[] | null
