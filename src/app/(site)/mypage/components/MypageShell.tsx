@@ -1,7 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { MYPAGE_TABS } from './MypageTabs'
 import { ChevronRight } from 'lucide-react'
 
@@ -16,8 +18,34 @@ function isTabActive(pathname: string | null, tabPath: string): boolean {
 
 export default function MypageShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { status } = useAuth()
+
+  /** `output: 'export'` 정적 빌드에서는 middleware 사용 불가 → 서버 리다이렉트 대신 클라이언트 가드 */
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace('/login')
+    }
+  }, [status, router])
+
   const currentTab =
     MYPAGE_TABS.find((tab) => isTabActive(pathname, tab.path)) ?? MYPAGE_TABS[0]
+
+  if (status === 'loading') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white text-[14px] text-[#6b7280]">
+        세션 확인 중…
+      </div>
+    )
+  }
+
+  if (status === 'unauthenticated') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white text-[14px] text-[#6b7280]">
+        로그인 페이지로 이동합니다…
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-white">
