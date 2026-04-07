@@ -27,8 +27,13 @@ export async function fetchArticleRankingHot(): Promise<ArticleRankingPayload> {
   return unwrapResult<ArticleRankingPayload>(data)
 }
 
-export async function fetchArticleRankingShare(): Promise<ArticleRankingPayload> {
-  const { data } = await api.get('/api/library/ranking/share')
+/** 당일 공유 랭킹 상위 3 — list.md BEST. 아티클 기본, 비디오·세미나는 contentType 지정 */
+export async function fetchArticleRankingShare(
+  contentType: 'ARTICLE' | 'VIDEO' | 'SEMINAR' = 'ARTICLE',
+): Promise<ArticleRankingPayload> {
+  const { data } = await api.get('/api/library/ranking/share', {
+    params: contentType === 'ARTICLE' ? {} : { contentType },
+  })
   return unwrapResult<ArticleRankingPayload>(data)
 }
 

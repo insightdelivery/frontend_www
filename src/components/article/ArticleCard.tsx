@@ -2,8 +2,13 @@
 
 import Link from 'next/link'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
+import {
+  CONTENT_CARD_BADGE_STYLES,
+  normalizeContentCardBadges,
+  type ArticleCardBadge,
+} from '@/components/article/articleBadges'
 
-export type ArticleCardBadge = 'NEW' | 'BEST'
+export type { ArticleCardBadge }
 
 export interface ArticleCardProps {
   id: string
@@ -20,21 +25,6 @@ export interface ArticleCardProps {
 }
 
 const DEFAULT_GRADIENT = 'bg-gradient-to-br from-gray-200 via-gray-300 to-gray-500'
-
-/** list.md §7 — NEW #FF75E1 / #FFFFFF, BEST #ef4444 / #FFFFFF */
-const BADGE_STYLES: Record<ArticleCardBadge, string> = {
-  NEW: 'bg-[#FF75E1] text-[#FFFFFF]',
-  BEST: 'bg-[#ef4444] text-[#FFFFFF]',
-}
-
-/** 중복 제거, 순서 NEW → BEST */
-function normalizeBadges(badges?: ArticleCardBadge[]): ArticleCardBadge[] {
-  if (!badges?.length) return []
-  const out: ArticleCardBadge[] = []
-  if (badges.includes('NEW')) out.push('NEW')
-  if (badges.includes('BEST')) out.push('BEST')
-  return out
-}
 
 /** 제목 위 카테고리 라벨 통일 스타일 (list.md §3.2) */
 const CATEGORY_LABEL_CLASS =
@@ -55,7 +45,7 @@ export function ArticleCard({
 }: ArticleCardProps) {
   const gradient = imageGradient || DEFAULT_GRADIENT
   const sub = typeof subtitle === 'string' ? subtitle.trim() : ''
-  const badgeList = normalizeBadges(badges)
+  const badgeList = normalizeContentCardBadges(badges)
   const thumbSrc = resolveArticleThumbnailUrl(thumbnail ?? null)
 
   return (
@@ -75,7 +65,7 @@ export function ArticleCard({
             {badgeList.map((b) => (
               <span
                 key={b}
-                className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold ${BADGE_STYLES[b]}`}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold ${CONTENT_CARD_BADGE_STYLES[b]}`}
               >
                 {b}
               </span>
@@ -83,11 +73,6 @@ export function ArticleCard({
           </div>
         ) : null}
       </div>
-      {categoryName ? (
-        <span className={`mt-2 inline-block ${getCategoryPillClass(categoryName)}`}>
-          {categoryName}
-        </span>
-      ) : null}
       <p className="mt-2 text-[15px] sm:text-[17px] font-extrabold leading-snug line-clamp-2 group-hover:text-gray-600 transition-colors">
         {title}
       </p>

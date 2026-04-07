@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { ChevronRight, Bookmark, Share2, Star } from 'lucide-react'
+import { ChevronRight, Bookmark, Share2, Star, Search, Link2 } from 'lucide-react'
 import { fetchArticleDetail, fetchArticleList, resolveArticlesByRanking } from '@/services/article'
 import { fetchArticleRankingRecommended } from '@/services/libraryRanking'
 import { fetchHomepageDocPublic } from '@/services/homepageDoc'
@@ -33,6 +33,30 @@ const COLORS = {
   accent: 'bg-[#e1f800]',
   quoteBorder: 'border-l-[#e1f800]',
 } as const
+
+/** 말씀 돋보기 — 빈 줄로 구절 구분, 없으면 한 블록 */
+function SermonHighlightVerses({ text }: { text: string }) {
+  const blocks = text
+    .split(/\n\s*\n/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+  const bodyClass =
+    'whitespace-pre-wrap break-words text-[16px] leading-7 text-[#475569]'
+  if (blocks.length <= 1) {
+    return (
+      <p className={bodyClass}>{blocks[0] ?? text.trim()}</p>
+    )
+  }
+  return (
+    <div className="space-y-4">
+      {blocks.map((para, i) => (
+        <p key={i} className={bodyClass}>
+          {para}
+        </p>
+      ))}
+    </div>
+  )
+}
 
 /** 날짜 포맷 (YYYY.MM.DD) */
 function formatDate(iso: string | null | undefined): string {
@@ -124,6 +148,7 @@ function DetailBottomWeeklyCard({ item }: { item: WeeklyCrossCardData }) {
 function DetailBottomArticleCard({ item, index }: { item: ArticleListItem; index: number }) {
   const grad = PLACEHOLDER_GRADIENTS[index % PLACEHOLDER_GRADIENTS.length]
   const thumbSrc = resolveArticleThumbnailUrl(item.thumbnail)
+  const subtitleLine = item.subtitle?.trim() ?? ''
   return (
     <Link href={detailUrl(String(item.id))} className="block group">
       <div
@@ -139,7 +164,9 @@ function DetailBottomArticleCard({ item, index }: { item: ArticleListItem; index
       <p className={`font-bold text-[16px] leading-6 ${COLORS.text} group-hover:underline line-clamp-2`}>
         {item.title}
       </p>
-      <p className={`text-[14px] leading-5 ${COLORS.textSecondary} mt-1`}>{item.author}</p>
+      {subtitleLine ? (
+        <p className={`text-[14px] leading-5 ${COLORS.textSecondary} mt-1 line-clamp-2`}>{subtitleLine}</p>
+      ) : null}
     </Link>
   )
 }
@@ -545,11 +572,6 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`font-bold text-[16px] leading-6 ${COLORS.text}`}>{article.author}</span>
-                {article.authorAffiliation?.trim() ? (
-                  <span className={`text-[14px] leading-6 font-medium ${COLORS.textSecondary}`}>
-                    {article.authorAffiliation.trim()}
-                  </span>
-                ) : null}
                 {article.author_id != null && Number(article.author_id) > 0 ? (
                   <Link
                     href={`/article/editor?author_id=${encodeURIComponent(String(article.author_id))}`}
@@ -612,11 +634,23 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
       </div>
 
       {sermonHighlightText ? (
-        <section className="mt-8 rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-6">
-          <p className="mb-2 text-[14px] font-bold text-[#0f172a]">말씀 돋보기</p>
-          <p className="whitespace-pre-wrap break-words text-[16px] leading-7 text-[#334155]">
-            {sermonHighlightText}
-          </p>
+        <section className="mt-8" aria-labelledby="sermon-highlight-heading">
+          <div className="mb-4 flex items-center gap-2">
+            <Search
+              className="h-5 w-5 shrink-0 text-[#e1f800]"
+              strokeWidth={2.25}
+              aria-hidden
+            />
+            <h2
+              id="sermon-highlight-heading"
+              className="text-[15px] font-bold leading-tight text-[#0f172a]"
+            >
+              말씀 돋보기
+            </h2>
+          </div>
+          <div className="border-l-4 border-[#e1f800] pl-5">
+            <SermonHighlightVerses text={sermonHighlightText} />
+          </div>
         </section>
       ) : null}
 
@@ -651,18 +685,21 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
       )}
 
       {articleCopyright != null && (
-        <section className="my-10 p-6 rounded-xl bg-blue-50/50 border-2 border-blue-200">
-          <p className="font-bold text-[12px] text-[#0f172a] mb-2">
-            {articleCopyright.title?.trim() || HOMEPAGE_DOC_DEFAULT_TITLES.article_copyright}
-          </p>
+        <section className="my-10">
           {(() => {
             const safeHtml = sanitizeHomepageHtml(articleCopyright.bodyHtml || '')
-            return safeHtml.trim() ? (
-              <div
-                className="text-[12px] leading-[19.5px] text-[#475569] [&_p]:mb-2 [&_p:last-child]:mb-0 [&_a]:text-[#2563eb] [&_a]:underline"
-                dangerouslySetInnerHTML={{ __html: safeHtml }}
-              />
-            ) : null
+            if (!safeHtml.trim()) return null
+            return (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-5">
+                <span className="shrink-0 text-[15px] font-bold leading-snug text-[#0f172a]">
+                  {articleCopyright.title?.trim() || HOMEPAGE_DOC_DEFAULT_TITLES.article_copyright}
+                </span>
+                <div
+                  className="min-w-0 flex-1 text-[12px] leading-[1.65] text-[#64748b] [&_p]:mb-2 [&_p:last-child]:mb-0 [&_a]:text-[#2563eb] [&_a]:underline"
+                  dangerouslySetInnerHTML={{ __html: safeHtml }}
+                />
+              </div>
+            )
           })()}
         </section>
       )}
@@ -674,9 +711,10 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
         </div>
         <button
           type="button"
-          className="bg-black text-white text-[16px] font-bold px-8 py-3 rounded-xl hover:opacity-90"
+          className="inline-flex items-center justify-center gap-2 bg-black text-white text-[16px] font-bold px-8 py-3 rounded-full hover:opacity-90"
           onClick={handleShareClick}
         >
+          <Link2 className="h-5 w-5 shrink-0 text-white" strokeWidth={2.25} aria-hidden />
           링크 복사하기
         </button>
       </section>

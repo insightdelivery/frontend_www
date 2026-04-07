@@ -12,6 +12,9 @@ const COLORS = {
   bgLight: 'bg-[#f8fafc]',
 } as const
 
+/** 댓글 본문 최대 글자수(초과 입력·붙여넣기 방지) */
+const COMMENT_MAX_LENGTH = 500
+
 export default function CommentSection({
   contentType,
   contentId,
@@ -137,7 +140,8 @@ export default function CommentSection({
         <div className={`mb-6 rounded-xl border ${COLORS.border} ${COLORS.bgLight} p-4`}>
           <textarea
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            maxLength={COMMENT_MAX_LENGTH}
+            onChange={(e) => setText(e.target.value.slice(0, COMMENT_MAX_LENGTH))}
             placeholder="선한 인사이트로 연결되기, 생각을 자유롭게 나눠주세요."
             className={`min-h-[110px] w-full resize-none bg-transparent text-[14px] leading-6 ${COLORS.text} outline-none`}
           />
@@ -172,7 +176,8 @@ export default function CommentSection({
                   <div className="mt-2">
                     <textarea
                       value={editingText}
-                      onChange={(e) => setEditingText(e.target.value)}
+                      maxLength={COMMENT_MAX_LENGTH}
+                      onChange={(e) => setEditingText(e.target.value.slice(0, COMMENT_MAX_LENGTH))}
                       className={`min-h-[90px] w-full resize-none rounded-lg border ${COLORS.border} bg-white p-3 text-[14px] leading-6 ${COLORS.text} outline-none`}
                     />
                     <div className="mt-2 flex justify-end gap-2">

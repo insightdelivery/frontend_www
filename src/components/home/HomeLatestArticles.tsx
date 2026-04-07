@@ -44,7 +44,6 @@ export default function HomeLatestArticles() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="font-bold text-black text-[24px] leading-[32px]">최신 아티클</h2>
-          <span className="h-2 w-2 rounded-full bg-[#ff9f8a]" />
         </div>
         <Link href="/article" className="font-medium text-[#6b7280] text-[14px] hover:text-black">
           더보기 &gt;
@@ -80,7 +79,7 @@ export default function HomeLatestArticles() {
                   ) : (
                     <div className={`aspect-[3/2] ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]}`} />
                   )}
-                  <span className="absolute left-3 top-3 rounded-[8px] bg-[#e1f800] px-2 py-1 font-bold text-black text-[10px]">
+                  <span className="absolute left-3 top-3 rounded-[8px] bg-[#FF9F8A] px-2 py-1 font-bold text-black text-[10px]">
                     {getSysCodeName(categories, a.category)}
                   </span>
                 </div>

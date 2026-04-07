@@ -62,7 +62,7 @@ export function TermsAgreement({ register, errors, watch: _watch, setValue }: Te
           className="h-5 w-5 rounded border-gray-300 text-gray-700 focus:ring-gray-300 flex-shrink-0"
         />
         <Label htmlFor="terms_all_agree" className="text-base font-bold text-gray-900 cursor-pointer flex-1 flex items-center gap-1">
-          이용약관 전체 동의.
+          이용약관 전체 동의
           <ChevronDown className="h-5 w-5 text-gray-400" aria-hidden />
         </Label>
       </div>

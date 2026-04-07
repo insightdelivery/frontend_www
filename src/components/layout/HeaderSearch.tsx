@@ -96,7 +96,7 @@ export default function HeaderSearch({ isOpen, onClose, onSearch, shellMaxClass 
       <div ref={panelRef} className="w-full border-t border-black/10 bg-gray-100 text-black">
         <div className={`mx-auto w-full ${shellMaxClass}`}>
           <div className="px-6 py-4">
-            <div className="flex items-center gap-2 rounded-full bg-white px-4 py-3 shadow-sm">
+            <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-sm">
               <Search className="h-4 w-4 shrink-0 text-black/50" aria-hidden />
               <input
                 ref={inputRef}
@@ -108,7 +108,7 @@ export default function HeaderSearch({ isOpen, onClose, onSearch, shellMaxClass 
                   }
                 }}
                 placeholder="검색어를 입력하세요"
-                className="min-h-11 w-full min-w-0 flex-1 bg-transparent text-base outline-none md:min-h-10 md:text-sm"
+                className="min-h-7 w-full min-w-0 flex-1 bg-transparent text-base outline-none md:min-h-7 md:text-sm"
               />
               <button
                 type="button"

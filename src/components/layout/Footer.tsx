@@ -97,7 +97,11 @@ export default function Footer() {
                   <span className="text-gray-400">광고 및 협업 문의</span>
                 )}
               </li>
-              <li><Link href="/" className="hover:text-gray-900 transition-colors">협력 업체</Link></li>
+              <li>
+                <Link href="/about/companyInfo#partners" className="hover:text-gray-900 transition-colors">
+                  협력 업체
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -118,27 +122,43 @@ export default function Footer() {
         {/* Middle Separator Line */}
         <div className="mt-8 sm:mt-12 md:mt-14 border-t border-gray-200"></div>
 
-        {/* Bottom Section */}
-        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
-          {/* Left Side - Company Legal and Contact Information */}
-          <div className="space-y-2 text-[12px] sm:text-[14px] text-gray-700">
-            <p className="break-words">
-              사업자등록번호 : 203-87-02097 | 통신판매업신고 : 제2025-서울성동-1533호 | 개인정보책임자 : 조나영
-            </p>
-            <p className="break-words">
-            서울특별시 성동구 광나루로8길 31, 2동 301호(성수동2가, 성수SKV1센터) I 이메일: indemgz@gmail.com | 대표이사 : 조광식 
-            </p>
-            <p className="mt-3 sm:mt-4">Copyright ⓒ 2024. InDe All Rights Reserved</p>
+        {/* 1행: (주)원소울 | SNS 두 영역 / 2행 이하: 사업자·주소·저작권 전체 너비 1블록 */}
+        <div className="mt-5 sm:mt-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+            <p className="m-0 shrink-0 text-left text-[12px] leading-relaxed text-gray-700 font-semibold">(주)원소울</p>
+            <div className="flex flex-wrap gap-4 text-[12px] font-normal text-gray-700 tracking-wide sm:justify-end">
+              {SNS_LINKS.map(({ href, label, Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 hover:text-gray-900 transition-colors"
+                  aria-label={label}
+                >
+                  <Icon className="h-4 w-4 sm:h-[18px] sm:w-[18px] flex-shrink-0" />
+                  <span>{label}</span>
+                </a>
+              ))}
+            </div>
           </div>
 
-          {/* Right Side - Social Media Links */}
-          <div className="flex flex-wrap gap-4 sm:gap-6 text-[12px] sm:text-[14px] font-normal text-gray-700 tracking-wide flex-shrink-0 items-center">
-            {SNS_LINKS.map(({ href, label, Icon }) => (
-              <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-gray-900 transition-colors" aria-label={label}>
-                <Icon className="h-4 w-4 sm:h-[18px] sm:w-[18px] flex-shrink-0" />
-                <span>{label}</span>
-              </a>
-            ))}
+          <div className="mt-2 w-full space-y-2 text-left text-[12px] leading-relaxed text-gray-700">
+            <p className="m-0 p-0 break-words">
+              <strong className="font-semibold text-gray-700">사업자등록번호</strong> : 203-87-02097{' '}
+              <span className="text-gray-500">|</span>{' '}
+              <strong className="font-semibold text-gray-700">통신판매업신고</strong> : 제2025-서울성동-1533호{' '}
+              <span className="text-gray-500">|</span>{' '}
+              <strong className="font-semibold text-gray-700">개인정보책임자</strong> : 조나영
+            </p>
+            <p className="m-0 p-0 break-words">
+              <strong className="font-semibold text-gray-700">주소</strong> : 서울특별시 성동구 광나루로8길 31, 2동 301호(성수동2가, 성수SKV1센터){' '}
+              <span className="text-gray-500">|</span>{' '}
+              <strong className="font-semibold text-gray-700">이메일</strong> : indemgz@gmail.com{' '}
+              <span className="text-gray-500">|</span>{' '}
+              <strong className="font-semibold text-gray-700">대표이사</strong> : 조광식
+            </p>
+            <p className="m-0 p-0 pt-1 text-[12px] text-gray-400">&copy; 2024 InDe. All Rights Reserved.</p>
           </div>
         </div>
       </div>

@@ -5,5 +5,5 @@ import { homepageDocMetadataFallback } from '@/components/homepage/homepageDocMe
 export const metadata: Metadata = homepageDocMetadataFallback('company_intro')
 
 export default function CompanyInfoPage() {
-  return <HomepageDocClientView docType="company_intro" />
+  return <HomepageDocClientView docType="company_intro" bottomAnchorId="partners" />
 }

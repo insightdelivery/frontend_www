@@ -12,7 +12,7 @@ export default function VideoPage() {
       listContentType="video"
       detailPathPrefix="/video/detail"
       pageTitle="비디오"
-      pageSubtitle="큐레이션된 비디오 콘텐츠를 통해 최신 트렌드와 인사이트를 만나보세요."
+      pageSubtitle=""
       emptyListMessage="등록된 비디오가 없습니다"
     />
   )

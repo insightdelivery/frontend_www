@@ -21,7 +21,6 @@ export default function HomeSeminarReplay() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="font-bold text-black text-[24px] leading-[32px]">세미나 다시보기</h2>
-          <span className="h-2 w-2 rounded-full bg-[#ffdf38]" aria-hidden />
         </div>
         <Link href="/seminar" className="font-medium text-[#6b7280] text-[14px] hover:text-black">
           더보기 &gt;
@@ -51,7 +50,7 @@ export default function HomeSeminarReplay() {
                   ) : (
                     <div className={`absolute inset-0 ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]}`} />
                   )}
-                  <span className="absolute left-3 top-3 z-[1] rounded-[8px] bg-[#e1f800] px-2 py-1 font-bold text-black text-[10px] max-w-[85%] truncate">
+                  <span className="absolute left-3 top-3 z-[1] rounded-[8px] bg-[#EA90FF] px-2 py-1 font-bold text-black text-[10px] max-w-[85%] truncate">
                     {categoryLabel(v.category) || v.category?.trim() || '세미나'}
                   </span>
                   <div className="absolute inset-0 z-[1] flex items-center justify-center bg-black/20">

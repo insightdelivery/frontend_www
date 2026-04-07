@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ChevronDown } from 'lucide-react'
 import HomeHeroCarousel from '@/components/home/HomeHeroCarousel'
 import { fetchPublicVideoList } from '@/services/video'
 import type { PublicVideoListItem } from '@/types/video'
@@ -15,13 +14,19 @@ import {
   VIDEO_CATEGORY_PARENT,
 } from '@/lib/syscode'
 import WwwPagination from '@/components/common/WwwPagination'
+import {
+  contentCardBadges,
+  sharedTopIdsFromRankingList,
+  CONTENT_CARD_BADGE_STYLES,
+  normalizeContentCardBadges,
+} from '@/components/article/articleBadges'
+import { fetchArticleRankingShare } from '@/services/libraryRanking'
 
 const PAGE_SIZE = 12
 
-const SORT_OPTIONS: { label: string; api: 'latest' | 'popular' | 'rating' }[] = [
-  { label: '최신', api: 'latest' },
-  { label: '인기', api: 'popular' },
-  { label: '평점', api: 'rating' },
+const SORT_TABS: { label: string; api: 'latest' | 'popular' }[] = [
+  { label: '최신순', api: 'latest' },
+  { label: '인기순', api: 'popular' },
 ]
 
 function resolveThumbnailUrl(url: string | null | undefined): string | null {
@@ -80,11 +85,12 @@ export default function PublicVideoSeminarListPage({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
-  const [sortApi, setSortApi] = useState<'latest' | 'popular' | 'rating'>('latest')
-  const [sortOpen, setSortOpen] = useState(false)
+  const [sortApi, setSortApi] = useState<'latest' | 'popular'>('latest')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [seenCategories, setSeenCategories] = useState<string[]>([])
   const [categoryCodes, setCategoryCodes] = useState<SysCodeItem[]>([])
+  /** list.md BEST — 당일 공유 랭킹 상위 contentCode 집합 */
+  const [shareTopIds, setShareTopIds] = useState<Set<string>>(() => new Set())
 
   const categoryParent = useMemo(
     () => (listContentType === 'seminar' ? SEMINAR_CATEGORY_PARENT : VIDEO_CATEGORY_PARENT),
@@ -94,6 +100,21 @@ export default function PublicVideoSeminarListPage({
   useEffect(() => {
     void getSysCode(categoryParent).then(setCategoryCodes)
   }, [categoryParent])
+
+  useEffect(() => {
+    const ct = listContentType === 'video' ? ('VIDEO' as const) : ('SEMINAR' as const)
+    let cancelled = false
+    fetchArticleRankingShare(ct)
+      .then((res) => {
+        if (!cancelled) setShareTopIds(sharedTopIdsFromRankingList(res.list))
+      })
+      .catch(() => {
+        if (!cancelled) setShareTopIds(new Set())
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [listContentType])
 
   const categoryLabel = useCallback(
     (sid: string | undefined | null) => {
@@ -140,7 +161,6 @@ export default function PublicVideoSeminarListPage({
   }, [load])
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-  const sortLabel = SORT_OPTIONS.find((o) => o.api === sortApi)?.label ?? '최신'
 
   return (
     <main className="bg-white text-black">
@@ -182,34 +202,27 @@ export default function PublicVideoSeminarListPage({
               </button>
             ))}
           </div>
-          <div className="relative flex items-center gap-2">
-            <span className="text-[13px] text-gray-500">정렬:</span>
-            <button
-              type="button"
-              onClick={() => setSortOpen(!sortOpen)}
-              className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-[13px] font-medium text-gray-800 hover:bg-gray-50"
-            >
-              {sortLabel}
-              <ChevronDown className="h-4 w-4 text-gray-500" />
-            </button>
-            {sortOpen ? (
-              <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-                {SORT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.api}
-                    type="button"
-                    onClick={() => {
-                      setSortApi(opt.api)
-                      setSortOpen(false)
-                      setPage(1)
-                    }}
-                    className="block w-full px-4 py-2 text-left text-[13px] hover:bg-gray-50"
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
+          <div className="flex items-center gap-5 sm:gap-6" role="tablist" aria-label="정렬">
+            {SORT_TABS.map((opt) => {
+              const active = sortApi === opt.api
+              return (
+                <button
+                  key={opt.api}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => {
+                    setSortApi(opt.api)
+                    setPage(1)
+                  }}
+                  className={`text-[14px] font-medium transition-colors ${
+                    active ? 'text-black' : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -225,6 +238,9 @@ export default function PublicVideoSeminarListPage({
               {items.map((row, idx) => {
                 const thumb = resolveThumbnailUrl(row.thumbnail)
                 const durStr = formatDurationSec(row.videoStreamInfo?.duration ?? null)
+                const badges = normalizeContentCardBadges(
+                  contentCardBadges(row.createdAt, row.id, shareTopIds),
+                )
                 return (
                   <Link key={row.id} href={`${detailPathPrefix}?id=${row.id}`} className="group block">
                     <div className="relative">
@@ -236,10 +252,19 @@ export default function PublicVideoSeminarListPage({
                           <div className={`h-full w-full ${PLACEHOLDER_GRADIENTS[idx % PLACEHOLDER_GRADIENTS.length]}`} />
                         )}
                       </div>
-                      {row.isNewBadge ? (
-                        <span className="absolute left-3 top-3 rounded-full bg-yellow-300 px-2.5 py-1 text-[10px] font-extrabold text-black">
-                          NEW
-                        </span>
+                      {badges.length > 0 ? (
+                        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+                          {badges.map((b) => (
+                            <span
+                              key={b}
+                              className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold ${
+                                b === 'NEW' ? 'bg-[#fde048] text-black' : CONTENT_CARD_BADGE_STYLES[b]
+                              }`}
+                            >
+                              {b}
+                            </span>
+                          ))}
+                        </div>
                       ) : null}
                       {durStr ? (
                         <span className="absolute bottom-3 right-3 rounded bg-black/70 px-2 py-0.5 text-[11px] text-white">

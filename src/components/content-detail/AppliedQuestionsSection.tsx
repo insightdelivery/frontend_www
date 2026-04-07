@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
-import { Pencil, Trash2, Loader2 } from 'lucide-react'
+import { Pencil, Trash2, Loader2, ClipboardEdit } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   fetchContentQuestions,
@@ -227,7 +227,16 @@ export default function AppliedQuestionsSection({
 
   return (
     <section className={`${COLORS.bgLight} border ${COLORS.border} rounded-2xl p-8 ${className}`.trim()}>
-      <h3 className={`font-bold text-[20px] ${COLORS.text} mb-6`}>적용 질문</h3>
+      <h3
+        className={`mb-6 flex items-center gap-2 font-bold text-[20px] ${COLORS.text}`}
+      >
+        <ClipboardEdit
+          className={`h-6 w-6 shrink-0 ${COLORS.textSecondary}`}
+          strokeWidth={2}
+          aria-hidden
+        />
+        적용 질문
+      </h3>
       {submitError && <p className="mb-4 text-sm text-red-600">{submitError}</p>}
       <div className="space-y-6">
         {contentQuestions.length > 0 ? (
@@ -240,7 +249,9 @@ export default function AppliedQuestionsSection({
 
             return (
               <div key={q.question_id}>
-                <label className={`mb-2 block text-[14px] font-semibold leading-5 ${COLORS.text}`}>
+                <label
+                  className={`mb-2 block font-sans text-[16px] font-semibold leading-[20px] tracking-normal text-[#0f172a]`}
+                >
                   Q{i + 1}. {q.question_text}
                 </label>
 
@@ -261,7 +272,7 @@ export default function AppliedQuestionsSection({
                 )}
 
                 {showReadOnly && saved && (
-                  <div className="flex flex-row items-center gap-3 sm:gap-4">
+                  <div className="flex flex-row items-center gap-3 sm:gap-4 pl-[20px]">
                     <p
                       className={`min-w-0 flex-1 whitespace-pre-wrap break-words text-[16px] leading-relaxed ${COLORS.text}`}
                     >
@@ -299,7 +310,7 @@ export default function AppliedQuestionsSection({
                 )}
 
                 {showComposer && (
-                  <>
+                  <div className={isEditing ? 'pl-[20px]' : undefined}>
                     <textarea
                       value={draft}
                       onChange={(e) => handleDraftChange(q.question_id, e.target.value)}
@@ -337,7 +348,7 @@ export default function AppliedQuestionsSection({
                         </button>
                       )}
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             )

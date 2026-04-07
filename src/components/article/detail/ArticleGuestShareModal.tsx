@@ -6,6 +6,7 @@
  */
 import { useRef } from 'react'
 import Link from 'next/link'
+import { Copy, Info, LogIn } from 'lucide-react'
 import { postShare, type ContentType } from '@/services/libraryUseractivity'
 
 const DEBOUNCE_MS = 2000
@@ -55,29 +56,46 @@ export default function ArticleGuestShareModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl"
+        className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl sm:p-8"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="guest-share-title" className="font-black text-[20px] text-[#0f172a] mb-3">
+        <h2
+          id="guest-share-title"
+          className="mb-5 text-[22px] font-black leading-tight tracking-tight text-[#0f172a] sm:mb-6"
+        >
           인사이트 확장하기!
         </h2>
-        <p className="text-[15px] text-[#475569] mb-4 leading-relaxed">
-          비회원은 <strong className="text-[#0f172a]">현재 페이지 주소</strong>만 복사할 수 있습니다. 회원 로그인 시{' '}
-          <strong className="text-[#0f172a]">24시간 유효 short 공유 링크</strong>를 발급할 수 있습니다.
-        </p>
+
+        <div className="mb-6 flex gap-3 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-4 sm:p-5">
+          <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#64748b]" strokeWidth={2} aria-hidden />
+          <p className="text-[15px] leading-relaxed text-[#475569]">
+            비회원은 <strong className="font-semibold text-[#0f172a]">현재 페이지 주소</strong>만 복사할 수 있습니다.
+            <br />로그인 후, 링크를 복사하면 전체 내용을 공유할 수 있습니다.
+          </p>
+        </div>
+
         <button
           type="button"
-          className="w-full bg-black text-white text-[15px] font-bold py-3 rounded-xl hover:opacity-90 mb-3"
+          className="mb-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-black py-3.5 text-[15px] font-bold text-white shadow-sm transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
           onClick={handleCopy}
         >
+          <Copy className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
           현재 페이지 링크 복사
         </button>
-        <p className="text-center text-[14px] mb-4">
-          <Link href="/login" className="text-[#2563eb] underline font-medium">
-            로그인 후 short 링크 발급
-          </Link>
-        </p>
-        <button type="button" className="w-full text-[14px] text-[#64748b] hover:underline" onClick={onClose}>
+
+        <Link
+          href="/login"
+          className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-blue-200 bg-blue-50/90 py-3.5 text-[14px] font-bold text-blue-900 transition hover:border-blue-300 hover:bg-blue-100"
+        >
+          <LogIn className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+          로그인 하기
+        </Link>
+
+        <button
+          type="button"
+          className="w-full rounded-xl border-2 border-slate-200 bg-white py-3.5 text-[15px] font-bold text-[#0f172a] shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
+          onClick={onClose}
+        >
           닫기
         </button>
       </div>

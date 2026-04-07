@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { CheckCircle2, Clock, Copy } from 'lucide-react'
 import { ensureShareLink, type ShareEnsureResult } from '@/services/contentShare'
 import { postShare, type ContentType } from '@/services/libraryUseractivity'
 import { buildShortSharePageUrl } from '@/lib/shareUrl'
@@ -36,8 +37,8 @@ export default function ArticleShareModal({
   const [data, setData] = useState<ShareEnsureResult | null>(null)
   const [, setTick] = useState(0)
   const lastShareLogAt = useRef(0)
-  /** 같은 expiredAt에 대해 자동 갱신 1회만 (§7.5 remaining<=0) */
-  const autoRenewedForExpiredAt = useRef<string | null>(null)
+  /** 만료 시점(expiredAt)마다 자동 갱신 1회만 시도 — 실패 시 ref 해제해 수동 재시도 가능 */
+  const renewAttemptForExpiredAt = useRef<string | null>(null)
 
   const runEnsure = useCallback(async () => {
     setLoading(true)
@@ -45,9 +46,12 @@ export default function ArticleShareModal({
     try {
       const r = await ensureShareLink(contentType, contentCode)
       setData(r)
+      renewAttemptForExpiredAt.current = null
     } catch (e) {
       setError(e instanceof Error ? e.message : '링크를 불러오지 못했습니다.')
-      setData(null)
+      // 갱신 실패 시에도 기존 응답 유지 → mode·만료 시각 유지, 다시 시도 UI 표시 가능
+      setData((prev) => prev)
+      renewAttemptForExpiredAt.current = null
     } finally {
       setLoading(false)
     }
@@ -58,10 +62,10 @@ export default function ArticleShareModal({
       setData(null)
       setError(null)
       setLoading(false)
-      autoRenewedForExpiredAt.current = null
+      renewAttemptForExpiredAt.current = null
       return
     }
-    autoRenewedForExpiredAt.current = null
+    renewAttemptForExpiredAt.current = null
     runEnsure()
   }, [open, runEnsure])
 
@@ -79,18 +83,26 @@ export default function ArticleShareModal({
   const displayRemainingMs =
     expiredAt && mode === 'active' ? new Date(expiredAt).getTime() - Date.now() : 0
 
+  /** 유효시간 종료 후: 서버가 기존 행을 UPDATE해 새 shortCode·만료 시각 발급(§5.3) — 자동 1회 */
   useEffect(() => {
     if (!open || mode !== 'active' || !expiredAt) return
     if (displayRemainingMs > 0) return
-    if (autoRenewedForExpiredAt.current === expiredAt) return
-    autoRenewedForExpiredAt.current = expiredAt
-    runEnsure()
-  }, [open, mode, expiredAt, displayRemainingMs, runEnsure])
+    if (loading) return
+    if (error) return
+    if (renewAttemptForExpiredAt.current === expiredAt) return
+    renewAttemptForExpiredAt.current = expiredAt
+    void runEnsure()
+  }, [open, mode, expiredAt, displayRemainingMs, loading, error, runEnsure])
 
   const isStateB = mode === 'active' && displayRemainingMs > 0
   const isStateA = mode === 'issued' || mode === 'renewed'
+  /** 자동 갱신 실패 후: 만료된 채로 링크 재발급 필요 */
   const needsManualRenew =
-    mode === 'active' && displayRemainingMs <= 0 && autoRenewedForExpiredAt.current === expiredAt && !loading
+    Boolean(data) &&
+    mode === 'active' &&
+    displayRemainingMs <= 0 &&
+    !loading &&
+    Boolean(error)
 
   const fireShareLog = useCallback(() => {
     const now = Date.now()
@@ -99,8 +111,9 @@ export default function ArticleShareModal({
     postShare(contentType, contentCode).catch(() => {})
   }, [contentCode, contentType])
 
-  const handleCopy = async () => {
-    if (!shareUrl || !isStateA) return
+  /** State A·B 공통 — API가 준 `shortCode`로 만든 URL만 복사(추가 발급 요청 없음) */
+  const handleCopyUrl = async () => {
+    if (!shareUrl) return
     try {
       await navigator.clipboard.writeText(shareUrl)
       fireShareLog()
@@ -111,7 +124,8 @@ export default function ArticleShareModal({
   }
 
   const handleManualRenew = () => {
-    runEnsure()
+    renewAttemptForExpiredAt.current = null
+    void runEnsure()
   }
 
   if (!open) return null
@@ -125,55 +139,90 @@ export default function ArticleShareModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl"
+        className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl sm:p-8"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="share-modal-title" className="font-black text-[20px] text-[#0f172a] mb-4">
+        <h2 id="share-modal-title" className="mb-5 text-[22px] font-black leading-tight tracking-tight text-[#0f172a] sm:mb-6">
           인사이트 확장하기!
         </h2>
 
-        {loading && <p className="text-[14px] text-[#64748b]">불러오는 중…</p>}
-        {error && !loading && <p className="text-[14px] text-red-600 mb-2">{error}</p>}
+        {loading && (
+          <p className="text-[15px] text-[#64748b]" role="status">
+            불러오는 중…
+          </p>
+        )}
+        {error && !loading && !needsManualRenew && (
+          <p className="mb-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[14px] text-red-700">{error}</p>
+        )}
 
         {!loading && data && isStateB && (
-          <div className="space-y-3">
-            <p className="text-[15px] text-[#0f172a]">이미 공유 링크가 생성되었습니다.</p>
-            <p className="text-[14px] font-mono text-[#475569]">
-              남은 시간: {formatRemainingMs(displayRemainingMs)}
-            </p>
+          <div className="space-y-4 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-4 sm:p-5">
+            <div className="flex gap-3">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" strokeWidth={2.25} aria-hidden />
+              <p className="text-[15px] font-semibold leading-snug text-[#0f172a]">
+                이미 공유 링크가 생성되었습니다.
+              </p>
+            </div>
+
+            {shareUrl ? (
+              <div className="rounded-lg border border-slate-200 bg-white p-3 sm:p-4">
+                <p className="mb-2 text-[12px] font-semibold tracking-wide text-[#64748b]">공유 링크</p>
+                <p className="mb-3 break-all text-[13px] leading-relaxed text-[#0f172a]">{shareUrl}</p>
+                <button
+                  type="button"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-black py-3 text-[15px] font-bold text-white shadow-sm transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
+                  onClick={handleCopyUrl}
+                >
+                  <Copy className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+                  복사하기
+                </button>
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-slate-200 bg-white px-3 py-3 sm:px-4">
+              <Clock className="h-4 w-4 shrink-0 text-[#64748b]" strokeWidth={2} aria-hidden />
+              <span className="text-[13px] font-medium text-[#64748b]">남은 시간</span>
+              <span className="min-w-[7.5rem] flex-1 text-right font-mono text-[18px] font-semibold tabular-nums text-[#0f172a] sm:text-[20px]">
+                {formatRemainingMs(displayRemainingMs)}
+              </span>
+            </div>
           </div>
         )}
 
         {!loading && data && isStateA && (
           <div className="space-y-4">
-            <p className="text-[13px] text-[#64748b] break-all">{shareUrl || '—'}</p>
+            <p className="break-all text-[13px] text-[#64748b]">{shareUrl || '—'}</p>
             <button
               type="button"
-              className="w-full bg-black text-white text-[15px] font-bold py-3 rounded-xl hover:opacity-90"
-              onClick={handleCopy}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-black py-3 text-[15px] font-bold text-white shadow-sm transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 disabled:opacity-50"
+              onClick={handleCopyUrl}
               disabled={!shareUrl}
             >
+              <Copy className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
               복사하기
             </button>
           </div>
         )}
 
         {!loading && needsManualRenew && (
-          <div className="space-y-3">
-            <p className="text-[14px] text-[#64748b]">링크를 갱신할 수 없습니다. 다시 시도해 주세요.</p>
+          <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50/80 p-4">
+            <p className="text-[14px] leading-relaxed text-[#92400e]">
+              공유 링크 유효 시간이 지났습니다. 새 링크를 발급하려면 아래를 눌러 주세요. (이전 short 링크는 더 이상
+              사용되지 않습니다.)
+            </p>
             <button
               type="button"
-              className="w-full bg-black text-white text-[15px] font-bold py-3 rounded-xl hover:opacity-90"
+              className="w-full rounded-xl bg-black py-3 text-[15px] font-bold text-white shadow-sm transition hover:opacity-90"
               onClick={handleManualRenew}
             >
-              다시 시도
+              새 공유 링크 발급하기
             </button>
           </div>
         )}
 
         <button
           type="button"
-          className="mt-6 w-full text-[14px] text-[#64748b] hover:underline"
+          className="mt-6 w-full rounded-xl border-2 border-slate-200 bg-white py-3.5 text-[15px] font-bold text-[#0f172a] shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
           onClick={onClose}
         >
           닫기

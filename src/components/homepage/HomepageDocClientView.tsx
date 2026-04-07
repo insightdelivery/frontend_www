@@ -8,7 +8,13 @@ import { sanitizeHomepageHtml } from '@/lib/sanitizeHomepageHtml'
 import { fetchHomepageDocPublic } from '@/services/homepageDoc'
 import { HomepageDocBody } from '@/components/homepage/HomepageDocBody'
 
-export function HomepageDocClientView({ docType }: { docType: HomepageDocType }) {
+export function HomepageDocClientView({
+  docType,
+  bottomAnchorId,
+}: {
+  docType: HomepageDocType
+  bottomAnchorId?: string
+}) {
   const [doc, setDoc] = useState<HomepageDocPayload | null | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
 
@@ -34,6 +40,16 @@ export function HomepageDocClientView({ docType }: { docType: HomepageDocType })
       cancelled = true
     }
   }, [docType])
+
+  /** 문서 렌더 후 #bottomAnchorId로 이동(클라이언트 전환 시 브라우저 기본 해시 스크롤이 안 될 수 있음) */
+  useEffect(() => {
+    if (doc === undefined || doc === null || !bottomAnchorId) return
+    if (typeof window === 'undefined') return
+    if (window.location.hash !== `#${bottomAnchorId}`) return
+    const id = bottomAnchorId
+    const scroll = () => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    requestAnimationFrame(() => requestAnimationFrame(scroll))
+  }, [doc, bottomAnchorId])
 
   if (doc === undefined) {
     return (
@@ -67,5 +83,5 @@ export function HomepageDocClientView({ docType }: { docType: HomepageDocType })
 
   const title = doc.title?.trim() || HOMEPAGE_DOC_DEFAULT_TITLES[docType]
   const html = sanitizeHomepageHtml(doc.bodyHtml || '')
-  return <HomepageDocBody title={title} html={html} />
+  return <HomepageDocBody title={title} html={html} bottomAnchorId={bottomAnchorId} />
 }

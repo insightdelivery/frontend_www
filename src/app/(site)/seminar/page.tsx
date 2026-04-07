@@ -12,7 +12,7 @@ export default function SeminarPage() {
       listContentType="seminar"
       detailPathPrefix="/seminar/detail"
       pageTitle="세미나"
-      pageSubtitle="큐레이션된 세미나 영상으로 현장 인사이트와 실무 노하우를 만나보세요."
+      pageSubtitle=""
       emptyListMessage="등록된 세미나가 없습니다"
     />
   )

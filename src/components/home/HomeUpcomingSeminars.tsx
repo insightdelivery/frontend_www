@@ -119,7 +119,6 @@ export default function HomeUpcomingSeminars() {
       <div className="flex w-full items-center">
         <div className="flex items-center gap-2">
           <h2 className="text-[24px] font-bold leading-[32px] text-black">다가오는 세미나</h2>
-          <span className="size-2 shrink-0 rounded-full bg-[#e1f800]" aria-hidden />
         </div>
       </div>
 
