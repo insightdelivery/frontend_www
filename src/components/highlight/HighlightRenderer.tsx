@@ -27,7 +27,33 @@ export function HighlightRenderer({ contentHtml, className }: HighlightRendererP
     const sanitized =
       typeof window !== 'undefined'
         ? DOMPurify.sanitize(contentHtml, {
-            ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'a', 'blockquote', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'span', 'div'],
+            ALLOWED_TAGS: [
+              'p',
+              'br',
+              'hr',
+              'strong',
+              'em',
+              'u',
+              'a',
+              'blockquote',
+              'ul',
+              'ol',
+              'li',
+              'h1',
+              'h2',
+              'h3',
+              'h4',
+              'h5',
+              'h6',
+              'span',
+              'div',
+              'img',
+              'figure',
+              'figcaption',
+              'picture',
+              'source',
+            ],
+            ADD_ATTR: ['loading', 'decoding', 'srcset', 'sizes', 'class'],
           })
         : contentHtml
     root.innerHTML = sanitized

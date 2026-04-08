@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { normalizeSearchQuery } from '@/lib/searchQuery'
 import { fetchUnifiedSearch } from '@/services/search'
-import type { UnifiedSearchResult } from '@/types/search'
+import type { SearchContentItem, UnifiedSearchResult } from '@/types/search'
 import { ensureSysCodeLoaded } from '@/lib/syscode'
 import SearchBar from '@/components/search/SearchBar'
 import SearchContentSection from '@/components/search/SearchContentSection'
@@ -13,6 +13,10 @@ import SearchEmptyResult from '@/components/search/SearchEmptyResult'
 import SearchSkeleton from '@/components/search/SearchSkeleton'
 
 const emptyBuckets: UnifiedSearchResult = { article: [], video: [], seminar: [] }
+
+function sortSearchByPriority(items: SearchContentItem[]): SearchContentItem[] {
+  return [...items].sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999))
+}
 
 function isCanceled(e: unknown): boolean {
   if (axios.isAxiosError(e)) {
@@ -123,19 +127,19 @@ export default function SearchPageContent() {
                 key={`${debouncedQuery}-article`}
                 title="아티클"
                 kind="article"
-                items={data.article}
+                items={sortSearchByPriority(data.article)}
               />
               <SearchContentSection
                 key={`${debouncedQuery}-video`}
                 title="비디오"
                 kind="video"
-                items={data.video}
+                items={sortSearchByPriority(data.video)}
               />
               <SearchContentSection
                 key={`${debouncedQuery}-seminar`}
                 title="세미나"
                 kind="seminar"
-                items={data.seminar}
+                items={sortSearchByPriority(data.seminar)}
               />
             </div>
           </>

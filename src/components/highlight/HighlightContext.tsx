@@ -1,10 +1,17 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { fetchHighlightList, createHighlight, createHighlights, deleteHighlightGroup } from '@/services/highlight'
+import {
+  fetchHighlightList,
+  createHighlight,
+  createHighlights,
+  deleteHighlight,
+  deleteHighlightGroup,
+} from '@/services/highlight'
 import { getAccessToken } from '@/services/auth'
 import { getHighlightConstants } from '@/lib/highlightConstants'
 import type { HighlightItem, HighlightCreatePayload, HighlightConstants } from '@/types/highlight'
+import { Tooltip, toTooltipAnchor, type TooltipAnchor } from '@/components/ui/Tooltip'
 
 interface HighlightContextValue {
   articleId: string | null
@@ -14,7 +21,10 @@ interface HighlightContextValue {
   setArticleId: (id: string | null) => void
   create: (payloads: HighlightCreatePayload[]) => Promise<void>
   deleteGroup: (highlightGroupId: number) => Promise<void>
+  deleteHighlightById: (highlightId: number) => Promise<void>
   refresh: () => Promise<void>
+  /** articleHightlightPlan §18 — 선택/마크 근처 툴팁 (anchor는 getBoundingClientRect 등) */
+  showHighlightTooltip: (message: string, anchorRect?: DOMRect | null, durationMs?: number) => void
 }
 
 const HighlightContext = createContext<HighlightContextValue | null>(null)
@@ -33,9 +43,22 @@ export function HighlightProvider({ articleId, children }: HighlightProviderProp
   const [list, setList] = useState<HighlightItem[]>([])
   const [loading, setLoading] = useState(false)
   const [constants] = useState<HighlightConstants>(getHighlightConstants)
-  const lastFetchedId = useRef<string | null>(null)
-  /** Strict Mode 재마운트 시 첫 요청 결과 재사용 (중복 호출 없이 화면 갱신) */
+  /** 동일 articleId에 대한 in-flight 요청 1회만 — Strict Mode 이중 마운트 시 공유 */
   const highlightPromiseRef = useRef<{ articleId: string; promise: Promise<HighlightItem[]> } | null>(null)
+  const [tooltip, setTooltip] = useState<{ message: string; anchor: TooltipAnchor | null } | null>(null)
+  const tooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const showHighlightTooltip = useCallback((message: string, anchorRect?: DOMRect | null, durationMs = 2000) => {
+    setTooltip({
+      message,
+      anchor: anchorRect ? toTooltipAnchor(anchorRect) : null,
+    })
+    if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current)
+    tooltipTimerRef.current = setTimeout(() => {
+      setTooltip(null)
+      tooltipTimerRef.current = null
+    }, durationMs)
+  }, [])
 
   const refresh = useCallback(async () => {
     if (!articleId) {
@@ -64,7 +87,7 @@ export function HighlightProvider({ articleId, children }: HighlightProviderProp
       return
     }
 
-    // 재마운트(Strict Mode) 시 이미 진행 중인 요청이 있으면 그 결과만 사용 (1회 호출 유지)
+    // 재마운트(Strict Mode) 시 이미 진행 중인 요청이 있으면 그 결과만 사용
     const inFlight = highlightPromiseRef.current
     if (inFlight?.articleId === articleId) {
       inFlight.promise
@@ -72,10 +95,6 @@ export function HighlightProvider({ articleId, children }: HighlightProviderProp
         .catch(() => setList([]))
       return () => {}
     }
-
-    // 중복 호출 방지 (Strict Mode 대응, article_detail_duplicate_api_analysis Part II)
-    if (lastFetchedId.current === articleId) return
-    lastFetchedId.current = articleId
 
     setLoading(true)
     const promise = fetchHighlightList(articleId)
@@ -88,6 +107,12 @@ export function HighlightProvider({ articleId, children }: HighlightProviderProp
         highlightPromiseRef.current = null
       })
   }, [articleId])
+
+  useEffect(() => {
+    return () => {
+      if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current)
+    }
+  }, [])
 
   const create = useCallback(
     async (payloads: HighlightCreatePayload[]) => {
@@ -110,6 +135,14 @@ export function HighlightProvider({ articleId, children }: HighlightProviderProp
     [refresh]
   )
 
+  const deleteHighlightById = useCallback(
+    async (highlightId: number) => {
+      await deleteHighlight(highlightId)
+      await refresh()
+    },
+    [refresh]
+  )
+
   const value: HighlightContextValue = {
     articleId,
     list,
@@ -118,12 +151,15 @@ export function HighlightProvider({ articleId, children }: HighlightProviderProp
     setArticleId: () => {},
     create,
     deleteGroup,
+    deleteHighlightById,
     refresh,
+    showHighlightTooltip,
   }
 
   return (
     <HighlightContext.Provider value={value}>
       {children}
+      <Tooltip message={tooltip?.message ?? null} anchor={tooltip?.anchor ?? null} />
     </HighlightContext.Provider>
   )
 }

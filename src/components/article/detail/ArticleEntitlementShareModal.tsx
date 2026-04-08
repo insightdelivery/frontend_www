@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { fetchShareForCopy } from '@/services/contentShare'
 import { postShare, type ContentType } from '@/services/libraryUseractivity'
 import { buildShortSharePageUrl } from '@/lib/shareUrl'
+import { useLoginHref } from '@/hooks/useLoginHref'
 
 const DEBOUNCE_MS = 2000
 
@@ -28,6 +29,7 @@ export default function ArticleEntitlementShareModal({
   contentType = 'ARTICLE',
   onCopied,
 }: ArticleEntitlementShareModalProps) {
+  const loginHref = useLoginHref()
   const lastLogAt = useRef(0)
   const [loading, setLoading] = useState(false)
   const [shortCode, setShortCode] = useState<string | null>(null)
@@ -154,7 +156,7 @@ export default function ArticleEntitlementShareModal({
         )}
 
         <p className="text-center text-[14px] mb-2">
-          <Link href="/login" className="text-[#2563eb] underline font-medium">
+          <Link href={loginHref} className="text-[#2563eb] underline font-medium">
             로그인 후 새 short 링크 발급
           </Link>
         </p>

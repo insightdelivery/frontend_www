@@ -105,7 +105,7 @@ export default function MypageAppliedQuestionsPage() {
                   <span className="w-fit rounded-[2px] bg-[#f1f5f9] px-2 py-1 text-[10px] font-black uppercase tracking-[0.5px] text-[#475569]">
                     {cardTagText(item)}
                   </span>
-                  <div className="relative h-[195px] w-full overflow-hidden rounded-lg bg-[#f1f5f9]">
+                  <div className="relative aspect-3/2 w-full overflow-hidden rounded-lg bg-[#f1f5f9]">
                     {item.thumbnailUrl ? (
                       <Image
                         src={item.thumbnailUrl}

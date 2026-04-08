@@ -26,6 +26,24 @@ function formatRemainingMs(ms: number): string {
 /** §7.4 — SHARE 로그 스팸 완화 */
 const SHARE_LOG_DEBOUNCE_MS = 2000
 
+/**
+ * API expiredAt는 백엔드 UTC(DATETIME) 직렬화. 오프셋 없으면 로컬로 파싱되어
+ * 남은 시간이 음수로 떨어지고 silent renew가 반복될 수 있음 → 없으면 Z(UTC)로 해석.
+ */
+function parseApiExpiredAtMs(iso: string): number {
+  const s = (iso || '').trim()
+  if (!s) return NaN
+  const hasTz = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(s)
+  const normalized = hasTz ? s : `${s}Z`
+  return new Date(normalized).getTime()
+}
+
+function isExpiredAtInPast(iso: string): boolean {
+  const t = parseApiExpiredAtMs(iso)
+  if (!Number.isFinite(t)) return false
+  return t <= Date.now()
+}
+
 export default function ArticleShareModal({
   open,
   onClose,
@@ -39,6 +57,9 @@ export default function ArticleShareModal({
   const lastShareLogAt = useRef(0)
   /** 만료 시점(expiredAt)마다 자동 갱신 1회만 시도 — 실패 시 ref 해제해 수동 재시도 가능 */
   const renewAttemptForExpiredAt = useRef<string | null>(null)
+  /** 만료 응답 시 조용히 ensure 재시도(서버가 새 링크 발급할 때까지) — 무한 방지 상한 */
+  const silentRenewAttemptsRef = useRef(0)
+  const MAX_SILENT_ENSURE = 12
 
   const runEnsure = useCallback(async () => {
     setLoading(true)
@@ -46,7 +67,14 @@ export default function ArticleShareModal({
     try {
       const r = await ensureShareLink(contentType, contentCode)
       setData(r)
-      renewAttemptForExpiredAt.current = null
+      // 무한 ensure 방지: 자동 갱신 effect가 ref를 expiredAt에 맞춘 뒤 호출한 runEnsure가 "여전히 만료" 응답이면 ref 유지.
+      // 최초 오픈 시 runEnsure는 ref가 null → 아래 조건 불충족 → null 유지 → effect가 1회 자동 갱신 가능.
+      const stillExpired = r.mode === 'active' && Boolean(r.expiredAt) && isExpiredAtInPast(r.expiredAt)
+      if (stillExpired && renewAttemptForExpiredAt.current === r.expiredAt) {
+        renewAttemptForExpiredAt.current = r.expiredAt
+      } else {
+        renewAttemptForExpiredAt.current = null
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : '링크를 불러오지 못했습니다.')
       // 갱신 실패 시에도 기존 응답 유지 → mode·만료 시각 유지, 다시 시도 UI 표시 가능
@@ -63,9 +91,11 @@ export default function ArticleShareModal({
       setError(null)
       setLoading(false)
       renewAttemptForExpiredAt.current = null
+      silentRenewAttemptsRef.current = 0
       return
     }
     renewAttemptForExpiredAt.current = null
+    silentRenewAttemptsRef.current = 0
     runEnsure()
   }, [open, runEnsure])
 
@@ -80,29 +110,41 @@ export default function ArticleShareModal({
     return () => window.clearInterval(id)
   }, [open, mode, expiredAt])
 
+  const expiredAtMs = expiredAt ? parseApiExpiredAtMs(expiredAt) : NaN
   const displayRemainingMs =
-    expiredAt && mode === 'active' ? new Date(expiredAt).getTime() - Date.now() : 0
+    expiredAt && mode === 'active' && Number.isFinite(expiredAtMs)
+      ? expiredAtMs - Date.now()
+      : 0
 
-  /** 유효시간 종료 후: 서버가 기존 행을 UPDATE해 새 shortCode·만료 시각 발급(§5.3) — 자동 1회 */
-  useEffect(() => {
-    if (!open || mode !== 'active' || !expiredAt) return
-    if (displayRemainingMs > 0) return
-    if (loading) return
-    if (error) return
-    if (renewAttemptForExpiredAt.current === expiredAt) return
-    renewAttemptForExpiredAt.current = expiredAt
-    void runEnsure()
-  }, [open, mode, expiredAt, displayRemainingMs, loading, error, runEnsure])
+  /** 미만료: UTC 기준 만료 시각이 아직 미래. 파싱 실패 시 서버 active·shortCode면 표시(카운트다운만 0) */
+  const isActiveLinkUsable =
+    mode === 'active' &&
+    Boolean(shortCode) &&
+    Boolean(expiredAt) &&
+    (Number.isFinite(expiredAtMs) ? expiredAtMs > Date.now() : true)
 
-  const isStateB = mode === 'active' && displayRemainingMs > 0
+  const isStateB = isActiveLinkUsable
   const isStateA = mode === 'issued' || mode === 'renewed'
-  /** 자동 갱신 실패 후: 만료된 채로 링크 재발급 필요 */
-  const needsManualRenew =
+
+  /** 서버가 active인데 UTC 기준 만료가 이미 지난 경우만 재발급(로컬 파싱 오류로 연속 호출되던 것 방지) */
+  const shouldSilentRenew =
     Boolean(data) &&
     mode === 'active' &&
-    displayRemainingMs <= 0 &&
     !loading &&
-    Boolean(error)
+    !error &&
+    typeof expiredAt === 'string' &&
+    isExpiredAtInPast(expiredAt)
+
+  useEffect(() => {
+    if (!shouldSilentRenew) return
+    if (silentRenewAttemptsRef.current >= MAX_SILENT_ENSURE) {
+      setError('공유 링크를 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.')
+      return
+    }
+    silentRenewAttemptsRef.current += 1
+    renewAttemptForExpiredAt.current = null
+    void runEnsure()
+  }, [shouldSilentRenew, loading, expiredAt, shortCode, runEnsure])
 
   const fireShareLog = useCallback(() => {
     const now = Date.now()
@@ -121,11 +163,6 @@ export default function ArticleShareModal({
     } catch {
       setError('클립보드 복사에 실패했습니다.')
     }
-  }
-
-  const handleManualRenew = () => {
-    renewAttemptForExpiredAt.current = null
-    void runEnsure()
   }
 
   if (!open) return null
@@ -151,7 +188,7 @@ export default function ArticleShareModal({
             불러오는 중…
           </p>
         )}
-        {error && !loading && !needsManualRenew && (
+        {error && !loading && (
           <p className="mb-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[14px] text-red-700">{error}</p>
         )}
 
@@ -191,6 +228,9 @@ export default function ArticleShareModal({
 
         {!loading && data && isStateA && (
           <div className="space-y-4">
+            <p className="text-[15px] font-medium leading-relaxed text-[#0f172a]">
+              24시간 공유 링크로 인사이트와 복음을 나눠보세요!
+            </p>
             <p className="break-all text-[13px] text-[#64748b]">{shareUrl || '—'}</p>
             <button
               type="button"
@@ -200,22 +240,6 @@ export default function ArticleShareModal({
             >
               <Copy className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
               복사하기
-            </button>
-          </div>
-        )}
-
-        {!loading && needsManualRenew && (
-          <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50/80 p-4">
-            <p className="text-[14px] leading-relaxed text-[#92400e]">
-              공유 링크 유효 시간이 지났습니다. 새 링크를 발급하려면 아래를 눌러 주세요. (이전 short 링크는 더 이상
-              사용되지 않습니다.)
-            </p>
-            <button
-              type="button"
-              className="w-full rounded-xl bg-black py-3 text-[15px] font-bold text-white shadow-sm transition hover:opacity-90"
-              onClick={handleManualRenew}
-            >
-              새 공유 링크 발급하기
             </button>
           </div>
         )}

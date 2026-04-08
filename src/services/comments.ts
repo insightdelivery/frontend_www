@@ -35,6 +35,8 @@ export interface CommentReplyItem {
   is_mine?: boolean
   can_edit?: boolean
   can_delete?: boolean
+  /** 해당 콘텐츠에 대한 작성자의 *현재* 별점(1~5). 없으면 미부여. GET /api/comments 시 백엔드가 `publicUserActivityLog` RATING 기준으로 채움. */
+  rating_for_content?: number | null
 }
 
 export interface CommentItem extends CommentReplyItem {

@@ -51,3 +51,9 @@ export async function deleteHighlight(highlightId: number): Promise<void> {
 export async function deleteHighlightGroup(highlightGroupId: number): Promise<void> {
   await api.delete(`${BASE}/group/${highlightGroupId}`)
 }
+
+/** 생성/삭제 실패 시 공통 API 메시지 */
+export function getHighlightApiErrorMessage(err: unknown): string {
+  const e = err as { response?: { data?: { IndeAPIResponse?: { Message?: string } } } }
+  return e.response?.data?.IndeAPIResponse?.Message ?? '처리 중 오류가 발생했습니다.'
+}

@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import ProfileForm from '@/components/profile/ProfileForm'
 
 export default function ProfilePage() {
@@ -14,7 +15,9 @@ export default function ProfilePage() {
             회원 정보를 조회하고 수정할 수 있습니다.
           </p>
         </div>
-        <ProfileForm variant="standalone" />
+        <Suspense fallback={<p className="text-sm text-gray-600">로딩 중…</p>}>
+          <ProfileForm variant="standalone" />
+        </Suspense>
       </div>
     </div>
   )

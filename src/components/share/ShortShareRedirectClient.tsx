@@ -26,10 +26,12 @@ export default function ShortShareRedirectClient({ code }: { code: string }) {
         const id = res.contentId
         const expiredQ = res.expired ? '&share_expired=1' : ''
         if (ct === 'ARTICLE') {
-          const q = res.expired
-            ? `?id=${id}&share_expired=1`
-            : `?id=${id}`
-          router.replace(`/article/detail${q}`)
+          const idStr = String(id)
+          const params = new URLSearchParams({ id: idStr, from_share: '1' })
+          if (res.expired) params.set('share_expired', '1')
+          // router.replace만 쓰면 정적 export·클라이언트 라우팅에서 주소창에 from_share 등 쿼리가 남지 않는 경우가 있어 전체 이동으로 고정
+          const url = `${window.location.origin}/article/detail?${params.toString()}`
+          window.location.replace(url)
           return
         }
         if (ct === 'VIDEO') {

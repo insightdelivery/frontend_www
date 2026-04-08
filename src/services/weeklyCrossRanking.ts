@@ -48,10 +48,12 @@ export async function resolveWeeklyCrossCards(rows: WeeklyCrossRankingRow[]): Pr
       if (ct === 'ARTICLE') {
         const d = await fetchArticleDetail(code)
         const item = articleDetailToListItem(d)
+        /** 상세 하단 추천 카드와 동일 — 부제목만(에디터 이름은 표시하지 않음) */
+        const line2 = (d.subtitle?.trim() || '').trim()
         out.push({
           href: `/article/detail?id=${encodeURIComponent(code)}`,
           title: d.title,
-          line2: d.author,
+          line2,
           thumbSrc: resolveArticleThumbnailUrl(item.thumbnail),
           gradientIndex: g++,
         })

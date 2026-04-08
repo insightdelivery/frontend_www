@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useLoginHref } from '@/hooks/useLoginHref'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -46,6 +47,7 @@ const SMS_COOLDOWN_SEC = 30
 
 export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps) {
   const router = useRouter()
+  const loginHref = useLoginHref()
   const { setUser } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingUser, setIsLoadingUser] = useState(true)
@@ -128,11 +130,11 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
 
   useEffect(() => {
     if (!isAuthenticated()) {
-      router.push('/login')
+      router.push(loginHref)
       return
     }
     void fetchUserInfo()
-  }, [router, fetchUserInfo])
+  }, [router, fetchUserInfo, loginHref])
 
   useEffect(() => {
     if (smsCooldownSec <= 0) return
@@ -275,7 +277,7 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
             다시 시도
           </Button>
           <Button type="button" variant="outline" asChild>
-            <Link href="/login">로그인으로 이동</Link>
+            <Link href={loginHref}>로그인으로 이동</Link>
           </Button>
         </div>
       </div>

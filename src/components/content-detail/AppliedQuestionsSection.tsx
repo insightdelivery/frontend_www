@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import Link from 'next/link'
 import { Pencil, Trash2, Loader2, ClipboardEdit } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import {
@@ -20,6 +19,9 @@ const COLORS = {
   border: 'border-[#e2e8f0]',
   bgLight: 'bg-[#f8fafc]',
 } as const
+
+/** 비회원 답변 영역 — 북마크 툴팁 등과 동일 문구 */
+const GUEST_ANSWER_HINT = '로그인 후 이용 가능합니다.'
 
 export interface AppliedQuestionsSectionProps {
   /** `content_question` API — `ARTICLE` / `VIDEO` / `SEMINAR` */
@@ -44,6 +46,7 @@ export default function AppliedQuestionsSection({
   const authLoading = status === 'loading'
   const authenticated = status === 'authenticated'
 
+  const [questionsLoading, setQuestionsLoading] = useState(true)
   const [contentQuestions, setContentQuestions] = useState<ContentQuestionItem[]>([])
   const [savedAnswers, setSavedAnswers] = useState<Record<number, { answer_id: number; answer_text: string }>>({})
   const [draftAnswers, setDraftAnswers] = useState<Record<number, string>>({})
@@ -54,14 +57,22 @@ export default function AppliedQuestionsSection({
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!contentId) return
+    if (!contentId) {
+      setContentQuestions([])
+      setQuestionsLoading(false)
+      return
+    }
     let cancelled = false
+    setQuestionsLoading(true)
     fetchContentQuestions(contentType, contentId)
       .then((list) => {
         if (!cancelled) setContentQuestions(list)
       })
       .catch(() => {
         if (!cancelled) setContentQuestions([])
+      })
+      .finally(() => {
+        if (!cancelled) setQuestionsLoading(false)
       })
     return () => {
       cancelled = true
@@ -225,6 +236,10 @@ export default function AppliedQuestionsSection({
     [savedAnswers, extractApiMessage]
   )
 
+  if (questionsLoading || contentQuestions.length === 0) {
+    return null
+  }
+
   return (
     <section className={`${COLORS.bgLight} border ${COLORS.border} rounded-2xl p-8 ${className}`.trim()}>
       <h3
@@ -239,13 +254,13 @@ export default function AppliedQuestionsSection({
       </h3>
       {submitError && <p className="mb-4 text-sm text-red-600">{submitError}</p>}
       <div className="space-y-6">
-        {contentQuestions.length > 0 ? (
-          contentQuestions.map((q, i) => {
+        {contentQuestions.map((q, i) => {
             const saved = savedAnswers[q.question_id]
             const isEditing = editingQuestionId === q.question_id
             const draft = draftAnswers[q.question_id] ?? ''
             const showReadOnly = authenticated && !authLoading && !answersLoading && !!saved && !isEditing
             const showComposer = authenticated && !authLoading && !answersLoading && (!saved || isEditing)
+            const showGuestAnswerShell = !authLoading && !authenticated
 
             return (
               <div key={q.question_id}>
@@ -257,14 +272,14 @@ export default function AppliedQuestionsSection({
 
                 {authLoading && <p className={`text-[14px] ${COLORS.textSecondary}`}>로그인 상태 확인 중...</p>}
 
-                {!authLoading && !authenticated && (
-                  <p className={`text-[14px] ${COLORS.textSecondary}`}>
-                    답변을 작성하려면{' '}
-                    <Link href="/login" className="font-semibold text-[#0f172a] underline underline-offset-2">
-                      로그인
-                    </Link>
-                    이 필요합니다.
-                  </p>
+                {showGuestAnswerShell && (
+                  <div
+                    className="w-full min-h-[120px] cursor-not-allowed select-none rounded-xl border border-[#e2e8f0] bg-slate-50 p-4"
+                    role="note"
+                    aria-label={GUEST_ANSWER_HINT}
+                  >
+                    <p className={`m-0 text-[16px] leading-relaxed ${COLORS.textSecondary}`}>{GUEST_ANSWER_HINT}</p>
+                  </div>
                 )}
 
                 {!authLoading && authenticated && answersLoading && (
@@ -352,10 +367,7 @@ export default function AppliedQuestionsSection({
                 )}
               </div>
             )
-          })
-        ) : (
-          <p className={`text-[14px] ${COLORS.textSecondary}`}>등록된 적용 질문이 없습니다.</p>
-        )}
+          })}
       </div>
       {children}
     </section>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
+import { useLoginHref } from '@/hooks/useLoginHref'
 import { useAuth } from '@/contexts/AuthContext'
 import { getAccessToken, getUserInfo } from '@/services/auth'
 import { Search, Menu, X, Home } from 'lucide-react'
@@ -17,6 +18,7 @@ import type { NoticeListItem } from '@/types/board'
 export default function Header() {
   const pathname = usePathname()
   const router = useRouter()
+  const loginHref = useLoginHref()
   const { status, user, logout } = useAuth()
   const [clientReady, setClientReady] = useState(false)
   useEffect(() => {
@@ -165,7 +167,7 @@ export default function Header() {
                 </>
               ) : (
                 <>
-                  <button type="button" className="transition-opacity hover:opacity-70" onClick={() => router.push('/login')}>
+                  <button type="button" className="transition-opacity hover:opacity-70" onClick={() => router.push(loginHref)}>
                     로그인
                   </button>
                   <button type="button" className="transition-opacity hover:opacity-70" onClick={() => router.push('/register')}>
@@ -269,7 +271,7 @@ export default function Header() {
                         type="button"
                         className="block w-full text-left text-[14px] font-bold transition-opacity hover:opacity-70"
                         onClick={() => {
-                          router.push('/login')
+                          router.push(loginHref)
                           setMobileMenuOpen(false)
                         }}
                       >

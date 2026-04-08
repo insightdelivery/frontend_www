@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useId } from 'react'
 import Link from 'next/link'
-import { ChevronRight, Bookmark, Share2, Star, Search, Link2 } from 'lucide-react'
+import { ChevronRight, Bookmark, Share2, Search, Link2 } from 'lucide-react'
 import { fetchArticleDetail, fetchArticleList, resolveArticlesByRanking } from '@/services/article'
 import { fetchArticleRankingRecommended } from '@/services/libraryRanking'
 import { fetchHomepageDocPublic } from '@/services/homepageDoc'
@@ -10,8 +10,8 @@ import { HOMEPAGE_DOC_DEFAULT_TITLES } from '@/constants/homepageDoc'
 import { sanitizeHomepageHtml } from '@/lib/sanitizeHomepageHtml'
 import type { HomepageDocPayload } from '@/types/homepageDoc'
 import AppliedQuestionsSection from '@/components/content-detail/AppliedQuestionsSection'
-import CommentSection from '@/components/comments/CommentSection'
-import { postView, postRating, postBookmark, deleteBookmark, getMeRatings } from '@/services/libraryUseractivity'
+import ArticleRatingCommentSection from '@/components/article/detail/ArticleRatingCommentSection'
+import { postView, postBookmark, deleteBookmark, getMeRatings } from '@/services/libraryUseractivity'
 import ArticleShareModal from '@/components/article/detail/ArticleShareModal'
 import ArticleGuestShareModal from '@/components/article/detail/ArticleGuestShareModal'
 import ArticleEntitlementShareModal from '@/components/article/detail/ArticleEntitlementShareModal'
@@ -21,7 +21,16 @@ import { getSysCodeName, getSysCodeFromCache } from '@/lib/syscode'
 import { formatArticleTagLabel } from '@/lib/articleTags'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
 import { fetchWeeklyCrossRanking, resolveWeeklyCrossCards, type WeeklyCrossCardData } from '@/services/weeklyCrossRanking'
-import { HighlightProvider, useHighlight, HighlightRenderer, HighlightButton, selectionToPayloads } from '@/components/highlight'
+import { useLoginHref } from '@/hooks/useLoginHref'
+import {
+  HighlightProvider,
+  useHighlight,
+  HighlightRenderer,
+  HighlightButton,
+  HighlightMarkInteraction,
+  selectionToPayloads,
+} from '@/components/highlight'
+import { getHighlightApiErrorMessage } from '@/services/highlight'
 
 /** 아티클 상세 페이지 전체(GNB 제외) 가로 폭 */
 const DETAIL_MAX = 'max-w-[720px] mx-auto'
@@ -118,17 +127,20 @@ export interface ArticleDetailContentProps {
   id: string
   /** `/s/{code}` 만료 후 리다이렉트 시 안내 (contentShareLinkCopy.md §6) */
   shareExpired?: boolean
+  /** `/s?code=` resolve 후 `/article/detail?...&from_share=1`로 들어온 경우 — 비회원 미리보기 CTA 문구 분기 */
+  fromShareLink?: boolean
 }
 
-const ARTICLE_DETAIL_PROSE_CLASS = `prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:!block [&_p]:!mb-2 [&_br]:block [&_blockquote]:border-l-[5px] [&_blockquote]:border-l-[#03c75a] [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:my-5 [&_blockquote]:bg-[#f6fff8] [&_blockquote]:text-[#222] [&_blockquote]:text-[15px]`
+const ARTICLE_DETAIL_PROSE_CLASS = `prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:!block [&_p]:!mb-2 [&_br]:block [&_hr]:my-8 [&_hr]:block [&_hr]:w-full [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-solid [&_hr]:border-[#e2e8f0] [&_blockquote]:border-l-[5px] [&_blockquote]:border-l-[#03c75a] [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:my-5 [&_blockquote]:bg-[#f6fff8] [&_blockquote]:text-[#222] [&_blockquote]:text-[15px] [&_mark]:!bg-[#F8EDFF] [&_mark]:rounded [&_mark]:px-1 [&_mark]:py-0.5 [&_img]:max-w-full [&_img]:h-auto [&_figure]:my-6 [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-[#64748b]`
 
 function DetailBottomWeeklyCard({ item }: { item: WeeklyCrossCardData }) {
   const grad = PLACEHOLDER_GRADIENTS[item.gradientIndex % PLACEHOLDER_GRADIENTS.length]
   const thumbSrc = item.thumbSrc
+  const subtitleLine = item.line2?.trim() ?? ''
   return (
     <Link href={item.href} className="block group">
       <div
-        className={`aspect-[4/3] rounded-xl overflow-hidden mb-4 relative ${
+        className={`aspect-[3/2] rounded-xl overflow-hidden mb-4 relative ${
           thumbSrc ? 'bg-slate-100 border border-slate-100' : grad
         }`}
       >
@@ -140,7 +152,9 @@ function DetailBottomWeeklyCard({ item }: { item: WeeklyCrossCardData }) {
       <p className={`font-bold text-[16px] leading-6 ${COLORS.text} group-hover:underline line-clamp-2`}>
         {item.title}
       </p>
-      <p className={`text-[14px] leading-5 ${COLORS.textSecondary} mt-1 line-clamp-1`}>{item.line2}</p>
+      {subtitleLine ? (
+        <p className={`text-[14px] leading-5 ${COLORS.textSecondary} mt-1 line-clamp-2`}>{subtitleLine}</p>
+      ) : null}
     </Link>
   )
 }
@@ -171,13 +185,17 @@ function DetailBottomArticleCard({ item, index }: { item: ArticleListItem; index
   )
 }
 
-function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentProps) {
+function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleDetailContentProps) {
+  const loginHref = useLoginHref()
   const { status } = useAuth()
   const authenticated = status === 'authenticated'
   const [article, setArticle] = useState<ArticleDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isBookmarked, setIsBookmarked] = useState(false)
+  const [bookmarkTooltip, setBookmarkTooltip] = useState<string | null>(null)
+  const bookmarkTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const bookmarkTooltipId = useId()
   const [shareToast, setShareToast] = useState(false)
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [entitlementShareModalOpen, setEntitlementShareModalOpen] = useState(false)
@@ -341,21 +359,42 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
     }
   }, [article])
 
+  const showBookmarkTooltip = useCallback((message: string) => {
+    if (bookmarkTooltipTimerRef.current) clearTimeout(bookmarkTooltipTimerRef.current)
+    setBookmarkTooltip(message)
+    bookmarkTooltipTimerRef.current = setTimeout(() => {
+      setBookmarkTooltip(null)
+      bookmarkTooltipTimerRef.current = null
+    }, 2000)
+  }, [])
+
+  useEffect(
+    () => () => {
+      if (bookmarkTooltipTimerRef.current) clearTimeout(bookmarkTooltipTimerRef.current)
+    },
+    []
+  )
+
   const handleBookmarkClick = useCallback(async () => {
     if (!idValid || !article) return
-    if (!authenticated) return
+    if (!authenticated) {
+      showBookmarkTooltip('로그인 후 이용 가능합니다.')
+      return
+    }
     try {
       if (isBookmarked) {
         await deleteBookmark('ARTICLE', id)
         setIsBookmarked(false)
+        showBookmarkTooltip('북마크가 해제되었습니다.')
       } else {
         await postBookmark('ARTICLE', id)
         setIsBookmarked(true)
+        showBookmarkTooltip('북마크가 저장되었습니다.')
       }
     } catch {
       // ignore
     }
-  }, [id, idValid, article, status, isBookmarked])
+  }, [id, idValid, article, authenticated, isBookmarked, showBookmarkTooltip])
 
   const handleShareClick = useCallback(() => {
     if (status === 'loading' || loading) {
@@ -383,19 +422,6 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
       setGuestShareModalOpen(true)
     }
   }, [status, loading, authenticatedMember, shareEntitlementOnly])
-
-  const handleRatingClick = useCallback(
-    async (value: number) => {
-      if (!idValid || !authenticated) return
-      try {
-        await postRating('ARTICLE', id, value)
-        setRatingValue(value)
-      } catch {
-        // ignore
-      }
-    },
-    [id, idValid, status]
-  )
 
   useEffect(() => {
     if (!idValid || !authenticated) {
@@ -587,16 +613,41 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              className="p-1.5 rounded hover:bg-gray-100"
-              aria-label="북마크"
-              onClick={handleBookmarkClick}
-            >
-              <Bookmark
-                className={`h-5 w-5 ${isBookmarked ? 'fill-[#0f172a] text-[#0f172a]' : 'text-[#0f172a]'}`}
-              />
-            </button>
+            <div className="relative shrink-0">
+              {bookmarkTooltip ? (
+                <div
+                  id={bookmarkTooltipId}
+                  role="tooltip"
+                  className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 flex w-max max-w-[min(90vw,22rem)] -translate-x-1/2 flex-col items-center"
+                >
+                  <div className="max-w-[min(90vw,22rem)] whitespace-nowrap rounded-lg border border-gray-200/90 bg-gray-100 px-3 py-2 text-center text-[12px] font-medium leading-snug text-gray-800 shadow-sm">
+                    {bookmarkTooltip}
+                  </div>
+                  <span
+                    className="h-0 w-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-gray-100"
+                    aria-hidden
+                  />
+                </div>
+              ) : null}
+              <button
+                type="button"
+                className="p-1.5 rounded hover:bg-gray-100"
+                aria-label="북마크"
+                aria-describedby={bookmarkTooltip ? bookmarkTooltipId : undefined}
+                title={
+                  authenticated
+                    ? isBookmarked
+                      ? '북마크 해제'
+                      : '북마크 저장'
+                    : '로그인 후 이용 가능합니다.'
+                }
+                onClick={handleBookmarkClick}
+              >
+                <Bookmark
+                  className={`h-5 w-5 ${isBookmarked ? 'fill-[#0f172a] text-[#0f172a]' : 'text-[#0f172a]'}`}
+                />
+              </button>
+            </div>
             <button type="button" className="p-1.5 rounded hover:bg-gray-100" aria-label="공유" onClick={handleShareClick}>
               <Share2 className="h-5 w-5 text-[#0f172a]" />
             </button>
@@ -616,15 +667,43 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
             const sel = typeof window !== 'undefined' ? window.getSelection() : null
             const root = contentRootRef.current?.firstElementChild as HTMLElement | null
             if (!sel || !root || !article?.id) return
+            let anchorRect: DOMRect | null = null
+            try {
+              anchorRect = sel.rangeCount > 0 ? sel.getRangeAt(0).getBoundingClientRect() : null
+            } catch {
+              anchorRect = null
+            }
+            const maxLen = highlightContext.constants.maxLength
+            const rawLen = sel.toString().length
+            if (rawLen > maxLen) {
+              highlightContext.showHighlightTooltip(`하이라이트는 ${maxLen}자 까지 가능합니다.`, anchorRect)
+              return
+            }
             const payloads = selectionToPayloads(
               root,
               Number(article.id),
               sel,
               highlightContext.constants.colors[0] ?? 'yellow'
             )
-            if (payloads.length) await highlightContext.create(payloads)
+            if (!payloads.length) return
+            for (const p of payloads) {
+              if (p.highlightText.length > maxLen) {
+                highlightContext.showHighlightTooltip(`하이라이트는 ${maxLen}자 까지 가능합니다.`, anchorRect)
+                return
+              }
+            }
+            try {
+              await highlightContext.create(payloads)
+              highlightContext.showHighlightTooltip(
+                '하이라이트 되었습니다. 저장된 문장은 마이페이지에서도 확인이 가능합니다.',
+                anchorRect
+              )
+            } catch (e) {
+              highlightContext.showHighlightTooltip(getHighlightApiErrorMessage(e), anchorRect)
+            }
           }}
         />
+        <HighlightMarkInteraction contentRootRef={contentRootRef} />
         {showPreviewFade ? (
           <div
             aria-hidden
@@ -655,29 +734,39 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
       ) : null}
 
       {showPreviewFade && (
-        <section className="mt-8 mb-2 border-t border-[#e2e8f0] pt-12 text-center">
-          <p className="text-[28px] leading-[1.25] font-extrabold tracking-[-0.02em] text-[#0f172a]">
-            지금 인디에 가입하시고
-            <br />
-            이 글을 무료로 읽어보세요.
+        <section className="mt-8 mb-2 border-t border-[#e2e8f0] pt-10 text-center">
+          <p className="text-[18px] sm:text-[19px] leading-[1.45] font-bold tracking-[-0.015em] text-[#0f172a]">
+            {fromShareLink ? (
+              <>
+                다른 콘텐츠가 궁금하신가요?
+                <br />
+                지금 인디에 가입하시고 콘텐츠를 무료로 읽어보세요.
+              </>
+            ) : (
+              <>
+                지금 인디에 가입하시고
+                <br />
+                이 글을 무료로 읽어보세요.
+              </>
+            )}
           </p>
-          <div className="mt-8 mx-auto w-full max-w-[520px] space-y-3">
+          <div className="mt-6 mx-auto w-full max-w-[480px] space-y-2.5">
             <Link
               href="/register"
-              className="flex h-14 w-full items-center justify-center border border-[#d1d5db] bg-white text-[18px] md:text-[20px] font-bold text-[#111827] transition hover:bg-[#f8fafc]"
+              className="flex h-12 w-full items-center justify-center rounded-lg border border-[#d1d5db] bg-white text-[15px] font-bold text-[#111827] transition hover:bg-[#f8fafc]"
             >
               무료 계정 만들기
             </Link>
             <Link
               href="/register"
-              className="flex h-14 w-full items-center justify-center bg-[#fee500] text-[18px] md:text-[20px] font-bold text-[#111827] transition hover:brightness-95"
+              className="flex h-12 w-full items-center justify-center rounded-lg bg-[#fee500] text-[15px] font-bold text-[#111827] transition hover:brightness-95"
             >
               카카오로 무료 계정 만들기
             </Link>
           </div>
-          <p className="mt-8 text-[18px] md:text-[20px] text-[#6b7280]">
+          <p className={`mt-6 text-[14px] leading-6 ${COLORS.textSecondary}`}>
             이미 계정이 있으신가요?{' '}
-            <Link href="/login" className="font-bold text-[#111827] underline underline-offset-2">
+            <Link href={loginHref} className={`font-semibold ${COLORS.text} underline underline-offset-2`}>
               로그인하기
             </Link>
           </p>
@@ -720,7 +809,7 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
       </section>
       {shareToast && (
         <div
-          className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#0f172a] text-white text-[14px] font-medium px-6 py-3 rounded-xl shadow-lg z-50"
+          className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-[#0f172a] px-6 py-3 text-[14px] font-medium text-white shadow-lg"
           role="status"
         >
           링크가 복사되었습니다
@@ -749,33 +838,13 @@ function ArticleDetailContentInner({ id, shareExpired }: ArticleDetailContentPro
 
       <AppliedQuestionsSection contentType="ARTICLE" contentId={article.id} className="mb-12" />
 
-      <section className={`${COLORS.bgLight} border ${COLORS.border} rounded-2xl p-8 mb-12 text-center`}>
-        <h3 className={`mb-3 font-bold text-[20px] ${COLORS.text}`}>별점</h3>
-        <p className={`mb-3 font-bold text-[16px] ${COLORS.text}`}>콘텐츠가 도움이 되었나요?</p>
-        <div className="flex justify-center gap-2">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              type="button"
-              className="p-1 hover:opacity-70"
-              aria-label={`${n}점`}
-              onClick={() => handleRatingClick(n)}
-            >
-              <Star
-                className={`h-6 w-6 ${
-                  ratingValue !== null && n <= ratingValue ? 'fill-amber-400 text-amber-400' : 'text-[#e2e8f0] hover:text-amber-400'
-                }`}
-              />
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <CommentSection
+      <ArticleRatingCommentSection
         className="mb-12"
-        contentType="ARTICLE"
-        contentId={article.id}
+        contentCode={id}
+        articleId={article.id}
         allowComment={Boolean((article as unknown as { allowComment?: boolean }).allowComment)}
+        ratingValue={ratingValue}
+        setRatingValue={setRatingValue}
       />
 
       {detailBlocksLoading ? (

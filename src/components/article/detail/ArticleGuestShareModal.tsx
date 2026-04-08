@@ -6,6 +6,7 @@
  */
 import { useRef } from 'react'
 import Link from 'next/link'
+import { useLoginHref } from '@/hooks/useLoginHref'
 import { Copy, Info, LogIn } from 'lucide-react'
 import { postShare, type ContentType } from '@/services/libraryUseractivity'
 
@@ -28,6 +29,7 @@ export default function ArticleGuestShareModal({
   contentType = 'ARTICLE',
   onCopied,
 }: ArticleGuestShareModalProps) {
+  const loginHref = useLoginHref()
   const lastLogAt = useRef(0)
 
   const handleCopy = async () => {
@@ -84,7 +86,7 @@ export default function ArticleGuestShareModal({
         </button>
 
         <Link
-          href="/login"
+          href={loginHref}
           className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-blue-200 bg-blue-50/90 py-3.5 text-[14px] font-bold text-blue-900 transition hover:border-blue-300 hover:bg-blue-100"
         >
           <LogIn className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />

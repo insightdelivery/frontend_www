@@ -7,3 +7,4 @@ export {
   applyMarksToParagraph,
   selectionToPayloads,
 } from './highlightUtils'
+export { HighlightMarkInteraction } from './HighlightMarkInteraction'

@@ -73,7 +73,7 @@ export default function HomeLatestVideos() {
                   ) : (
                     <div className={`absolute inset-0 ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]}`} />
                   )}
-                  <span className="absolute left-3 top-3 z-[1] rounded-[8px] bg-[#FFDF38] px-2 py-1 font-bold text-black text-[10px] max-w-[85%] truncate">
+                  <span className="absolute left-3 top-3 z-[10] rounded-[8px] bg-[#FFDF38] px-2 py-1 font-bold text-black text-[10px] max-w-[85%] truncate">
                     {categoryLabel(v.category) || v.category?.trim() || '—'}
                   </span>
                   <div className="absolute inset-0 z-[1] flex items-center justify-center bg-black/20">

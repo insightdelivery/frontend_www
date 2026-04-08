@@ -27,6 +27,7 @@ export function HighlightButton({ onSave, style: styleProp, contentRootRef }: Hi
   const [saving, setSaving] = useState(false)
   const [position, setPosition] = useState<{ left: number; top: number }>({ left: 0, top: 0 })
   const rafRef = useRef<number | null>(null)
+  const overToastShownRef = useRef(false)
   const ctx = useHighlight()
   const constants = ctx?.constants ?? getHighlightConstants()
 
@@ -54,11 +55,28 @@ export function HighlightButton({ onSave, style: styleProp, contentRootRef }: Hi
           setVisible(false)
           return
         }
-        const str = sel.toString().trim()
-        if (!str || str.length > constants.maxLength) {
+        const raw = sel.toString()
+        const str = raw.trim()
+        if (!str) {
+          overToastShownRef.current = false
           setVisible(false)
           return
         }
+        if (raw.length > constants.maxLength) {
+          if (!overToastShownRef.current) {
+            overToastShownRef.current = true
+            let rect: DOMRect | null = null
+            try {
+              rect = sel.rangeCount > 0 ? sel.getRangeAt(0).getBoundingClientRect() : null
+            } catch {
+              rect = null
+            }
+            ctx?.showHighlightTooltip(`하이라이트는 ${constants.maxLength}자 까지 가능합니다.`, rect)
+          }
+          setVisible(false)
+          return
+        }
+        overToastShownRef.current = false
         if (contentRootRef?.current) {
           const anchor = sel.anchorNode
           if (!anchor || !contentRootRef.current.contains(anchor)) {
@@ -84,7 +102,7 @@ export function HighlightButton({ onSave, style: styleProp, contentRootRef }: Hi
       document.removeEventListener('selectionchange', onSelectionChange)
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current)
     }
-  }, [constants.maxLength, contentRootRef])
+  }, [constants.maxLength, contentRootRef, ctx?.showHighlightTooltip])
 
   if (!visible) return null
 

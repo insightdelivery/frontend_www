@@ -207,58 +207,54 @@ export default function MypageRatingsPage() {
                   className="rounded-2xl border border-[#f1f5f9] bg-white p-[25px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]"
                 >
                   <div className="flex gap-6">
-                    <div className="relative aspect-[4/3] w-[160px] shrink-0 overflow-hidden rounded-lg bg-[#f1f5f9]">
-                      {item.thumbnail ? (
-                        <Image
-                          src={item.thumbnail}
-                          alt=""
-                          fill
-                          className="object-cover"
-                          sizes="160px"
-                          unoptimized
-                        />
-                      ) : null}
+                    <div className="flex w-[160px] shrink-0 flex-col gap-3 self-start">
+                      <div className="relative aspect-3/2 w-full overflow-hidden rounded-lg bg-[#f1f5f9]">
+                        {item.thumbnail ? (
+                          <Image
+                            src={item.thumbnail}
+                            alt=""
+                            fill
+                            className="object-cover"
+                            sizes="160px"
+                            unoptimized
+                          />
+                        ) : null}
+                      </div>
+                      {item.contentMissing ? (
+                        <span className="flex h-9 w-full items-center justify-center rounded bg-[#e2e8f0] text-[12px] font-bold text-[#64748b]">
+                          콘텐츠 보기
+                        </span>
+                      ) : (
+                        <Link
+                          href={contentHref(item.contentType, item.contentCode)}
+                          className="flex h-9 w-full items-center justify-center rounded bg-[#e1f800] text-[12px] font-bold text-black transition hover:brightness-95"
+                        >
+                          콘텐츠 보기
+                        </Link>
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <p className="text-[14px] leading-5 text-[#64748b]">
-                            {contentTypeLabel(item.contentType)}
-                          </p>
-                          {item.category ? (
-                            <p className="mt-1 text-[14px] leading-5 text-[#64748b]">
-                              {item.category}
-                            </p>
-                          ) : null}
-                          <h3 className="mt-2 text-[18px] font-bold leading-7 text-[#0f172a]">
-                            {item.title || item.contentCode}
-                          </h3>
-                          {(item.subtitle ?? '').trim() ? (
-                            <p className="mt-2 line-clamp-2 text-[14px] leading-5 text-[#64748b]">
-                              {(item.subtitle ?? '').trim()}
-                            </p>
-                          ) : null}
-                          <div className="mt-2 flex items-center gap-2">
-                            <span className="text-[#0f172a]" aria-label={`${item.ratingValue ?? 0}점`}>
-                              {stars(item.ratingValue ?? 0)}
-                            </span>
-                            <span className="text-[12px] leading-4 text-[#94a3b8]">
-                              {formatDate(item.regDateTime)}
-                            </span>
-                          </div>
-                        </div>
-                        {item.contentMissing ? (
-                          <span className="shrink-0 rounded bg-[#e2e8f0] px-2 py-1 text-[12px] font-bold text-[#64748b]">
-                            콘텐츠 보기
-                          </span>
-                        ) : (
-                          <Link
-                            href={contentHref(item.contentType, item.contentCode)}
-                            className="shrink-0 rounded bg-[#e1f800] px-2 py-1 text-[12px] font-bold text-black"
-                          >
-                            콘텐츠 보기
-                          </Link>
-                        )}
+                      <p className="text-[14px] leading-5 text-[#64748b]">
+                        {contentTypeLabel(item.contentType)}
+                      </p>
+                      {item.category ? (
+                        <p className="mt-1 text-[14px] leading-5 text-[#64748b]">{item.category}</p>
+                      ) : null}
+                      <h3 className="mt-2 text-[18px] font-bold leading-7 text-[#0f172a]">
+                        {item.title || item.contentCode}
+                      </h3>
+                      {(item.subtitle ?? '').trim() ? (
+                        <p className="mt-2 line-clamp-2 text-[14px] leading-5 text-[#64748b]">
+                          {(item.subtitle ?? '').trim()}
+                        </p>
+                      ) : null}
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="text-[#0f172a]" aria-label={`${item.ratingValue ?? 0}점`}>
+                          {stars(item.ratingValue ?? 0)}
+                        </span>
+                        <span className="text-[12px] leading-4 text-[#94a3b8]">
+                          {formatDate(item.regDateTime)}
+                        </span>
                       </div>
                     </div>
                   </div>

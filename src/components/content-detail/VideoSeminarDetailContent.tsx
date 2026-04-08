@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronRight, Bookmark, Share2, Star } from 'lucide-react'
@@ -136,6 +136,9 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
   const [entitlementShareModalOpen, setEntitlementShareModalOpen] = useState(false)
   const openShareWhenAuthReady = useRef(false)
   const [isBookmarked, setIsBookmarked] = useState(false)
+  const [bookmarkTooltip, setBookmarkTooltip] = useState<string | null>(null)
+  const bookmarkTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const bookmarkTooltipId = useId()
   /** 로그인 후 별점 제출 시만 설정 (article/detail과 동일 — 서버 개인 별점 조회 없음) */
   const [ratingValue, setRatingValue] = useState<number | null>(null)
   /** wwwDocEtc.md §8.2 — 비디오/세미나 상세 각각 `video_copyright` / `seminar_copyright` */
@@ -276,22 +279,43 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
     }
   }, [status, loading, authenticatedMember, shareEntitlementOnly])
 
+  const showBookmarkTooltip = useCallback((message: string) => {
+    if (bookmarkTooltipTimerRef.current) clearTimeout(bookmarkTooltipTimerRef.current)
+    setBookmarkTooltip(message)
+    bookmarkTooltipTimerRef.current = setTimeout(() => {
+      setBookmarkTooltip(null)
+      bookmarkTooltipTimerRef.current = null
+    }, 2000)
+  }, [])
+
+  useEffect(
+    () => () => {
+      if (bookmarkTooltipTimerRef.current) clearTimeout(bookmarkTooltipTimerRef.current)
+    },
+    []
+  )
+
   const handleBookmarkClick = useCallback(async () => {
     if (!detail) return
     const cid = String(detail.id)
-    if (!authenticated) return
+    if (!authenticated) {
+      showBookmarkTooltip('로그인 후 이용 가능합니다.')
+      return
+    }
     try {
       if (isBookmarked) {
         await deleteBookmark(apiContentType, cid)
         setIsBookmarked(false)
+        showBookmarkTooltip('북마크가 해제되었습니다.')
       } else {
         await postBookmark(apiContentType, cid)
         setIsBookmarked(true)
+        showBookmarkTooltip('북마크가 저장되었습니다.')
       }
     } catch {
       // ignore
     }
-  }, [detail, authenticated, isBookmarked, apiContentType])
+  }, [detail, authenticated, isBookmarked, apiContentType, showBookmarkTooltip])
 
   const handleRatingClick = useCallback(
     async (value: number) => {
@@ -433,16 +457,41 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
                 >
                   <Share2 className="h-5 w-5 text-[#0f172a]" />
                 </button>
-                <button
-                  type="button"
-                  className="rounded-lg p-2 hover:bg-gray-100"
-                  aria-label="북마크"
-                  onClick={handleBookmarkClick}
-                >
-                  <Bookmark
-                    className={`h-5 w-5 ${isBookmarked ? 'fill-[#0f172a] text-[#0f172a]' : 'text-[#0f172a]'}`}
-                  />
-                </button>
+                <div className="relative shrink-0">
+                  {bookmarkTooltip ? (
+                    <div
+                      id={bookmarkTooltipId}
+                      role="tooltip"
+                      className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 flex w-max max-w-[min(90vw,22rem)] -translate-x-1/2 flex-col items-center"
+                    >
+                      <div className="max-w-[min(90vw,22rem)] whitespace-nowrap rounded-lg border border-gray-200/90 bg-gray-100 px-3 py-2 text-center text-[12px] font-medium leading-snug text-gray-800 shadow-sm">
+                        {bookmarkTooltip}
+                      </div>
+                      <span
+                        className="h-0 w-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-gray-100"
+                        aria-hidden
+                      />
+                    </div>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="rounded-lg p-2 hover:bg-gray-100"
+                    aria-label="북마크"
+                    aria-describedby={bookmarkTooltip ? bookmarkTooltipId : undefined}
+                    title={
+                      authenticated
+                        ? isBookmarked
+                          ? '북마크 해제'
+                          : '북마크 저장'
+                        : '로그인 후 이용 가능합니다.'
+                    }
+                    onClick={handleBookmarkClick}
+                  >
+                    <Bookmark
+                      className={`h-5 w-5 ${isBookmarked ? 'fill-[#0f172a] text-[#0f172a]' : 'text-[#0f172a]'}`}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -527,7 +576,13 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
         }}
       />
 
-      <AppliedQuestionsSection contentType={apiContentType} contentId={detail.id} className="mb-12" />
+      {/* 적용 질문: article/detail.md §4.6 — ARTICLE과 동일 AppliedQuestionsSection(질문 0건·로딩 시 미노출, 비회원 잠금 영역 동일) */}
+      <AppliedQuestionsSection
+        key={`applied-questions-${apiContentType}-${detail.id}`}
+        contentType={apiContentType}
+        contentId={detail.id}
+        className="mb-12"
+      />
 
       <section className={`${COLORS.bgLight} mb-12 rounded-2xl border p-8 text-center ${COLORS.border}`}>
         <h3 className={`mb-3 text-[20px] font-bold ${COLORS.text}`}>별점</h3>

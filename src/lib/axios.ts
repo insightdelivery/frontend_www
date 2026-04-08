@@ -136,7 +136,9 @@ export function handleAuthFail(): void {
   Cookies.remove('accessToken', { path: '/' })
   Cookies.remove('refreshToken', { path: '/' })
   if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-    window.location.replace('/login?error=UNAUTHORIZED')
+    const { pathname, search } = window.location
+    const next = encodeURIComponent(`${pathname}${search}`)
+    window.location.replace(`/login?error=UNAUTHORIZED&next=${next}`)
   }
 }
 

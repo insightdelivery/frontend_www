@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { IconKakao, IconNaver, IconGoogle } from '@/components/login/SocialLoginIcons'
 import { cn } from '@/lib/utils'
+import { getSafePostLoginRedirect, persistPostLoginNextForOAuth } from '@/lib/postLoginRedirect'
 
 const loginSchema = z.object({
   email: z.string().email('올바른 이메일 형식이 아닙니다.'),
@@ -55,7 +56,7 @@ function LoginForm() {
         // ignore
       }
 
-      router.push('/')
+      router.push(getSafePostLoginRedirect(searchParams.get('next')))
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { message?: string; error?: string } }; message?: string }
       const msg = anyErr.response?.data?.error ?? anyErr.response?.data?.message ?? anyErr.message ?? '로그인에 실패했습니다.'
@@ -66,11 +67,16 @@ function LoginForm() {
   }
 
   const handleSNSLogin = (provider: 'kakao' | 'naver' | 'google') => {
+    persistPostLoginNextForOAuth(searchParams.get('next'))
     const base = getApiBaseURL().replace(/\/$/, '')
+    const next = searchParams.get('next')
+    const qs = new URLSearchParams()
+    if (next) qs.set('next', next)
+    const suffix = qs.toString() ? `?${qs.toString()}` : ''
     const urls = {
-      kakao: `${base}/auth/kakao/redirect`,
-      naver: `${base}/auth/naver/redirect`,
-      google: `${base}/auth/google/redirect`,
+      kakao: `${base}/auth/kakao/redirect${suffix}`,
+      naver: `${base}/auth/naver/redirect${suffix}`,
+      google: `${base}/auth/google/redirect${suffix}`,
     }
     window.location.href = urls[provider]
   }

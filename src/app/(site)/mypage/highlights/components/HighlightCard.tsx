@@ -45,7 +45,7 @@ export default function HighlightCard({ item, onDelete }: HighlightCardProps) {
               className="flex min-w-0 flex-1 items-start gap-2 text-left"
             >
               {item.thumbnail ? (
-                <div className="relative mt-0.5 aspect-[3/2] w-20 shrink-0 overflow-hidden rounded sm:w-24">
+                <div className="relative mt-0.5 aspect-3/2 w-20 shrink-0 overflow-hidden rounded sm:w-24">
                   <Image
                     src={item.thumbnail}
                     alt=""
@@ -57,7 +57,7 @@ export default function HighlightCard({ item, onDelete }: HighlightCardProps) {
                 </div>
               ) : (
                 <div
-                  className="mt-0.5 aspect-[3/2] w-20 shrink-0 rounded bg-gray-300 sm:w-24"
+                  className="mt-0.5 aspect-3/2 w-20 shrink-0 rounded bg-gray-300 sm:w-24"
                   aria-hidden
                 />
               )}

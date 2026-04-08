@@ -4,7 +4,7 @@ export type ArticleCardBadge = 'NEW' | 'BEST'
 
 /** list.md §7 — ArticleCard와 동일 */
 export const CONTENT_CARD_BADGE_STYLES: Record<ArticleCardBadge, string> = {
-  NEW: 'bg-[#FF75E1] text-[#FFFFFF]',
+  NEW: 'bg-[#fde048] text-black',
   BEST: 'bg-[#ef4444] text-[#FFFFFF]',
 }
 

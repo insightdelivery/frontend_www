@@ -112,7 +112,7 @@ export default function MypageBookmarksPage() {
                 className="flex flex-wrap items-center gap-6 py-6 sm:flex-nowrap"
               >
                 <div className="flex min-w-0 flex-1 gap-6">
-                  <div className="relative h-[144px] w-[192px] shrink-0 overflow-hidden rounded-lg bg-[#e2e8f0]">
+                  <div className="relative aspect-3/2 w-[192px] shrink-0 overflow-hidden rounded-lg bg-[#e2e8f0]">
                     {item.thumbnail ? (
                       <Image
                         src={item.thumbnail}

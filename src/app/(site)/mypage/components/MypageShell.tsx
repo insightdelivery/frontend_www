@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { buildLoginHrefFromParts } from '@/lib/postLoginRedirect'
 import { MYPAGE_TABS } from './MypageTabs'
 import { ChevronRight } from 'lucide-react'
 
@@ -23,9 +24,10 @@ export default function MypageShell({ children }: { children: React.ReactNode })
 
   /** `output: 'export'` 정적 빌드에서는 middleware 사용 불가 → 서버 리다이렉트 대신 클라이언트 가드 */
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.replace('/login')
-    }
+    if (status !== 'unauthenticated') return
+    if (typeof window === 'undefined') return
+    const q = window.location.search.startsWith('?') ? window.location.search.slice(1) : window.location.search
+    router.replace(buildLoginHrefFromParts(window.location.pathname, q))
   }, [status, router])
 
   const currentTab =

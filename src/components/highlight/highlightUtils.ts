@@ -34,17 +34,36 @@ export function getParagraphNodes(root: HTMLElement | null): Element[] {
   }
 }
 
-/** textContent 기준 문자 offset에 해당하는 (텍스트 노드, 노드 내 offset) 반환 */
+/**
+ * textContent 기준 문자 offset에 해당하는 (텍스트 노드, 노드 내 offset) 반환.
+ * Range 끝이 문단 끝(end === text.length)일 때 charOffset === 노드 끝이므로
+ * 기존 `charOffset < current + len` 만으로는 null이 되어 <mark>가 안 그려지는 버그가 있었음.
+ */
 function getTextNodeAtOffset(root: Element, charOffset: number): { node: Text; offset: number } | null {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null)
   let current = 0
   let node: Text | null = walker.nextNode() as Text | null
+  let lastText: Text | null = null
+  let lastLen = 0
   while (node) {
     const len = node.textContent?.length ?? 0
-    if (charOffset < current + len)
+    lastText = node
+    lastLen = len
+    if (len === 0) {
+      node = walker.nextNode() as Text | null
+      continue
+    }
+    if (charOffset < current + len) {
       return { node, offset: charOffset - current }
+    }
+    if (charOffset === current + len) {
+      return { node, offset: len }
+    }
     current += len
     node = walker.nextNode() as Text | null
+  }
+  if (lastText && charOffset === current) {
+    return { node: lastText, offset: lastLen }
   }
   return null
 }
@@ -74,6 +93,21 @@ function resolveHighlightPosition(paragraphs: Element[], h: HighlightItem): Reso
   const byIndex = paragraphs[h.paragraphIndex]
   if (byIndex && tryParagraph(byIndex, h.startOffset, h.endOffset)) {
     return { el: byIndex, start: h.startOffset, end: h.endOffset, color: h.color, highlightId: h.highlightId }
+  }
+
+  // 1b) offset과 highlightText 길이가 어긋난 저장값 대비 — 지정 문단에서 highlightText 전체를 우선 검색
+  if (byIndex && h.highlightText) {
+    const t = textAt(byIndex)
+    const idx = t.indexOf(h.highlightText)
+    if (idx !== -1 && t.slice(idx, idx + h.highlightText.length) === h.highlightText) {
+      return {
+        el: byIndex,
+        start: idx,
+        end: idx + h.highlightText.length,
+        color: h.color,
+        highlightId: h.highlightId,
+      }
+    }
   }
 
   // 2) 전체 문단에서 검색. prefix+highlightText → highlightText+suffix → highlightText 순으로 시도 (§9).
@@ -142,7 +176,16 @@ function applyResolvedToParagraph(paragraphEl: Element, items: ResolvedHighlight
       if (r.color.startsWith('#')) {
         mark.style.backgroundColor = r.color
       }
-      range.surroundContents(mark)
+      try {
+        range.surroundContents(mark)
+      } catch {
+        const r2 = document.createRange()
+        r2.setStart(startPos.node, startPos.offset)
+        r2.setEnd(endPos.node, endPos.offset)
+        const frag = r2.extractContents()
+        mark.appendChild(frag)
+        r2.insertNode(mark)
+      }
     } catch {
       // 겹치는 구간 등으로 실패 시 스킵
     }
@@ -172,7 +215,16 @@ export function applyMarksToParagraph(paragraphEl: Element, items: HighlightItem
       if (h.color.startsWith('#')) {
         mark.style.backgroundColor = h.color
       }
-      range.surroundContents(mark)
+      try {
+        range.surroundContents(mark)
+      } catch {
+        const r2 = document.createRange()
+        r2.setStart(startPos.node, startPos.offset)
+        r2.setEnd(endPos.node, endPos.offset)
+        const frag = r2.extractContents()
+        mark.appendChild(frag)
+        r2.insertNode(mark)
+      }
     } catch {
       // 겹치는 구간 등으로 실패 시 스킵
     }

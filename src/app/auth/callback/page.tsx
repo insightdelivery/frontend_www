@@ -3,6 +3,11 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getMe, saveTokens, setOauthPendingTempToken } from '@/services/auth'
+import {
+  consumePostLoginNextFromSession,
+  getSafePostLoginRedirect,
+  POST_LOGIN_NEXT_SESSION_KEY,
+} from '@/lib/postLoginRedirect'
 import { useAuth } from '@/contexts/AuthContext'
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -43,6 +48,11 @@ function AuthCallbackContent() {
       }
 
       if (tempToken) {
+        try {
+          sessionStorage.removeItem(POST_LOGIN_NEXT_SESSION_KEY)
+        } catch {
+          /* ignore */
+        }
         setOauthPendingTempToken(tempToken)
         router.replace('/signup/phone')
         return
@@ -56,7 +66,17 @@ function AuthCallbackContent() {
           saveTokens(accessToken, refreshToken || '', user)
           setUser(user)
           const fromSignup = params.get('from') === 'signup'
-          router.replace(fromSignup ? '/?welcome=1' : '/')
+          if (fromSignup) {
+            try {
+              sessionStorage.removeItem(POST_LOGIN_NEXT_SESSION_KEY)
+            } catch {
+              /* ignore */
+            }
+            router.replace('/?welcome=1')
+            return
+          }
+          const storedNext = consumePostLoginNextFromSession()
+          router.replace(getSafePostLoginRedirect(storedNext || params.get('next')))
           return
         } catch (e) {
           console.error('OAuth 콜백 후 사용자 정보 조회 오류:', e)

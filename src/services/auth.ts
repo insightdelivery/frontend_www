@@ -436,7 +436,7 @@ export const logout = async (): Promise<void> => {
     Cookies.remove('refreshToken', { path: '/' })
     Cookies.remove(OAUTH_PENDING_TEMP_COOKIE, { path: '/' })
     if (typeof window !== 'undefined') {
-      window.location.replace('/login')
+      window.location.replace('/')
     }
   }
 }
