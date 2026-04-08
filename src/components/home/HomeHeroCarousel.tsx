@@ -117,7 +117,7 @@ function SlideVisual({ slide }: { slide: DisplayEventHeroItem }) {
             </span>
           </div>
         ) : null}
-        <h1 className="font-black text-white text-[32px] leading-[1.1] sm:text-[40px] md:text-[48px] md:leading-[48px]">
+        <h1 className="text-[46px] font-bold leading-[1.1] text-white">
           {title}
         </h1>
         {subtitle ? (
@@ -203,7 +203,7 @@ function StaticHero() {
               Director&apos;s Pick
             </span>
           </div>
-          <h1 className="font-black text-white text-[32px] leading-[1.1] sm:text-[40px] md:text-[48px] md:leading-[48px]">
+          <h1 className="text-[46px] font-bold leading-[1.1] text-white">
             소망의 시작, 파격적이고 명료한 복음이 바꾸는 당신의 일상
           </h1>
           <p className="mt-2 max-w-[672px] font-normal text-[18px] text-white/80 sm:text-[20px] sm:leading-[28px]">
