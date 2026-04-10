@@ -189,7 +189,7 @@ function HeroSlideCell({
 
 function StaticHero() {
   return (
-    <section className="mb-16 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
+    <section className="mb-8 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
       <div className={`relative ${HERO_ASPECT} w-full`}>
         <div
           className="absolute inset-0 opacity-90"
@@ -238,7 +238,7 @@ function ReducedMotionHero({ slides }: { slides: DisplayEventHeroItem[] }) {
     </>
   )
   return (
-    <section className="mb-16 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
+    <section className="mb-8 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
       <div className={`relative ${HERO_ASPECT} w-full`}>
         {href?.kind === 'internal' ? (
           <Link href={href.path} className="absolute inset-0 block" aria-label={title}>
@@ -422,7 +422,7 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
       )
     }
     return (
-      <section className="mb-16 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
+      <section className="mb-8 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
         <div
           className={`relative ${HERO_ASPECT} w-full flex items-center justify-center bg-gradient-to-b from-gray-700 to-gray-900 text-white/70 text-sm`}
         >
@@ -438,7 +438,7 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
 
   if (slides.length === 0) {
     return (
-      <section className="mb-16 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
+      <section className="mb-8 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
         <div
           className={`relative ${HERO_ASPECT} flex items-center justify-center rounded-[12px] bg-gray-100 px-4 text-center text-gray-500 text-sm`}
         >
@@ -455,7 +455,7 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
   /** 배너 1장만 있을 때는 자동 슬라이드 없음 */
   if (slides.length === 1) {
     return (
-      <section className="mb-16 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
+      <section className="mb-8 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
         <div ref={containerRef} className="relative w-full overflow-hidden rounded-[12px]">
           {containerW > 0 ? (
             <HeroSlideCell slide={slides[0]!} cellWidth={containerW} />
@@ -470,7 +470,7 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
   const translatePx = containerW > 0 ? activeIndex * containerW : 0
 
   return (
-    <section className="mb-16 rounded-[12px] bg-[#f3f4f6]">
+    <section className="mb-8 rounded-[12px] bg-[#f3f4f6]">
       <div
         ref={containerRef}
         className="group relative w-full overflow-hidden rounded-[12px]"

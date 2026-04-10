@@ -20,27 +20,27 @@ export default function MainBar({ notice, shellMaxClass = 'max-w-[900px]' }: Mai
   return (
     <div className="bg-[#8D93FF]">
       <div
-        className={`mx-auto flex h-8 min-h-[2rem] ${shellMaxClass} items-center justify-between gap-4 px-4 font-sans text-[13px] font-normal text-[#4D4D4D] sm:text-[14px] md:px-8`}
+        className={`mx-auto flex h-8 min-h-[2rem] ${shellMaxClass} items-center justify-between gap-4 px-4 font-sans text-[12px] font-normal leading-normal text-white md:px-8`}
       >
         {notice && href ? (
           <>
             <Link
               href={href}
-              className="min-w-0 flex-1 truncate text-left no-underline hover:no-underline hover:opacity-90"
+              className="min-w-0 flex-1 truncate text-left text-white no-underline hover:no-underline hover:opacity-90"
               aria-live="polite"
             >
               {notice.title}
             </Link>
             <Link
               href={href}
-              className="shrink-0 tracking-tight no-underline hover:no-underline hover:opacity-90"
+              className="shrink-0 tracking-tight text-white no-underline hover:no-underline hover:opacity-90"
               aria-label={`공지 상세: ${notice.title}`}
             >
               &gt;&gt;&gt;
             </Link>
           </>
         ) : (
-          <span className="sr-only">GNB 공지 없음</span>
+          <span className="sr-only">공지 없음</span>
         )}
       </div>
     </div>

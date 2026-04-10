@@ -155,7 +155,7 @@ function DetailBottomWeeklyCard({ item }: { item: WeeklyCrossCardData }) {
           <img src={thumbSrc} alt="" className="h-full w-full object-cover" />
         ) : null}
       </div>
-      <p className={`font-bold text-[16px] leading-6 ${COLORS.text} group-hover:underline line-clamp-2`}>
+      <p className={`text-[16px] font-medium leading-6 text-[#202020] group-hover:underline line-clamp-2`}>
         {item.title}
       </p>
       {subtitleLine ? (
@@ -181,7 +181,7 @@ function DetailBottomArticleCard({ item, index }: { item: ArticleListItem; index
           <img src={thumbSrc} alt="" className="h-full w-full object-cover" />
         ) : null}
       </div>
-      <p className={`font-bold text-[16px] leading-6 ${COLORS.text} group-hover:underline line-clamp-2`}>
+      <p className={`text-[16px] font-medium leading-6 text-[#202020] group-hover:underline line-clamp-2`}>
         {item.title}
       </p>
       {subtitleLine ? (
@@ -829,7 +829,7 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
         </section>
       )}
 
-      <section className={`${COLORS.accent} rounded-2xl p-8 flex flex-wrap items-center justify-between gap-4 mb-12`}>
+      <section className={`${COLORS.accent} mb-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-8`}>
         <div>
           <h3 className="font-black text-[24px] leading-8 text-black mb-1">인사이트 확장하기!</h3>
           <p className="text-[16px] text-black/70">24시간 공유 링크로 인사이트와 복음을 나눠보세요!</p>
@@ -880,10 +880,10 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
         }}
       />
 
-      <AppliedQuestionsSection contentType="ARTICLE" contentId={article.id} className="mb-12" />
+      <AppliedQuestionsSection contentType="ARTICLE" contentId={article.id} className="mb-0" />
 
       <ArticleRatingCommentSection
-        className="mb-12"
+        className="mb-0 mt-5"
         contentCode={id}
         articleId={article.id}
         allowComment={Boolean((article as unknown as { allowComment?: boolean }).allowComment)}
@@ -893,8 +893,8 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
 
       {detailBlocksLoading ? (
         <>
-          <section className="pt-16 mb-12" aria-busy="true">
-            <h2 className={`font-bold text-[24px] tracking-[-0.6px] ${COLORS.text} mb-8`}>관련 아티클</h2>
+          <section className="mt-10 mb-12" aria-busy="true">
+            <h2 className={`mb-[22px] font-bold text-[24px] tracking-[-0.6px] ${COLORS.text}`}>관련 아티클</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
               {[0, 1, 2].map((i) => (
                 <div key={i} className="animate-pulse">
@@ -905,8 +905,8 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
               ))}
             </div>
           </section>
-          <section className="pt-16 mb-12" aria-busy="true">
-            <h2 className={`font-bold text-[24px] tracking-[-0.6px] ${COLORS.text} mb-8`}>추천 아티클</h2>
+          <section className="mt-10 mb-12" aria-busy="true">
+            <h2 className={`mb-[22px] font-bold text-[24px] tracking-[-0.6px] ${COLORS.text}`}>추천 아티클</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
               {[0, 1, 2].map((i) => (
                 <div key={i} className="animate-pulse">
@@ -917,8 +917,8 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
               ))}
             </div>
           </section>
-          <section className="pt-16 mb-12" aria-busy="true">
-            <h2 className={`font-bold text-[24px] tracking-[-0.6px] ${COLORS.text} mb-8`}>주간 인기 콘텐츠</h2>
+          <section className="mt-10 mb-12" aria-busy="true">
+            <h2 className={`mb-[22px] font-bold text-[24px] tracking-[-0.6px] ${COLORS.text}`}>주간 인기 콘텐츠</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
               {[0, 1, 2].map((i) => (
                 <div key={i} className="animate-pulse">
@@ -933,8 +933,8 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
       ) : (
         <>
           {relatedArticles.length > 0 ? (
-            <section className="pt-16 mb-12">
-              <h2 className={`font-bold text-[24px] tracking-[-0.6px] ${COLORS.text} mb-8`}>관련 아티클</h2>
+            <section className="mt-10 mb-12">
+              <h2 className={`mb-[22px] font-bold text-[24px] tracking-[-0.6px] ${COLORS.text}`}>관련 아티클</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
                 {relatedArticles.map((item, i) => (
                   <DetailBottomArticleCard key={item.id} item={item} index={i} />
@@ -944,8 +944,8 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
           ) : null}
 
           {recommendedArticles.length > 0 ? (
-            <section className="pt-16 mb-12">
-              <h2 className={`font-bold text-[24px] tracking-[-0.6px] ${COLORS.text} mb-8`}>추천 아티클</h2>
+            <section className="mt-10 mb-12">
+              <h2 className={`mb-[22px] font-bold text-[24px] tracking-[-0.6px] ${COLORS.text}`}>추천 아티클</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
                 {recommendedArticles.map((item, i) => (
                   <DetailBottomArticleCard key={item.id} item={item} index={i} />
@@ -955,8 +955,8 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
           ) : null}
 
           {weeklyCards.length > 0 ? (
-            <section className="pt-16 mb-12">
-              <h2 className={`font-bold text-[24px] tracking-[-0.6px] ${COLORS.text} mb-8`}>주간 인기 콘텐츠</h2>
+            <section className="mt-10 mb-12">
+              <h2 className={`mb-[22px] font-bold text-[24px] tracking-[-0.6px] ${COLORS.text}`}>주간 인기 콘텐츠</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
                 {weeklyCards.map((item) => (
                   <DetailBottomWeeklyCard key={item.href} item={item} />

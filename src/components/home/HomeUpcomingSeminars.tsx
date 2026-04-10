@@ -81,7 +81,7 @@ function UpcomingSeminarCard({ item }: { item: PublicVideoListItem }) {
             </div>
           </div>
           <div className="pb-2">
-            <h3 className="text-[20px] font-bold leading-[28px] text-black group-hover:underline line-clamp-2">
+            <h3 className="text-[16px] font-medium leading-6 text-[#202020] group-hover:underline line-clamp-2">
               {item.title}
             </h3>
           </div>
@@ -114,7 +114,7 @@ export default function HomeUpcomingSeminars() {
   const featured = upcoming[0]
 
   return (
-    <section className="mt-16 flex flex-col gap-6">
+    <section className="mt-10 flex flex-col gap-[22px]">
       {/* Figma 1:261~264 — 제목 + 네온 점 (더보기 없음) */}
       <div className="flex w-full items-center">
         <div className="flex items-center gap-2">

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ChevronRight, Bookmark, Share2, Star } from 'lucide-react'
+import { ChevronRight, Bookmark, Share2, Link2 } from 'lucide-react'
 import VideoPlayer from '@/components/video/VideoPlayer'
 import { fetchPublicVideoDetail, fetchPublicVideoList } from '@/services/video'
 import type { PublicVideoDetail, PublicVideoListItem, VideoAttachment } from '@/types/video'
@@ -11,17 +11,17 @@ import { getApiBaseURL } from '@/lib/axios'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   postView,
-  postRating,
   postBookmark,
   deleteBookmark,
   getBookmarkStatus,
+  getMeRatings,
 } from '@/services/libraryUseractivity'
 import type { ContentType } from '@/services/libraryUseractivity'
 import ArticleShareModal from '@/components/article/detail/ArticleShareModal'
 import ArticleGuestShareModal from '@/components/article/detail/ArticleGuestShareModal'
 import ArticleEntitlementShareModal from '@/components/article/detail/ArticleEntitlementShareModal'
 import AppliedQuestionsSection from '@/components/content-detail/AppliedQuestionsSection'
-import CommentSection from '@/components/comments/CommentSection'
+import ArticleRatingCommentSection from '@/components/article/detail/ArticleRatingCommentSection'
 import type { SysCodeItem } from '@/lib/syscode'
 import {
   getSysCode,
@@ -34,7 +34,8 @@ import { HOMEPAGE_DOC_DEFAULT_TITLES } from '@/constants/homepageDoc'
 import type { HomepageDocPayload } from '@/types/homepageDoc'
 import { sanitizeHomepageHtml } from '@/lib/sanitizeHomepageHtml'
 
-const CONTAINER = 'max-w-[900px] mx-auto'
+/** 아티클 상세(`ArticleDetailContent`)와 동일 콘텐츠 폭 */
+const CONTAINER = 'max-w-[720px] mx-auto'
 const COLORS = {
   text: 'text-[#0f172a]',
   textSecondary: 'text-[#64748b]',
@@ -345,23 +346,53 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
     }
   }, [detail, authenticated, isBookmarked, apiContentType, showBookmarkTooltip])
 
-  const handleRatingClick = useCallback(
-    async (value: number) => {
-      if (!detail || !authenticated) return
-      const cid = String(detail.id)
+  useEffect(() => {
+    if (!detail?.id || !authenticated) {
+      setRatingValue(null)
+      return
+    }
+    const cid = String(detail.id)
+    let cancelled = false
+    ;(async () => {
       try {
-        await postRating(apiContentType, cid, value)
-        setRatingValue(value)
+        const pageSize = 50
+        let page = 1
+        let matched: number | null = null
+
+        while (page <= 20) {
+          const result = await getMeRatings({
+            page,
+            page_size: pageSize,
+            sort: 'regDateTime_desc',
+          })
+          const found = (result.list ?? []).find(
+            (item) =>
+              item.contentType === apiContentType &&
+              String(item.contentCode) === cid &&
+              typeof item.ratingValue === 'number'
+          )
+          if (found) {
+            matched = found.ratingValue ?? null
+            break
+          }
+          if (!result.list?.length || page * pageSize >= (result.total ?? 0)) break
+          page += 1
+        }
+
+        if (!cancelled) setRatingValue(matched)
       } catch {
-        // ignore
+        if (!cancelled) setRatingValue(null)
       }
-    },
-    [detail, authenticated, apiContentType]
-  )
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [detail?.id, authenticated, apiContentType])
 
   if (loading) {
     return (
-      <div className={`${CONTAINER} flex justify-center px-4 pb-20 pt-6 sm:px-6 md:px-8`}>
+      <div className={`${CONTAINER} flex justify-center px-4 pb-20 pt-6 sm:px-6 md:px-[54px]`}>
         <p className="text-gray-500">Loading...</p>
       </div>
     )
@@ -369,7 +400,7 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
 
   if (error || !detail) {
     return (
-      <div className={`${CONTAINER} flex justify-center px-4 pb-20 pt-6 sm:px-6 md:px-8`}>
+      <div className={`${CONTAINER} flex justify-center px-4 pb-20 pt-6 sm:px-6 md:px-[54px]`}>
         <p className="text-gray-600">{error ?? '데이터가 없습니다'}</p>
       </div>
     )
@@ -389,8 +420,8 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
   })()
 
   return (
-    <div className={`${CONTAINER} px-4 pb-20 pt-6 sm:px-6 md:px-8`}>
-      <section className="mb-10 flex flex-col gap-8">
+    <div className={`${CONTAINER} px-4 pb-20 pt-6 sm:px-6 md:px-[54px]`}>
+      <section className="mb-10">
         <div className="aspect-video w-full overflow-hidden rounded-[12px] bg-black">
           <VideoPlayer
             sourceType={
@@ -400,131 +431,130 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
             videoUrl={type === 'seminar' ? undefined : detail.videoUrl}
           />
         </div>
+      </section>
 
-        <div className="flex flex-col gap-8">
-          <nav className="flex items-center gap-2" aria-label="Breadcrumb">
-            <Link href={listUrl} className={`text-[14px] leading-5 ${COLORS.textSecondary} hover:underline`}>
-              {listLabel}
-            </Link>
-            <ChevronRight className="h-5 w-4 flex-shrink-0 text-[#64748b]" aria-hidden />
-            <span className={`text-[14px] font-bold leading-5 ${COLORS.text}`}>{categoryBreadcrumbLabel}</span>
-          </nav>
+      <nav className="mb-6 flex items-center gap-2" aria-label="Breadcrumb">
+        <Link href={listUrl} className={`text-[14px] leading-5 ${COLORS.textSecondary} hover:underline`}>
+          {listLabel}
+        </Link>
+        <ChevronRight className="h-5 w-4 flex-shrink-0 text-[#64748b]" aria-hidden />
+        <span className={`text-[14px] font-semibold leading-5 ${COLORS.text}`}>{categoryBreadcrumbLabel}</span>
+      </nav>
 
-          {shareExpired ? (
-            <div
-              className="rounded-xl border border-amber-200 bg-amber-50/90 p-4 text-[14px] leading-snug text-[#0f172a]"
-              role="status"
-            >
-              공유 링크 유효 시간이 만료되었습니다. 전체 열람은 회원·새 공유 링크 발급을 이용해 주세요.
+      {shareExpired ? (
+        <div
+          className="mb-6 rounded-xl border border-amber-200 bg-amber-50/90 p-4 text-[14px] leading-snug text-[#0f172a]"
+          role="status"
+        >
+          공유 링크 유효 시간이 만료되었습니다. 전체 열람은 회원·새 공유 링크 발급을 이용해 주세요.
+        </div>
+      ) : null}
+
+      <header className="mb-8">
+        <h1 className={`mb-4 font-bold text-[40px] leading-[1.2] tracking-[-0.025em] ${COLORS.text}`}>{detail.title}</h1>
+
+        {tags.length > 0 ? (
+          <div className="mb-6 flex flex-wrap gap-2" aria-label="태그">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full bg-[#e8edf2] px-3 py-1 text-[12px] font-medium leading-snug text-[#475569]"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        <div className={`flex flex-wrap items-center justify-between gap-4 border-y py-[25px] ${COLORS.border}`}>
+          <div className="flex min-w-0 items-start gap-4">
+            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200/90">
+              {speakerDisplay.profileUrl ? (
+                <Image
+                  src={speakerDisplay.profileUrl}
+                  alt={speakerDisplay.name === '—' ? '' : speakerDisplay.name}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              ) : null}
             </div>
-          ) : null}
-
-          <div className="flex flex-col gap-8">
-            <h1 className={`text-[32px] font-bold tracking-[-1.2px] sm:text-[40px] md:text-[48px] md:leading-[48px] ${COLORS.text}`}>
-              {detail.title}
-            </h1>
-
-            {tags.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {tags.map((tag) => (
-                  <span key={tag} className={`${COLORS.tagBg} rounded-full px-3 py-1 text-[12px] text-[#0f172a]`}>
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-
-            <div className={`flex flex-wrap items-center justify-between gap-4 border-y py-6 ${COLORS.border}`}>
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-[#cbd5e1]">
-                  {speakerDisplay.profileUrl ? (
-                    <Image
-                      src={speakerDisplay.profileUrl}
-                      alt={speakerDisplay.name === '—' ? '' : speakerDisplay.name}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                  ) : null}
-                </div>
-                <div className="min-w-0 leading-tight">
-                  <p className={`text-[16px] font-bold leading-6 ${COLORS.text}`}>{speakerDisplay.name}</p>
-                  {speakerDisplay.affiliation ? (
-                    <p className={`mt-1 text-[14px] font-normal leading-5 ${COLORS.textSecondary}`}>
-                      {speakerDisplay.affiliation}
-                    </p>
-                  ) : null}
-                  {metaDateLine ? (
-                    <p
-                      className={`text-[14px] font-normal leading-5 ${COLORS.textSecondary} ${
-                        speakerDisplay.affiliation ? 'mt-0.5' : 'mt-1'
-                      }`}
-                    >
-                      {metaDateLine}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                {attachments.map((file, i) => (
-                  <a
-                    key={`${file.url}-${i}`}
-                    href={file.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`rounded-lg border px-4 py-2 text-[14px] font-bold ${COLORS.border} ${COLORS.text} hover:bg-gray-50`}
-                  >
-                    {attachmentLabel(file)}
-                  </a>
-                ))}
-                <div className="relative shrink-0">
-                  {bookmarkTooltip ? (
-                    <div
-                      id={bookmarkTooltipId}
-                      role="tooltip"
-                      className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 flex w-max max-w-[min(90vw,22rem)] -translate-x-1/2 flex-col items-center"
-                    >
-                      <div className="max-w-[min(90vw,22rem)] whitespace-nowrap rounded-lg border border-gray-200/90 bg-gray-100 px-3 py-2 text-center text-[12px] font-medium leading-snug text-gray-800 shadow-sm">
-                        {bookmarkTooltip}
-                      </div>
-                      <span
-                        className="h-0 w-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-gray-100"
-                        aria-hidden
-                      />
-                    </div>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="rounded-lg p-2 hover:bg-gray-100"
-                    aria-label="북마크"
-                    aria-describedby={bookmarkTooltip ? bookmarkTooltipId : undefined}
-                    title={
-                      authenticated
-                        ? isBookmarked
-                          ? '북마크 해제'
-                          : '북마크 저장'
-                        : '로그인 후 이용 가능합니다.'
-                    }
-                    onClick={handleBookmarkClick}
-                  >
-                    <Bookmark
-                      className={`h-5 w-5 ${isBookmarked ? 'fill-[#0f172a] text-[#0f172a]' : 'text-[#0f172a]'}`}
-                    />
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  className="rounded-lg p-2 hover:bg-gray-100"
-                  aria-label="공유"
-                  onClick={handleShareClick}
+            <div className="min-w-0 leading-tight">
+              <p className={`text-[16px] font-bold leading-6 ${COLORS.text}`}>{speakerDisplay.name}</p>
+              {speakerDisplay.affiliation ? (
+                <p className={`mt-1 text-[14px] font-normal leading-5 ${COLORS.textSecondary}`}>
+                  {speakerDisplay.affiliation}
+                </p>
+              ) : null}
+              {metaDateLine ? (
+                <p
+                  className={`text-[14px] font-normal leading-5 ${COLORS.textSecondary} ${
+                    speakerDisplay.affiliation ? 'mt-0.5' : 'mt-1'
+                  }`}
                 >
-                  <Share2 className="h-5 w-5 text-[#0f172a]" />
-                </button>
-              </div>
+                  {metaDateLine}
+                </p>
+              ) : null}
             </div>
           </div>
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            {attachments.map((file, i) => (
+              <a
+                key={`${file.url}-${i}`}
+                href={file.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`rounded-lg border px-4 py-2 text-[14px] font-bold ${COLORS.border} ${COLORS.text} hover:bg-gray-50`}
+              >
+                {attachmentLabel(file)}
+              </a>
+            ))}
+            <div className="relative shrink-0">
+              {bookmarkTooltip ? (
+                <div
+                  id={bookmarkTooltipId}
+                  role="tooltip"
+                  className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 flex w-max max-w-[min(90vw,22rem)] -translate-x-1/2 flex-col items-center"
+                >
+                  <div className="max-w-[min(90vw,22rem)] whitespace-nowrap rounded-lg border border-gray-200/90 bg-gray-100 px-3 py-2 text-center text-[12px] font-medium leading-snug text-gray-800 shadow-sm">
+                    {bookmarkTooltip}
+                  </div>
+                  <span
+                    className="h-0 w-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-gray-100"
+                    aria-hidden
+                  />
+                </div>
+              ) : null}
+              <button
+                type="button"
+                className="rounded-md p-1.5 hover:bg-gray-100"
+                aria-label="북마크"
+                aria-describedby={bookmarkTooltip ? bookmarkTooltipId : undefined}
+                title={
+                  authenticated
+                    ? isBookmarked
+                      ? '북마크 해제'
+                      : '북마크 저장'
+                    : '로그인 후 이용 가능합니다.'
+                }
+                onClick={handleBookmarkClick}
+              >
+                <Bookmark
+                  className={`h-5 w-5 ${isBookmarked ? 'fill-[#0f172a] text-[#0f172a]' : 'text-[#0f172a]'}`}
+                />
+              </button>
+            </div>
+            <button
+              type="button"
+              className="rounded-md p-1.5 hover:bg-gray-100"
+              aria-label="공유"
+              onClick={handleShareClick}
+            >
+              <Share2 className="h-5 w-5 text-[#0f172a]" />
+            </button>
+          </div>
         </div>
-      </section>
+      </header>
 
       <div className="mb-10 flex flex-col gap-6">
         {bodyHtml ? (
@@ -557,16 +587,17 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
         </section>
       )}
 
-      <section className={`${COLORS.accent} mb-12 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-8`}>
+      <section className={`${COLORS.accent} mb-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-8`}>
         <div>
-          <h2 className="text-xl font-bold text-black">인사이트 확장하기!</h2>
-          <p className="mt-1 text-[16px] leading-6 text-black/70">24시간 공유 링크로 인사이트와 복음을 나눠보세요!</p>
+          <h3 className="mb-1 font-black text-[24px] leading-8 text-black">인사이트 확장하기!</h3>
+          <p className="text-[16px] text-black/70">24시간 공유 링크로 인사이트와 복음을 나눠보세요!</p>
         </div>
         <button
           type="button"
           onClick={handleShareClick}
-          className="rounded-xl bg-black px-6 py-3 text-[16px] font-bold text-white hover:opacity-90"
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-black px-8 py-3 text-[16px] font-bold text-white hover:opacity-90"
         >
+          <Link2 className="h-5 w-5 shrink-0 text-white" strokeWidth={2.25} aria-hidden />
           링크 복사하기
         </button>
       </section>
@@ -611,47 +642,25 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
         }}
       />
 
-      {/* 적용 질문: article/detail.md §4.6 — ARTICLE과 동일 AppliedQuestionsSection(질문 0건·로딩 시 미노출, 비회원 잠금 영역 동일) */}
       <AppliedQuestionsSection
         key={`applied-questions-${apiContentType}-${detail.id}`}
         contentType={apiContentType}
         contentId={detail.id}
-        className="mb-12"
+        className="mb-0"
       />
 
-      <section className={`${COLORS.bgLight} mb-12 rounded-2xl border p-8 text-center ${COLORS.border}`}>
-        <h3 className={`mb-3 text-[20px] font-bold ${COLORS.text}`}>별점</h3>
-        <p className={`mb-3 text-[16px] font-bold ${COLORS.text}`}>콘텐츠가 도움이 되었나요?</p>
-        <div className="flex justify-center gap-2">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              type="button"
-              className="p-1 hover:opacity-70"
-              aria-label={`${n}점`}
-              onClick={() => void handleRatingClick(n)}
-            >
-              <Star
-                className={`h-6 w-6 ${
-                  ratingValue !== null && n <= ratingValue
-                    ? 'fill-amber-400 text-amber-400'
-                    : 'text-[#e2e8f0] hover:text-amber-400'
-                }`}
-              />
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <CommentSection
-        className="mb-12"
+      <ArticleRatingCommentSection
+        className="mb-0 mt-5"
+        contentCode={contentCode}
+        articleId={detail.id}
         contentType={apiContentType}
-        contentId={detail.id}
         allowComment={Boolean((detail as unknown as { allowComment?: boolean }).allowComment)}
+        ratingValue={ratingValue}
+        setRatingValue={setRatingValue}
       />
 
-      <section className="pt-8">
-        <h2 className={`mb-8 text-[24px] font-bold tracking-[-0.6px] ${COLORS.text}`}>추천 콘텐츠</h2>
+      <section className="mt-10 mb-12">
+        <h2 className={`mb-[22px] text-[24px] font-bold tracking-[-0.6px] ${COLORS.text}`}>추천 콘텐츠</h2>
         {related.length === 0 ? (
           <p className={`text-sm ${COLORS.textSecondary}`}>추천할 콘텐츠가 없습니다.</p>
         ) : (
@@ -668,7 +677,9 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
                       <div className={`h-full w-full ${RELATED_PLACEHOLDERS[i % RELATED_PLACEHOLDERS.length]}`} />
                     )}
                   </div>
-                  <p className={`line-clamp-2 text-[16px] font-bold leading-6 group-hover:underline ${COLORS.text}`}>{item.title}</p>
+                  <p className="line-clamp-2 text-[16px] font-medium leading-6 text-[#202020] group-hover:underline">
+                    {item.title}
+                  </p>
                   <p className={`mt-1 text-[14px] leading-5 ${COLORS.textSecondary}`}>{item.speaker ?? '—'}</p>
                 </Link>
               )

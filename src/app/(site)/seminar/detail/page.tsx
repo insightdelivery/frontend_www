@@ -3,6 +3,7 @@
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import VideoSeminarDetailContent from '@/components/content-detail/VideoSeminarDetailContent'
+import TopButton from '@/components/common/TopButton'
 
 function SeminarDetailInner() {
   const searchParams = useSearchParams()
@@ -20,6 +21,7 @@ function SeminarDetailInner() {
   return (
     <main className="min-h-screen bg-white">
       <VideoSeminarDetailContent type="seminar" id={id} shareExpired={shareExpired} />
+      <TopButton />
     </main>
   )
 }

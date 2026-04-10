@@ -3,7 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CornerDownRight, MessageCircle, MoreVertical, Star } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { createComment, deleteComment, fetchComments, updateComment, type CommentItem } from '@/services/comments'
+import {
+  createComment,
+  deleteComment,
+  fetchComments,
+  updateComment,
+  type CommentContentType,
+  type CommentItem,
+} from '@/services/comments'
 import { postRating } from '@/services/libraryUseractivity'
 
 const COLORS = {
@@ -35,7 +42,9 @@ function StarRowDisplay({ value }: { value: number | null | undefined }) {
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
-          className={`h-3.5 w-3.5 ${i <= n ? 'fill-slate-700 text-slate-700' : 'text-slate-200'}`}
+          className={`h-3.5 w-3.5 ${
+            i <= n ? 'fill-[#333333] text-[#333333]' : 'fill-none stroke-[#cbd5e1] text-[#cbd5e1]'
+          }`}
           strokeWidth={i <= n ? 0 : 1.5}
           aria-hidden
         />
@@ -46,7 +55,10 @@ function StarRowDisplay({ value }: { value: number | null | undefined }) {
 
 export interface ArticleRatingCommentSectionProps {
   contentCode: string
+  /** 콘텐츠 PK (아티클·비디오·세미나 공통) */
   articleId: number
+  /** 기본값 `ARTICLE` — 비디오/세미나 상세에서 `VIDEO` / `SEMINAR` 전달 */
+  contentType?: CommentContentType
   allowComment: boolean
   ratingValue: number | null
   setRatingValue: (v: number | null) => void
@@ -54,11 +66,12 @@ export interface ArticleRatingCommentSectionProps {
 }
 
 /**
- * 아티클 상세 전용 — 별점 + 댓글 작성을 한 블록에 두고, 목록에는 작성자의 *현재* 콘텐츠 별점을 표시 (detail.md §4.9)
+ * 아티클·비디오·세미나 상세 공통 — 별점 + 댓글을 한 블록에 두고, 목록에는 작성자의 *현재* 콘텐츠 별점을 표시 (detail.md §4.9)
  */
 export default function ArticleRatingCommentSection({
   contentCode,
   articleId,
+  contentType = 'ARTICLE',
   allowComment,
   ratingValue,
   setRatingValue,
@@ -101,14 +114,14 @@ export default function ArticleRatingCommentSection({
     setLoading(true)
     setError(null)
     try {
-      const res = await fetchComments({ contentType: 'ARTICLE', contentId: articleId })
+      const res = await fetchComments({ contentType, contentId: articleId })
       setItems(res.list ?? [])
     } catch (e) {
       setError(e instanceof Error ? e.message : '댓글을 불러오지 못했습니다.')
     } finally {
       setLoading(false)
     }
-  }, [allowComment, articleId])
+  }, [allowComment, articleId, contentType])
 
   useEffect(() => {
     void load()
@@ -127,12 +140,12 @@ export default function ArticleRatingCommentSection({
     setError(null)
     try {
       if (draftStars !== null && draftStars >= 1 && draftStars <= 5) {
-        await postRating('ARTICLE', contentCode, draftStars)
+        await postRating(contentType, contentCode, draftStars)
         setRatingValue(draftStars)
       }
       const t = text.trim()
       if (allowComment && t) {
-        await createComment({ contentType: 'ARTICLE', contentId: articleId, commentText: t })
+        await createComment({ contentType, contentId: articleId, commentText: t })
         setText('')
       }
       await load()
@@ -141,7 +154,7 @@ export default function ArticleRatingCommentSection({
     } finally {
       setSubmitting(false)
     }
-  }, [authenticated, canSave, draftStars, text, allowComment, contentCode, articleId, load, setRatingValue])
+  }, [authenticated, canSave, draftStars, text, allowComment, contentType, contentCode, articleId, load, setRatingValue])
 
   const startEdit = useCallback((id: number, current: string) => {
     setEditingId(id)
@@ -191,7 +204,7 @@ export default function ArticleRatingCommentSection({
           <MessageCircle className={`h-6 w-6 shrink-0 ${COLORS.textSecondary}`} strokeWidth={2} aria-hidden />
           <h2 className={`text-[18px] font-bold ${COLORS.text}`}>이 콘텐츠가 어떠셨나요?</h2>
         </div>
-        <div className="flex shrink-0 items-center gap-1 sm:pl-4">
+        <div className="flex shrink-0 items-center gap-1 rounded-xl bg-[#d4d4d8] px-3 py-2 sm:pl-4">
           {[1, 2, 3, 4, 5].map((n) => {
             const active = draftStars !== null && n <= draftStars
             return (
@@ -208,8 +221,10 @@ export default function ArticleRatingCommentSection({
                 className="rounded p-0.5 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Star
-                  className={`h-7 w-7 ${active ? 'fill-slate-700 text-slate-700' : 'text-slate-200'}`}
-                  strokeWidth={active ? 0 : 1.5}
+                  className={`h-7 w-7 ${
+                    active ? 'fill-[#333333] text-[#333333]' : 'fill-none stroke-2 stroke-white text-white'
+                  }`}
+                  strokeWidth={active ? 0 : 2}
                 />
               </button>
             )

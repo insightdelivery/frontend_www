@@ -40,7 +40,7 @@ export default function HomeLatestArticles() {
   }, [load])
 
   return (
-    <section className="mt-16 flex flex-col gap-6">
+    <section className="mt-10 flex flex-col gap-[22px]">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="font-bold text-black text-[24px] leading-[32px]">최신 아티클</h2>
@@ -83,7 +83,7 @@ export default function HomeLatestArticles() {
                     {getSysCodeName(categories, a.category)}
                   </span>
                 </div>
-                <p className="mt-3 line-clamp-2 font-bold text-black text-[18px] leading-[24.75px] group-hover:underline">
+                <p className="mt-3 line-clamp-2 text-[16px] font-medium leading-6 text-[#202020] group-hover:underline">
                   {a.title}
                 </p>
               </div>

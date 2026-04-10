@@ -29,7 +29,7 @@ const config = {
       },
       colors: {
         // 룩엔필 브랜드 컬러 (이미지 디자인 기반)
-        'neon-yellow': '#E1F800',
+        'neon-yellow': '#D9F032',
         'brand-yellow': '#FFDF38',
         'brand-purple': '#EA90FF',
         'brand-pink': '#FF75E1',

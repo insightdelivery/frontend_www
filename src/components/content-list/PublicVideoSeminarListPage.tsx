@@ -166,10 +166,10 @@ export default function PublicVideoSeminarListPage({
     <main className="bg-white text-black">
       <div className="mx-auto max-w-[900px] px-4 py-6 sm:px-6 md:px-8 md:py-10">
         <header className="mb-8 sm:mb-10">
-          <h1 className="text-[28px] font-black uppercase tracking-tight text-gray-900 sm:text-[34px] md:text-[42px]">
-            {pageTitle}
-          </h1>
-          <p className="mt-2 text-[14px] text-gray-600 sm:text-[16px]">{pageSubtitle}</p>
+          <h1 className="text-[40px] font-bold leading-tight tracking-tight text-black">{pageTitle}</h1>
+          {pageSubtitle ? (
+            <p className="mt-2 text-[14px] text-gray-600 sm:text-[16px]">{pageSubtitle}</p>
+          ) : null}
         </header>
 
         <section className="mb-8 sm:mb-10">
@@ -275,7 +275,7 @@ export default function PublicVideoSeminarListPage({
                     <p className="mt-2 text-[11px] uppercase text-gray-500 sm:text-[12px]">
                       {categoryLabel(row.category) || row.category?.trim() || '—'} · {row.speaker ?? '—'}
                     </p>
-                    <p className="mt-0.5 text-[15px] font-extrabold leading-snug line-clamp-2 transition-colors group-hover:text-gray-600 sm:text-[17px]">
+                    <p className="mt-0.5 text-[16px] font-medium leading-snug text-[#202020] line-clamp-2 transition-colors group-hover:opacity-80">
                       {row.title}
                     </p>
                     <p className="mt-1 line-clamp-2 text-[12px] text-gray-600 sm:text-[13px]">{row.subtitle ?? ''}</p>

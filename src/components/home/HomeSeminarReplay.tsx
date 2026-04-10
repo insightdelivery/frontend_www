@@ -17,7 +17,7 @@ export default function HomeSeminarReplay() {
   const categoryLabel = useSysCodeCategoryLabel(SEMINAR_CATEGORY_PARENT)
 
   return (
-    <section className="mt-16 flex flex-col gap-6">
+    <section className="mt-10 flex flex-col gap-[22px]">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="font-bold text-black text-[24px] leading-[32px]">세미나 다시보기</h2>
@@ -59,7 +59,7 @@ export default function HomeSeminarReplay() {
                     </div>
                   </div>
                 </div>
-                <p className="mt-3 line-clamp-2 font-bold text-black text-[18px] leading-[24.75px] group-hover:underline">
+                <p className="mt-3 line-clamp-2 text-[16px] font-medium leading-6 text-[#202020] group-hover:underline">
                   {v.title}
                 </p>
                 {v.speaker ? (
