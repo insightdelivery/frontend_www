@@ -88,12 +88,6 @@ export default function HeaderSearch({ isOpen, onClose, onSearch, shellMaxClass 
   }, [isOpen, setHeaderSearchInputFocused])
 
   useEffect(() => {
-    if (isOpen) {
-      inputRef.current?.focus()
-    }
-  }, [isOpen])
-
-  useEffect(() => {
     if (!isOpen || pathname !== '/search') return
     setQuery(normalizeSearchQuery(qFromUrl))
   }, [isOpen, pathname, qFromUrl])
@@ -123,10 +117,11 @@ export default function HeaderSearch({ isOpen, onClose, onSearch, shellMaxClass 
     const el = recentAnchorRef.current
     const update = () => {
       const r = el.getBoundingClientRect()
+      const maxW = 400
       setRecentDropdownRect({
         top: r.bottom + 8,
         left: r.left,
-        width: r.width,
+        width: Math.min(r.width, maxW),
       })
     }
 
@@ -224,8 +219,8 @@ export default function HeaderSearch({ isOpen, onClose, onSearch, shellMaxClass 
         className="flex min-h-0 min-w-0 flex-1 flex-col border-t border-black/10 bg-gray-100 text-black"
       >
         <div className={`mx-auto flex min-h-0 w-full min-w-0 flex-1 flex-col ${shellMaxClass}`}>
-          <div ref={recentAnchorRef} className="relative z-30 shrink-0 px-6 pt-4 pb-2">
-            <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-sm">
+          <div className="relative z-30 shrink-0 px-6 pt-4 pb-2">
+            <div ref={recentAnchorRef} className="flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-sm">
               <Search className="h-4 w-4 shrink-0 text-black/50" aria-hidden />
               <input
                 ref={inputRef}
@@ -295,7 +290,7 @@ export default function HeaderSearch({ isOpen, onClose, onSearch, shellMaxClass 
                 ref={recentDropdownRef}
                 role="listbox"
                 aria-label="최근 검색어"
-                className="max-h-[min(50vh,280px)] overflow-y-auto rounded-lg border border-black/10 bg-white shadow-lg"
+                className="max-h-[min(50vh,280px)] max-w-[400px] overflow-y-auto rounded-lg border border-black/10 bg-white shadow-lg"
                 style={{
                   position: 'fixed',
                   top: recentDropdownRect.top,
