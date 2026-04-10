@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import Cookies from 'js-cookie'
+import { USER_INFO_COOKIE_EXPIRES_DAYS } from '@/constants/authCookies'
 import {
   clearMemoryAccessToken,
   getMemoryAccessToken,
@@ -215,7 +216,7 @@ function applyTokenRefreshPayload(data: TokenRefreshPayload): string {
   }
   if (data?.user) {
     Cookies.set('userInfo', JSON.stringify(data.user), {
-      expires: 1,
+      expires: USER_INFO_COOKIE_EXPIRES_DAYS,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
@@ -259,10 +260,23 @@ type EnsureTokenMode = 'strict' | 'lenient'
 
 async function ensureToken(mode: EnsureTokenMode): Promise<void> {
   if (typeof window === 'undefined') return
-  let token = getMemoryAccessToken()
+  const token = getMemoryAccessToken()
 
   if (!token) {
-    if (mode === 'lenient' && !Cookies.get('userInfo')) return
+    if (mode === 'lenient') {
+      try {
+        await runRefreshDeduped()
+      } catch (err) {
+        const ax = err as AxiosError
+        const st = ax.response?.status
+        // refresh HttpOnly 쿠키 없음 등 — 백엔드는 보통 400. 비로그인으로 공개 API 계속.
+        if (st === 400 || st === 404) return
+        // 401/403은 executeTokenRefreshOnce에서 handleAuthFail 처리됨
+        if (st === 401 || st === 403) return
+        throw err
+      }
+      return
+    }
     await runRefreshDeduped()
     return
   }
@@ -271,16 +285,18 @@ async function ensureToken(mode: EnsureTokenMode): Promise<void> {
   await runRefreshDeduped()
 }
 
-/** initAuth — userInfo 있을 때만 조용히 1회 (비로그인은 refresh 호출 안 함) */
+/**
+ * 메모리 access token이 없거나 만료되면 HttpOnly refresh 쿠키로 1회 갱신 시도.
+ * userInfo 쿠키 유무와 무관해야 함(1일 만료 userInfo 때문에 7일 refresh가 막히던 문제 방지).
+ */
 export async function restoreSessionTokens(): Promise<void> {
   if (typeof window === 'undefined') return
   const token = getMemoryAccessToken()
   if (token && !isTokenExpired(token)) return
-  if (!token && !Cookies.get('userInfo')) return
   try {
     await runRefreshDeduped()
   } catch {
-    /* 401/403이면 executeTokenRefreshOnce에서 이미 handleAuthFail */
+    /* 401/403: executeTokenRefreshOnce에서 handleAuthFail. 400: refresh 없음 — 무시 */
   }
 }
 

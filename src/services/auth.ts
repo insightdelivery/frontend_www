@@ -1,6 +1,12 @@
 import apiClient, { resetAuthFailHandled, restoreSessionTokens } from '@/lib/axios'
+import { USER_INFO_COOKIE_EXPIRES_DAYS } from '@/constants/authCookies'
 import { clearMemoryAccessToken, getMemoryAccessToken, setMemoryAccessToken } from '@/lib/accessTokenMemory'
 import Cookies from 'js-cookie'
+
+/**
+ * 인증 상태의 근거는 (1) 메모리 access token (2) HttpOnly refresh 쿠키 → `/auth/tokenrefresh` 뿐이다.
+ * `userInfo` 일반 쿠키는 헤더·UI 표시용 캐시이며, 없거나 만료되어도 refresh가 살아 있으면 세션 복구가 가능해야 한다.
+ */
 
 /** 공개 API가 4xx 시 raw `{ error }` 또는 `{ IndeAPIResponse: { Message } }` 둘 다 쓸 수 있음 */
 function messageFromApiError(error: unknown, fallback: string): string {
@@ -401,7 +407,7 @@ export const completeProfile = async (data: ProfileCompleteRequest): Promise<Pro
     const out = (fromResult ?? (raw as ProfileCompleteResponse)) as ProfileCompleteResponse
     if (out?.user) {
       Cookies.set('userInfo', JSON.stringify(out.user), {
-        expires: 1,
+        expires: USER_INFO_COOKIE_EXPIRES_DAYS,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         path: '/',
@@ -466,6 +472,8 @@ export const requestWithdraw = async (data: WithdrawRequest): Promise<{ success:
  * 로그인·OAuth 직후 — frontend_wwwRules.md §2·§3
  * accessToken → 메모리만. refreshToken → 서버 Set-Cookie(HttpOnly)에만 두고, 클라이언트 쿠키·헤더·바디로 저장·전송하지 않음.
  * (refreshToken 인자는 API 응답 호환용으로 받되 저장하지 않음.)
+ *
+ * `userInfo` 쿠키: 닉네임 등 UI용 캐시만. 세션 복구 조건으로 쓰지 않는다(`axios.restoreSessionTokens`는 userInfo와 무관하게 refresh 시도).
  */
 export const saveTokens = (accessToken: string, _refreshToken: string, userInfo?: UserInfo) => {
   setMemoryAccessToken(accessToken)
@@ -475,7 +483,7 @@ export const saveTokens = (accessToken: string, _refreshToken: string, userInfo?
   }
   resetAuthFailHandled()
   const cookieOptions = {
-    expires: 1,
+    expires: USER_INFO_COOKIE_EXPIRES_DAYS,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict' as const,
     path: '/',
@@ -486,7 +494,7 @@ export const saveTokens = (accessToken: string, _refreshToken: string, userInfo?
 }
 
 /**
- * 사용자 정보 가져오기 (쿠키에서)
+ * UI용 사용자 정보 캐시(일반 쿠키). 없으면 null — 인증 여부는 `getMemoryAccessToken()` 등으로 판단.
  */
 export const getUserInfo = (): UserInfo | null => {
   const userInfoStr = Cookies.get('userInfo')

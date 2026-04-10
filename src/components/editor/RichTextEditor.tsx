@@ -115,7 +115,9 @@ export function RichTextEditor({
   useEffect(() => {
     if (!editor) return
     const current = editor.getHTML()
-    if (current === '<p></p>' && content) editor.commands.setContent(content, false)
+    if (current === '<p></p>' && content) {
+      editor.commands.setContent(content, { emitUpdate: false })
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor])
 
