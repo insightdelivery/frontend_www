@@ -206,8 +206,8 @@ export default function MypageRatingsPage() {
                   key={item.publicUserActivityLogId}
                   className="rounded-2xl border border-[#f1f5f9] bg-white p-[25px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]"
                 >
-                  <div className="flex gap-6">
-                    <div className="flex w-[160px] shrink-0 flex-col gap-3 self-start">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
+                    <div className="flex w-full flex-col gap-3 sm:w-[160px] sm:shrink-0">
                       <div className="relative aspect-3/2 w-full overflow-hidden rounded-lg bg-[#f1f5f9]">
                         {item.thumbnail ? (
                           <Image
@@ -215,7 +215,7 @@ export default function MypageRatingsPage() {
                             alt=""
                             fill
                             className="object-cover"
-                            sizes="160px"
+                            sizes="(max-width: 640px) 100vw, 160px"
                             unoptimized
                           />
                         ) : null}

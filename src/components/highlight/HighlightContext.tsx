@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   fetchHighlightList,
   createHighlight,
@@ -24,7 +24,7 @@ interface HighlightContextValue {
   deleteHighlightById: (highlightId: number) => Promise<void>
   refresh: () => Promise<void>
   /** articleHightlightPlan §18 — 선택/마크 근처 툴팁 (anchor는 getBoundingClientRect 등) */
-  showHighlightTooltip: (message: string, anchorRect?: DOMRect | null, durationMs?: number) => void
+  showHighlightTooltip: (message: ReactNode, anchorRect?: DOMRect | null, durationMs?: number) => void
 }
 
 const HighlightContext = createContext<HighlightContextValue | null>(null)
@@ -45,10 +45,10 @@ export function HighlightProvider({ articleId, children }: HighlightProviderProp
   const [constants] = useState<HighlightConstants>(getHighlightConstants)
   /** 동일 articleId에 대한 in-flight 요청 1회만 — Strict Mode 이중 마운트 시 공유 */
   const highlightPromiseRef = useRef<{ articleId: string; promise: Promise<HighlightItem[]> } | null>(null)
-  const [tooltip, setTooltip] = useState<{ message: string; anchor: TooltipAnchor | null } | null>(null)
+  const [tooltip, setTooltip] = useState<{ message: ReactNode; anchor: TooltipAnchor | null } | null>(null)
   const tooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const showHighlightTooltip = useCallback((message: string, anchorRect?: DOMRect | null, durationMs = 2000) => {
+  const showHighlightTooltip = useCallback((message: ReactNode, anchorRect?: DOMRect | null, durationMs = 2000) => {
     setTooltip({
       message,
       anchor: anchorRect ? toTooltipAnchor(anchorRect) : null,

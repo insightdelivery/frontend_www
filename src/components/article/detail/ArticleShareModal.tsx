@@ -12,6 +12,8 @@ export interface ArticleShareModalProps {
   contentCode: string
   /** 기본 ARTICLE — 비디오·세미나 상세는 VIDEO / SEMINAR */
   contentType?: ContentType
+  /** 「복사하기」 성공 직후 (토스트 등) */
+  onCopied?: () => void
 }
 
 function formatRemainingMs(ms: number): string {
@@ -49,6 +51,7 @@ export default function ArticleShareModal({
   onClose,
   contentCode,
   contentType = 'ARTICLE',
+  onCopied,
 }: ArticleShareModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -159,6 +162,7 @@ export default function ArticleShareModal({
     try {
       await navigator.clipboard.writeText(shareUrl)
       fireShareLog()
+      onCopied?.()
       onClose()
     } catch {
       setError('클립보드 복사에 실패했습니다.')

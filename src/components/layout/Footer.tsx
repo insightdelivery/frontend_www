@@ -72,61 +72,7 @@ export default function Footer() {
             <p className="mt-4 sm:mt-5 text-[11px] sm:text-[12px] leading-[1.6] text-gray-600 max-w-full md:max-w-[360px]">
             InDe는 말씀과 삶을 연결하는 크리스천 인사이트 플랫폼으로, 정기적인 콘텐츠를 통해 세상의 개념과 정의를 복음으로 조명하고, 매주 듣는 말씀을 일상의 언어와 시각으로 적용할 수 있도록 돕습니다.
             </p>
-          </div>
-
-          {/* Middle Column - Site Menu */}
-          <div className="md:col-span-1">
-            <p className="text-[12px] font-extrabold text-gray-700">소개</p>
-            <ul className="mt-4 sm:mt-5 space-y-2 text-[12px] text-gray-600">
-              <li><Link href="/about/companyInfo" className="hover:text-gray-900 transition-colors">인디소개</Link></li>
-              <li>
-                {recruitHref ? (
-                  <a href={recruitHref} target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
-                    인재채용
-                  </a>
-                ) : (
-                  <span className="text-gray-400">인재채용</span>
-                )}
-              </li>
-              <li>
-                {partnershipHref ? (
-                  <a href={partnershipHref} target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
-                    광고 및 협업 문의
-                  </a>
-                ) : (
-                  <span className="text-gray-400">광고 및 협업 문의</span>
-                )}
-              </li>
-              <li>
-                <Link href="/about/companyInfo#partners" className="hover:text-gray-900 transition-colors">
-                  협력 업체
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Right Column - Customer Support (공지사항, FAQ, 1:1 문의 + SNS) */}
-          <div className="md:col-span-1">
-            <p className="text-[12px] font-extrabold text-gray-700">서비스</p>
-            <ul className="mt-4 sm:mt-5 space-y-2 text-[12px] text-gray-600">
-              <li><Link href="/notice" className="hover:text-gray-900 transition-colors">공지사항</Link></li>
-              <li><Link href="/faq" className="hover:text-gray-900 transition-colors">FAQ</Link></li>
-              <li><Link href="/mypage/support" className="hover:text-gray-900 transition-colors">1:1 문의</Link></li>
-              <li><Link href="/terms" className="hover:text-gray-900 transition-colors">이용약관</Link></li>
-              <li><Link href="/privacy" className="hover:text-gray-900 transition-colors">개인정보처리방침</Link></li>
-              <li><Link href="/membership/checkout" className="hover:text-gray-900 transition-colors">결제</Link></li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Middle Separator Line */}
-        <div className="mt-8 sm:mt-12 md:mt-14 border-t border-gray-200"></div>
-
-        {/* 1행: (주)원소울 | SNS 두 영역 / 2행 이하: 사업자·주소·저작권 전체 너비 1블록 */}
-        <div className="mt-5 sm:mt-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
-            <p className="m-0 shrink-0 text-left text-[12px] leading-relaxed text-gray-700 font-semibold">(주)원소울</p>
-            <div className="flex flex-wrap gap-4 text-[12px] font-normal text-gray-700 tracking-wide sm:justify-end">
+            <div className="flex flex-wrap gap-4 mt-5 sm:mt-6 text-[12px] font-normal text-gray-700 tracking-wide">
               {SNS_LINKS.map(({ href, label, Icon }) => (
                 <a
                   key={label}
@@ -141,6 +87,62 @@ export default function Footer() {
                 </a>
               ))}
             </div>
+
+          </div>
+
+          {/* 모바일: 소개(왼쪽) | 서비스(오른쪽) 2열 — md+: 상위 4열 그리드에 직접 참여 */}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-0 items-start md:contents">
+            <div className="min-w-0 md:col-span-1">
+              <p className="text-[12px] font-extrabold text-gray-700">소개</p>
+              <ul className="mt-4 sm:mt-5 space-y-2 text-[12px] text-gray-600">
+                <li><Link href="/about/companyInfo" className="hover:text-gray-900 transition-colors">인디소개</Link></li>
+                <li>
+                  {recruitHref ? (
+                    <a href={recruitHref} target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
+                      인재채용
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">인재채용</span>
+                  )}
+                </li>
+                <li>
+                  {partnershipHref ? (
+                    <a href={partnershipHref} target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
+                      광고 및 협업 문의
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">광고 및 협업 문의</span>
+                  )}
+                </li>
+                <li>
+                  <Link href="/about/companyInfo#partners" className="hover:text-gray-900 transition-colors">
+                    협력 업체
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            <div className="min-w-0 md:col-span-1">
+              <p className="text-[12px] font-extrabold text-gray-700">서비스</p>
+              <ul className="mt-4 sm:mt-5 space-y-2 text-[12px] text-gray-600">
+                <li><Link href="/notice" className="hover:text-gray-900 transition-colors">공지사항</Link></li>
+                <li><Link href="/faq" className="hover:text-gray-900 transition-colors">FAQ</Link></li>
+                <li><Link href="/mypage/support" className="hover:text-gray-900 transition-colors">1:1 문의</Link></li>
+                <li><Link href="/terms" className="hover:text-gray-900 transition-colors">이용약관</Link></li>
+                <li><Link href="/privacy" className="hover:text-gray-900 transition-colors">개인정보처리방침</Link></li>
+                <li><Link href="/membership/checkout" className="hover:text-gray-900 transition-colors">결제</Link></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Middle Separator Line */}
+        <div className="mt-8 sm:mt-12 md:mt-14 border-t border-gray-200"></div>
+
+        {/* 1행: (주)원소울 | SNS 두 영역 / 2행 이하: 사업자·주소·저작권 전체 너비 1블록 */}
+        <div className="mt-5 sm:mt-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+            <p className="m-0 shrink-0 text-left text-[12px] leading-relaxed text-gray-700 font-semibold">(주)원소울</p>
           </div>
 
           <div className="mt-2 w-full space-y-2 text-left text-[12px] leading-relaxed text-gray-700">

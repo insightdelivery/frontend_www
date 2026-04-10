@@ -9,7 +9,13 @@ import { fetchPublicVideoDetail, fetchPublicVideoList } from '@/services/video'
 import type { PublicVideoDetail, PublicVideoListItem, VideoAttachment } from '@/types/video'
 import { getApiBaseURL } from '@/lib/axios'
 import { useAuth } from '@/contexts/AuthContext'
-import { postView, postRating, postBookmark, deleteBookmark } from '@/services/libraryUseractivity'
+import {
+  postView,
+  postRating,
+  postBookmark,
+  deleteBookmark,
+  getBookmarkStatus,
+} from '@/services/libraryUseractivity'
 import type { ContentType } from '@/services/libraryUseractivity'
 import ArticleShareModal from '@/components/article/detail/ArticleShareModal'
 import ArticleGuestShareModal from '@/components/article/detail/ArticleGuestShareModal'
@@ -295,6 +301,28 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
     []
   )
 
+  /** 재방문 시 북마크 아이콘 동기화 */
+  useEffect(() => {
+    if (!authenticated) {
+      setIsBookmarked(false)
+      return
+    }
+    if (!detail) return
+    const cid = String(detail.id)
+    let cancelled = false
+    ;(async () => {
+      try {
+        const bookmarked = await getBookmarkStatus(apiContentType, cid)
+        if (!cancelled) setIsBookmarked(bookmarked)
+      } catch {
+        if (!cancelled) setIsBookmarked(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [authenticated, detail?.id, apiContentType])
+
   const handleBookmarkClick = useCallback(async () => {
     if (!detail) return
     const cid = String(detail.id)
@@ -449,14 +477,6 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
                     {attachmentLabel(file)}
                   </a>
                 ))}
-                <button
-                  type="button"
-                  className="rounded-lg p-2 hover:bg-gray-100"
-                  aria-label="공유"
-                  onClick={handleShareClick}
-                >
-                  <Share2 className="h-5 w-5 text-[#0f172a]" />
-                </button>
                 <div className="relative shrink-0">
                   {bookmarkTooltip ? (
                     <div
@@ -492,6 +512,14 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
                     />
                   </button>
                 </div>
+                <button
+                  type="button"
+                  className="rounded-lg p-2 hover:bg-gray-100"
+                  aria-label="공유"
+                  onClick={handleShareClick}
+                >
+                  <Share2 className="h-5 w-5 text-[#0f172a]" />
+                </button>
               </div>
             </div>
           </div>
@@ -510,18 +538,21 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
       </div>
 
       {copyrightDoc != null && (
-        <section className="my-10 rounded-xl border-2 border-blue-200 bg-blue-50/50 p-6">
-          <p className="mb-2 text-[12px] font-bold text-[#0f172a]">
-            {copyrightDoc.title?.trim() || HOMEPAGE_DOC_DEFAULT_TITLES[copyrightDocType]}
-          </p>
+        <section className="my-10">
           {(() => {
             const safeHtml = sanitizeHomepageHtml(copyrightDoc.bodyHtml || '')
-            return safeHtml.trim() ? (
-              <div
-                className="text-[12px] leading-[19.5px] text-[#475569] [&_p]:mb-2 [&_p:last-child]:mb-0 [&_a]:text-[#2563eb] [&_a]:underline"
-                dangerouslySetInnerHTML={{ __html: safeHtml }}
-              />
-            ) : null
+            if (!safeHtml.trim()) return null
+            return (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-5">
+                <span className="shrink-0 text-[15px] font-bold leading-snug text-[#0f172a]">
+                  {copyrightDoc.title?.trim() || HOMEPAGE_DOC_DEFAULT_TITLES[copyrightDocType]}
+                </span>
+                <div
+                  className="min-w-0 flex-1 text-[12px] leading-[1.65] text-[#64748b] [&_p]:mb-2 [&_p:last-child]:mb-0 [&_a]:text-[#2563eb] [&_a]:underline"
+                  dangerouslySetInnerHTML={{ __html: safeHtml }}
+                />
+              </div>
+            )
           })()}
         </section>
       )}
@@ -545,7 +576,7 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
           className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-[#0f172a] px-6 py-3 text-[14px] font-medium text-white shadow-lg"
           role="status"
         >
-          링크가 복사되었습니다
+          복사 되었습니다.
         </div>
       ) : null}
 
@@ -554,6 +585,10 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
         onClose={() => setShareModalOpen(false)}
         contentCode={contentCode}
         contentType={apiContentType}
+        onCopied={() => {
+          setShareToast(true)
+          setTimeout(() => setShareToast(false), 2000)
+        }}
       />
       <ArticleEntitlementShareModal
         open={entitlementShareModalOpen}

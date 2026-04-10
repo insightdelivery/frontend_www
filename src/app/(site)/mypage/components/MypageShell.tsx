@@ -1,21 +1,13 @@
 'use client'
 
-import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { buildLoginHrefFromParts } from '@/lib/postLoginRedirect'
 import { MYPAGE_TABS } from './MypageTabs'
+import MypageScrollTabs from './MypageScrollTabs'
+import { isMypageTabActive } from './mypageNavUtils'
 import { ChevronRight } from 'lucide-react'
-
-/** 현재 pathname에 해당하는 탭이 활성인지 (회원정보는 /mypage, /mypage/info 모두 활성, 1:1 문의는 /mypage/support 하위 전부) */
-function isTabActive(pathname: string | null, tabPath: string): boolean {
-  const p = (pathname ?? '').replace(/\/$/, '')
-  if (p === tabPath) return true
-  if (tabPath === '/mypage/info' && (p === '/mypage' || p === '/mypage/info')) return true
-  if (tabPath === '/mypage/support' && p.startsWith('/mypage/support')) return true
-  return false
-}
 
 export default function MypageShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -31,7 +23,7 @@ export default function MypageShell({ children }: { children: React.ReactNode })
   }, [status, router])
 
   const currentTab =
-    MYPAGE_TABS.find((tab) => isTabActive(pathname, tab.path)) ?? MYPAGE_TABS[0]
+    MYPAGE_TABS.find((tab) => isMypageTabActive(pathname, tab.path)) ?? MYPAGE_TABS[0]
 
   if (status === 'loading') {
     return (
@@ -63,27 +55,9 @@ export default function MypageShell({ children }: { children: React.ReactNode })
           <p className="text-[16px] leading-6 text-[#6b7280]">{currentTab.subtitle}</p>
         </div>
 
-        {/* Tab bar: 선택 탭 검은색 볼드 + 밑줄 #E1F800 (Figma 88-1265, mypage.md §1.2) */}
+        {/* Tab bar: 가로 스크롤 + 화살표 + 활성 탭 중앙 정렬 (mypage.md — 모바일 탭 명령서) */}
         <nav className="mt-6 border-b border-[#e5e7eb]" aria-label="마이페이지 탭">
-          <div className="flex gap-8">
-            {MYPAGE_TABS.map((tab) => {
-              const active = isTabActive(pathname, tab.path)
-              return (
-                <Link
-                  key={tab.path}
-                  href={tab.path}
-                  className="inline-block pb-[18px] text-[16px] leading-6 border-b-2 -mb-px transition-colors border-transparent hover:text-[#111827]"
-                  style={{
-                    borderBottomColor: active ? '#E1F800' : 'transparent',
-                    fontWeight: active ? 700 : 500,
-                    color: active ? '#000000' : '#9ca3af',
-                  }}
-                >
-                  {tab.label}
-                </Link>
-              )
-            })}
-          </div>
+          <MypageScrollTabs />
         </nav>
 
         {/* Main content: padding top 40px, bottom 44px */}

@@ -24,7 +24,8 @@ const CONFIG = {
     'span',
     'div',
   ],
-  ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'target', 'rel', 'class', 'style'],
+  /** `id` — 관리자 본문의 앵커(#partners 등) 유지 */
+  ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'target', 'rel', 'class', 'style', 'id'],
 }
 
 export function sanitizeHomepageHtml(html: string): string {

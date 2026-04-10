@@ -1,10 +1,11 @@
 import { Suspense } from 'react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
+import { SearchChromeProvider } from '@/contexts/SearchChromeContext'
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <SearchChromeProvider>
       <Suspense
         fallback={
           <div className="sticky top-0 z-50">
@@ -21,6 +22,6 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       */}
       {children}
       <Footer />
-    </>
+    </SearchChromeProvider>
   )
 }

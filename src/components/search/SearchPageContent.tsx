@@ -7,9 +7,8 @@ import { normalizeSearchQuery } from '@/lib/searchQuery'
 import { fetchUnifiedSearch } from '@/services/search'
 import type { SearchContentItem, UnifiedSearchResult } from '@/types/search'
 import { ensureSysCodeLoaded } from '@/lib/syscode'
-import SearchBar from '@/components/search/SearchBar'
+import { useSearchChrome } from '@/contexts/SearchChromeContext'
 import SearchContentSection from '@/components/search/SearchContentSection'
-import SearchEmptyResult from '@/components/search/SearchEmptyResult'
 import SearchSkeleton from '@/components/search/SearchSkeleton'
 
 const emptyBuckets: UnifiedSearchResult = { article: [], video: [], seminar: [] }
@@ -33,6 +32,7 @@ export default function SearchPageContent() {
   const searchParams = useSearchParams()
   const query = normalizeSearchQuery(searchParams.get('q'))
   const [debouncedQuery, setDebouncedQuery] = useState(query)
+  const { setHideRecentSearchesInHeader, headerSearchInputFocused } = useSearchChrome()
 
   useEffect(() => {
     void ensureSysCodeLoaded()
@@ -83,9 +83,30 @@ export default function SearchPageContent() {
     return () => controller.abort()
   }, [debouncedQuery])
 
+  useEffect(() => {
+    if (!debouncedQuery) {
+      setHideRecentSearchesInHeader(false)
+      return
+    }
+    if (loading) {
+      setHideRecentSearchesInHeader(false)
+      return
+    }
+    if (headerSearchInputFocused) {
+      setHideRecentSearchesInHeader(false)
+      return
+    }
+    // 검색 요청이 완료되면(결과 0건·API 오류 포함) 헤더 최근 검색어 목록 숨김 — 입력에 다시 포커스하면 해제
+    setHideRecentSearchesInHeader(true)
+  }, [debouncedQuery, loading, headerSearchInputFocused, setHideRecentSearchesInHeader])
+
+  useEffect(() => {
+    return () => setHideRecentSearchesInHeader(false)
+  }, [setHideRecentSearchesInHeader])
+
   if (loading) {
     return (
-      <main className="min-h-[40vh] bg-white text-black">
+      <main className="min-h-[40vh] bg-white px-3 pt-2 pb-6 text-black md:px-6 md:pb-8">
         <SearchSkeleton />
       </main>
     )
@@ -93,11 +114,9 @@ export default function SearchPageContent() {
 
   if (!data) {
     return (
-      <main className="min-h-[40vh] bg-white px-4 py-10 text-black md:px-8">
-        <div className="mx-auto max-w-[900px]">
-          <h1 className="text-xl font-bold">검색</h1>
-          <SearchBar defaultValue={query} />
-          <p className="mt-8 text-gray-600">검색 결과를 불러오지 못했습니다.</p>
+      <main className="min-h-[40vh] bg-white px-3 pt-2 pb-6 text-black md:px-6 md:pb-8">
+        <div className="mx-auto w-full max-w-[900px]">
+          <p className="text-gray-600">검색 결과를 불러오지 못했습니다.</p>
         </div>
       </main>
     )
@@ -107,41 +126,40 @@ export default function SearchPageContent() {
     (data.article?.length ?? 0) + (data.video?.length ?? 0) + (data.seminar?.length ?? 0)
 
   return (
-    <main className="min-h-[40vh] bg-white px-4 py-10 text-black md:px-8">
-      <div className="mx-auto max-w-[900px]">
-        <h1 className="text-2xl font-black text-gray-900">검색</h1>
-        <SearchBar defaultValue={query} />
-
+    <main className="min-h-[40vh] bg-white px-3 pt-2 pb-6 text-black md:px-6 md:pb-8">
+      <div className="mx-auto w-full max-w-[900px]">
         {!debouncedQuery ? (
-          <p className="mt-8 text-gray-600">검색어를 입력한 뒤 검색해 주세요.</p>
-        ) : total === 0 ? (
-          <SearchEmptyResult />
+          <p className="text-gray-600">검색어를 입력한 뒤 검색해 주세요.</p>
         ) : (
           <>
-            <p className="mt-4 text-sm text-gray-500">
-              &quot;{debouncedQuery}&quot; 결과{' '}
-              <span className="font-medium text-gray-800">{total}</span>건
-            </p>
-            <div className="mt-8">
-              <SearchContentSection
-                key={`${debouncedQuery}-article`}
-                title="아티클"
-                kind="article"
-                items={sortSearchByPriority(data.article)}
-              />
-              <SearchContentSection
-                key={`${debouncedQuery}-video`}
-                title="비디오"
-                kind="video"
-                items={sortSearchByPriority(data.video)}
-              />
-              <SearchContentSection
-                key={`${debouncedQuery}-seminar`}
-                title="세미나"
-                kind="seminar"
-                items={sortSearchByPriority(data.seminar)}
-              />
+            <div className="flex justify-end">
+              <p className="text-sm text-gray-500">
+                &quot;{debouncedQuery}&quot; 결과{' '}
+                <span className="font-medium text-gray-800">{total}</span>건
+              </p>
             </div>
+            {total > 0 ? (
+              <div className="mt-4">
+                <SearchContentSection
+                  key={`${debouncedQuery}-article`}
+                  title="아티클"
+                  kind="article"
+                  items={sortSearchByPriority(data.article)}
+                />
+                <SearchContentSection
+                  key={`${debouncedQuery}-video`}
+                  title="비디오"
+                  kind="video"
+                  items={sortSearchByPriority(data.video)}
+                />
+                <SearchContentSection
+                  key={`${debouncedQuery}-seminar`}
+                  title="세미나"
+                  kind="seminar"
+                  items={sortSearchByPriority(data.seminar)}
+                />
+              </div>
+            ) : null}
           </>
         )}
       </div>

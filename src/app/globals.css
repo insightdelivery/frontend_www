@@ -46,6 +46,15 @@
     -webkit-line-clamp: 2;
     overflow: hidden;
   }
+
+  /** 마이페이지 가로 탭 — 스크롤바 숨김 (mypage.md 모바일 탭 명령서) */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* 구분선(Divider) - 아티클 본문 표시 */

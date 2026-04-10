@@ -69,7 +69,6 @@ export default function Header() {
     const q = normalizeSearchQuery(raw)
     if (!q) return
     router.push(`/search?q=${encodeURIComponent(q)}`)
-    closeSearch()
   }
 
   const shellMax = siteShellMaxWidthClass(pathname)
@@ -87,6 +86,8 @@ export default function Header() {
   const isVideoSection = pathname.startsWith('/video')
   const isSeminarSection = pathname.startsWith('/seminar')
   const isMainPage = pathname === '/'
+  const isSearchRoute = pathname === '/search'
+  const searchPanelOpen = isSearchRoute || isSearchOpen
 
   return (
     <div className="sticky top-0 z-50">
@@ -179,11 +180,12 @@ export default function Header() {
                 type="button"
                 className="rounded-md p-1.5 transition-colors hover:bg-black/10"
                 aria-label="검색"
-                aria-expanded={isSearchOpen}
+                aria-expanded={searchPanelOpen}
                 aria-controls="header-search-panel"
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={() => {
                   setMobileMenuOpen(false)
+                  if (isSearchRoute) return
                   setIsSearchOpen((o) => !o)
                 }}
               >
@@ -196,11 +198,12 @@ export default function Header() {
                 type="button"
                 className="rounded-md p-1.5 transition-colors hover:bg-black/10"
                 aria-label="검색"
-                aria-expanded={isSearchOpen}
+                aria-expanded={searchPanelOpen}
                 aria-controls="header-search-panel"
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={() => {
                   setMobileMenuOpen(false)
+                  if (isSearchRoute) return
                   setIsSearchOpen((o) => !o)
                 }}
               >
@@ -297,7 +300,7 @@ export default function Header() {
       </header>
 
       <HeaderSearch
-        isOpen={isSearchOpen}
+        isOpen={searchPanelOpen}
         onClose={closeSearch}
         onSearch={handleSearchSubmit}
         shellMaxClass={shellMax}

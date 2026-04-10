@@ -6,5 +6,6 @@ export {
   applyMarks,
   applyMarksToParagraph,
   selectionToPayloads,
+  payloadsFromRange,
 } from './highlightUtils'
 export { HighlightMarkInteraction } from './HighlightMarkInteraction'

@@ -11,7 +11,13 @@ import { sanitizeHomepageHtml } from '@/lib/sanitizeHomepageHtml'
 import type { HomepageDocPayload } from '@/types/homepageDoc'
 import AppliedQuestionsSection from '@/components/content-detail/AppliedQuestionsSection'
 import ArticleRatingCommentSection from '@/components/article/detail/ArticleRatingCommentSection'
-import { postView, postBookmark, deleteBookmark, getMeRatings } from '@/services/libraryUseractivity'
+import {
+  postView,
+  postBookmark,
+  deleteBookmark,
+  getMeRatings,
+  getBookmarkStatus,
+} from '@/services/libraryUseractivity'
 import ArticleShareModal from '@/components/article/detail/ArticleShareModal'
 import ArticleGuestShareModal from '@/components/article/detail/ArticleGuestShareModal'
 import ArticleEntitlementShareModal from '@/components/article/detail/ArticleEntitlementShareModal'
@@ -28,7 +34,7 @@ import {
   HighlightRenderer,
   HighlightButton,
   HighlightMarkInteraction,
-  selectionToPayloads,
+  payloadsFromRange,
 } from '@/components/highlight'
 import { getHighlightApiErrorMessage } from '@/services/highlight'
 
@@ -131,7 +137,7 @@ export interface ArticleDetailContentProps {
   fromShareLink?: boolean
 }
 
-const ARTICLE_DETAIL_PROSE_CLASS = `prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:!block [&_p]:!mb-2 [&_br]:block [&_hr]:my-8 [&_hr]:block [&_hr]:w-full [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-solid [&_hr]:border-[#e2e8f0] [&_blockquote]:border-l-[5px] [&_blockquote]:border-l-[#03c75a] [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:my-5 [&_blockquote]:bg-[#f6fff8] [&_blockquote]:text-[#222] [&_blockquote]:text-[15px] [&_mark]:!bg-[#F8EDFF] [&_mark]:rounded [&_mark]:px-1 [&_mark]:py-0.5 [&_img]:max-w-full [&_img]:h-auto [&_figure]:my-6 [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-[#64748b]`
+const ARTICLE_DETAIL_PROSE_CLASS = `prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:!block [&_p]:!mb-2 [&_br]:block [&_hr]:my-8 [&_hr]:block [&_hr]:w-full [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-solid [&_hr]:border-[#e2e8f0] [&_blockquote]:border-l-[5px] [&_blockquote]:border-l-[#03c75a] [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:my-5 [&_blockquote]:bg-[#f6fff8] [&_blockquote]:text-[#222] [&_blockquote]:text-[15px] [&_mark]:!bg-[#F8EDFF] [&_mark]:rounded [&_mark]:px-1 [&_mark]:py-0.5 [&_mark[data-highlight-id]]:cursor-pointer [&_img]:max-w-full [&_img]:h-auto [&_figure]:my-6 [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-[#64748b]`
 
 function DetailBottomWeeklyCard({ item }: { item: WeeklyCrossCardData }) {
   const grad = PLACEHOLDER_GRADIENTS[item.gradientIndex % PLACEHOLDER_GRADIENTS.length]
@@ -374,6 +380,27 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
     },
     []
   )
+
+  /** 재방문 시 북마크 아이콘 동기화 */
+  useEffect(() => {
+    if (!authenticated) {
+      setIsBookmarked(false)
+      return
+    }
+    if (!idValid || !article) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const bookmarked = await getBookmarkStatus('ARTICLE', id)
+        if (!cancelled) setIsBookmarked(bookmarked)
+      } catch {
+        if (!cancelled) setIsBookmarked(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [authenticated, idValid, id, article?.id])
 
   const handleBookmarkClick = useCallback(async () => {
     if (!idValid || !article) return
@@ -662,30 +689,35 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
         />
         <HighlightButton
           contentRootRef={contentRootRef}
-          onSave={async () => {
+          onSave={async (range: Range) => {
             if (!highlightContext) return
-            const sel = typeof window !== 'undefined' ? window.getSelection() : null
             const root = contentRootRef.current?.firstElementChild as HTMLElement | null
-            if (!sel || !root || !article?.id) return
+            if (!root || !article?.id) return
             let anchorRect: DOMRect | null = null
             try {
-              anchorRect = sel.rangeCount > 0 ? sel.getRangeAt(0).getBoundingClientRect() : null
+              anchorRect = range.getBoundingClientRect()
             } catch {
               anchorRect = null
             }
             const maxLen = highlightContext.constants.maxLength
-            const rawLen = sel.toString().length
+            const rawLen = range.toString().length
             if (rawLen > maxLen) {
               highlightContext.showHighlightTooltip(`하이라이트는 ${maxLen}자 까지 가능합니다.`, anchorRect)
               return
             }
-            const payloads = selectionToPayloads(
+            const payloads = payloadsFromRange(
               root,
               Number(article.id),
-              sel,
+              range,
               highlightContext.constants.colors[0] ?? 'yellow'
             )
-            if (!payloads.length) return
+            if (!payloads.length) {
+              highlightContext.showHighlightTooltip(
+                '하이라이트할 텍스트를 만들 수 없습니다. 문단을 다시 선택해 주세요.',
+                anchorRect
+              )
+              return
+            }
             for (const p of payloads) {
               if (p.highlightText.length > maxLen) {
                 highlightContext.showHighlightTooltip(`하이라이트는 ${maxLen}자 까지 가능합니다.`, anchorRect)
@@ -695,7 +727,11 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
             try {
               await highlightContext.create(payloads)
               highlightContext.showHighlightTooltip(
-                '하이라이트 되었습니다. 저장된 문장은 마이페이지에서도 확인이 가능합니다.',
+                <>
+                  하이라이트 되었습니다.
+                  <br />
+                  저장된 문장은 마이페이지에서도 확인이 가능합니다.
+                </>,
                 anchorRect
               )
             } catch (e) {
@@ -812,11 +848,19 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
           className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-[#0f172a] px-6 py-3 text-[14px] font-medium text-white shadow-lg"
           role="status"
         >
-          링크가 복사되었습니다
+          복사 되었습니다.
         </div>
       )}
 
-      <ArticleShareModal open={shareModalOpen} onClose={() => setShareModalOpen(false)} contentCode={id} />
+      <ArticleShareModal
+        open={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        contentCode={id}
+        onCopied={() => {
+          setShareToast(true)
+          setTimeout(() => setShareToast(false), 2000)
+        }}
+      />
       <ArticleEntitlementShareModal
         open={entitlementShareModalOpen}
         onClose={() => setEntitlementShareModalOpen(false)}

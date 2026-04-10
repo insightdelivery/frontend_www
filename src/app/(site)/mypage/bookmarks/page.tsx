@@ -109,17 +109,17 @@ export default function MypageBookmarksPage() {
             {displayedList.map((item) => (
               <div
                 key={item.publicUserActivityLogId}
-                className="flex flex-wrap items-center gap-6 py-6 sm:flex-nowrap"
+                className="flex flex-col gap-4 py-6 sm:flex-row sm:items-center sm:gap-6"
               >
-                <div className="flex min-w-0 flex-1 gap-6">
-                  <div className="relative aspect-3/2 w-[192px] shrink-0 overflow-hidden rounded-lg bg-[#e2e8f0]">
+                <div className="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+                  <div className="relative aspect-3/2 w-full overflow-hidden rounded-lg bg-[#e2e8f0] sm:w-[192px] sm:shrink-0">
                     {item.thumbnail ? (
                       <Image
                         src={item.thumbnail}
                         alt=""
                         fill
                         className="object-cover"
-                        sizes="192px"
+                        sizes="(max-width: 640px) 100vw, 192px"
                         unoptimized
                       />
                     ) : null}
@@ -145,13 +145,13 @@ export default function MypageBookmarksPage() {
                   </div>
                 </div>
                 {item.contentMissing ? (
-                  <span className="shrink-0 rounded-lg bg-[#e2e8f0] px-6 py-3 text-[16px] font-medium leading-6 text-[#64748b]">
+                  <span className="flex w-full shrink-0 items-center justify-center rounded-lg bg-[#e2e8f0] px-6 py-3 text-[16px] font-medium leading-6 text-[#64748b] sm:w-auto">
                     콘텐츠 보러가기
                   </span>
                 ) : (
                   <Link
                     href={contentHref(item.contentType, item.contentCode)}
-                    className="shrink-0 rounded-lg bg-[#e1f800] px-6 py-3 text-[16px] font-medium leading-6 text-black"
+                    className="flex w-full shrink-0 items-center justify-center rounded-lg bg-[#e1f800] px-6 py-3 text-[16px] font-medium leading-6 text-black sm:w-auto"
                   >
                     콘텐츠 보러가기
                   </Link>

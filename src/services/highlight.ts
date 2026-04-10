@@ -52,8 +52,56 @@ export async function deleteHighlightGroup(highlightGroupId: number): Promise<vo
   await api.delete(`${BASE}/group/${highlightGroupId}`)
 }
 
+/**
+ * IndeAPIResponse.Message — 문자열이거나 DRF 검증 오류 형태(객체·객체 배열)일 수 있다.
+ * Tooltip 등에 넣을 때는 반드시 문자열로 변환해야 한다(배열/객체를 그대로 렌더하면 React 런타임 오류).
+ */
+export function indeApiMessageToString(message: unknown): string {
+  if (message == null || message === '') return '처리 중 오류가 발생했습니다.'
+  if (typeof message === 'string') return message
+
+  if (Array.isArray(message)) {
+    const parts: string[] = []
+    for (const item of message) {
+      if (item == null) continue
+      if (typeof item === 'string') {
+        parts.push(item)
+        continue
+      }
+      if (typeof item === 'object') {
+        const keys = Object.keys(item as object)
+        if (keys.length === 0) continue
+        parts.push(indeApiMessageToString(item))
+      }
+    }
+    const joined = parts.join(' ').trim()
+    return joined || '처리 중 오류가 발생했습니다.'
+  }
+
+  if (typeof message === 'object') {
+    const parts: string[] = []
+    for (const v of Object.values(message as Record<string, unknown>)) {
+      if (v == null) continue
+      if (typeof v === 'string') parts.push(v)
+      else if (Array.isArray(v)) {
+        for (const x of v) {
+          if (typeof x === 'string') parts.push(x)
+          else if (x != null && typeof x === 'object') parts.push(indeApiMessageToString(x))
+        }
+      } else if (typeof v === 'object') {
+        parts.push(indeApiMessageToString(v))
+      }
+    }
+    const joined = parts.join(' ').trim()
+    return joined || '처리 중 오류가 발생했습니다.'
+  }
+
+  return String(message)
+}
+
 /** 생성/삭제 실패 시 공통 API 메시지 */
 export function getHighlightApiErrorMessage(err: unknown): string {
-  const e = err as { response?: { data?: { IndeAPIResponse?: { Message?: string } } } }
-  return e.response?.data?.IndeAPIResponse?.Message ?? '처리 중 오류가 발생했습니다.'
+  const ax = err as { response?: { data?: { IndeAPIResponse?: { Message?: unknown } } } }
+  const raw = ax.response?.data?.IndeAPIResponse?.Message
+  return indeApiMessageToString(raw)
 }

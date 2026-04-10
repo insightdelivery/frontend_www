@@ -62,6 +62,7 @@ const isLibraryMemberEndpoint = (config: InternalAxiosRequestConfig) => {
   if (m === 'post' && /^\/api\/library\/content-share\/ensure\/?$/.test(path)) return true
   if (m === 'post' && /^\/api\/library\/useractivity\/rating\/?$/.test(path)) return true
   if ((m === 'post' || m === 'delete') && /^\/api\/library\/useractivity\/bookmark\/?$/.test(path)) return true
+  if (m === 'get' && /^\/api\/library\/useractivity\/bookmark\/?$/.test(path)) return true
   if (m === 'get' && /^\/api\/library\/useractivity\/me\//.test(path)) return true
   return false
 }

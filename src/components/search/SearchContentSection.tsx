@@ -20,7 +20,7 @@ export default function SearchContentSection({ title, kind, items }: Props) {
   const slice = items.slice(0, visibleCount)
 
   return (
-    <section className="mb-10">
+    <section className="mb-6 last:mb-0">
       <h2 className="text-xl font-bold text-gray-900">
         {title} <span className="text-gray-500">{items.length}</span>
       </h2>

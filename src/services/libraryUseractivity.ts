@@ -87,6 +87,18 @@ export async function postRating(
   if (!out?.result) throw new Error(getMessage(res.data))
 }
 
+/** 로그인 사용자 기준 해당 콘텐츠 북마크 여부 (상세 진입 시 UI 동기화) */
+export async function getBookmarkStatus(
+  contentType: ContentType,
+  contentCode: string
+): Promise<boolean> {
+  const res = await apiClient.get('/api/library/useractivity/bookmark', {
+    params: { contentType, contentCode },
+  })
+  const out = unwrap<{ bookmarked?: boolean }>(res.data)
+  return Boolean(out?.bookmarked)
+}
+
 /** 북마크 추가 */
 export async function postBookmark(contentType: ContentType, contentCode: string): Promise<void> {
   const res = await apiClient.post('/api/library/useractivity/bookmark', {

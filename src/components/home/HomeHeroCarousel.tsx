@@ -11,6 +11,11 @@ import { getApiBaseURL } from '@/lib/axios'
 
 /** 히어로(메인·비디오·세미나 리스트) 배너 비율 16:9 — 컨테이너 너비에 맞춰 높이 자동 */
 const HERO_ASPECT = 'aspect-[16/9]'
+/** 모바일 히어로 타이틀: 가로 비례 clamp + 1px 축소 보정 / md↑ 46px 고정 */
+const HERO_TITLE_CLASS =
+  'text-[clamp(1.25rem,calc(3vw+0.65rem-1px),2.875rem)] md:text-[46px]'
+/** 부제 — 모바일 가변, md↑ 고정에 가깝게 */
+const HERO_SUBTITLE_SIZE = 'clamp(0.875rem, 1.35vw + 0.6rem, 1.25rem)'
 /** 슬라이드가 멈춰 있는 시간(다음 장으로 넘어가기 전) */
 const SLIDE_HOLD_MS = 5000
 /** 왼쪽으로 넘어가는 트랜지션 시간 */
@@ -117,11 +122,14 @@ function SlideVisual({ slide }: { slide: DisplayEventHeroItem }) {
             </span>
           </div>
         ) : null}
-        <h1 className="text-[46px] font-bold leading-[1.1] text-white">
+        <h1 className={`font-bold leading-[1.12] tracking-tight text-white sm:leading-[1.1] ${HERO_TITLE_CLASS}`}>
           {title}
         </h1>
         {subtitle ? (
-          <p className="mt-2 max-w-[672px] font-normal text-[18px] text-white/80 sm:text-[20px] sm:leading-[28px]">
+          <p
+            className="mt-2 max-w-[672px] font-normal leading-snug text-white/80 sm:leading-[28px]"
+            style={{ fontSize: HERO_SUBTITLE_SIZE }}
+          >
             {subtitle}
           </p>
         ) : null}
@@ -203,10 +211,15 @@ function StaticHero() {
               Director&apos;s Pick
             </span>
           </div>
-          <h1 className="text-[46px] font-bold leading-[1.1] text-white">
+          <h1
+            className={`font-bold leading-[1.12] tracking-tight text-white sm:leading-[1.1] ${HERO_TITLE_CLASS}`}
+          >
             소망의 시작, 파격적이고 명료한 복음이 바꾸는 당신의 일상
           </h1>
-          <p className="mt-2 max-w-[672px] font-normal text-[18px] text-white/80 sm:text-[20px] sm:leading-[28px]">
+          <p
+            className="mt-2 max-w-[672px] font-normal leading-snug text-white/80 sm:leading-[28px]"
+            style={{ fontSize: HERO_SUBTITLE_SIZE }}
+          >
             디렉터 추천 콘텐츠 - 아티클, 비디오 등 디렉터가 엄선한 5개의 콘텐츠를 만나보세요.
           </p>
         </div>

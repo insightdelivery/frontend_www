@@ -1,5 +1,7 @@
 'use client'
 
+import type { ReactNode } from 'react'
+
 /**
  * 하이라이트 안내 — 선택/마크 근처 고정 툴팁 (articleHightlightPlan §18.5)
  */
@@ -25,11 +27,11 @@ export function Tooltip({
   message,
   anchor,
 }: {
-  message: string | null
+  message: ReactNode | null
   /** null이면 화면 상단 중앙(폴백) */
   anchor: TooltipAnchor | null
 }) {
-  if (!message) return null
+  if (message == null || message === '') return null
 
   const vw = typeof window !== 'undefined' ? window.innerWidth : 400
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800

@@ -25,11 +25,16 @@ function contentTypeLabel(contentType: ContentType): string {
   return { ARTICLE: '아티클', VIDEO: '비디오', SEMINAR: '세미나' }[contentType] ?? contentType
 }
 
+/** 년.월.일. (구분마다 마침표) — toLocale + replace 첫 글자만 치환 버그(`202604.11.`) 방지 */
 function formatDate(regDateTime: string | null): string {
   if (!regDateTime) return ''
   try {
     const d = new Date(regDateTime)
-    return d.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace('.', '')
+    if (Number.isNaN(d.getTime())) return regDateTime
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}.${m}.${day}.`
   } catch {
     return regDateTime
   }

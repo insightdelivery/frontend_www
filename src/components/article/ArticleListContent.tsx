@@ -181,7 +181,6 @@ export function ArticleListContent() {
             <h2 className="text-[20px] sm:text-[22px] md:text-[25px] font-extrabold text-gray-900">
               지금 가장 핫한 아티클
             </h2>
-            <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" aria-hidden />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {hotArticles.map((article, i) => (
@@ -206,7 +205,6 @@ export function ArticleListContent() {
             <h2 className="text-[20px] sm:text-[22px] md:text-[25px] font-extrabold text-gray-900">
               가장 많이 공유된 아티클
             </h2>
-            <span className="w-2 h-2 rounded-full bg-brand-orange flex-shrink-0" aria-hidden />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {sharedArticles.map((article, i) => (
@@ -229,27 +227,26 @@ export function ArticleListContent() {
         <section className="mt-10 sm:mt-14">
           <div className="flex items-center gap-2 mb-4">
             <h2 className="text-[20px] sm:text-[22px] md:text-[25px] font-extrabold text-gray-900">
-              에디터 추천
+              에디터 추천 아티클
             </h2>
-            <span className="text-red-500 text-lg leading-none" aria-hidden>
-              ★
-            </span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {editorArticles.map((article, i) => (
-              <EditorPickCard
-                key={article.id}
+              <ArticleCard
+                key={`editor-${article.id}`}
                 id={String(article.id)}
                 title={article.title}
                 subtitle={article.subtitle}
+                categoryName={getSysCodeName(categories, article.category)}
+                badges={articleCardBadges(article, sharedTopIds)}
                 thumbnail={article.thumbnail}
                 imageGradient={getGradient(12 + i)}
-                imageShape={i % 2 === 0 ? 'circle' : 'square'}
               />
             ))}
           </div>
         </section>
       )}
+
     </div>
   )
 }

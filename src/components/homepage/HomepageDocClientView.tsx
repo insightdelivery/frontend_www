@@ -10,10 +10,8 @@ import { HomepageDocBody } from '@/components/homepage/HomepageDocBody'
 
 export function HomepageDocClientView({
   docType,
-  bottomAnchorId,
 }: {
   docType: HomepageDocType
-  bottomAnchorId?: string
 }) {
   const [doc, setDoc] = useState<HomepageDocPayload | null | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
@@ -41,15 +39,21 @@ export function HomepageDocClientView({
     }
   }, [docType])
 
-  /** 문서 렌더 후 #bottomAnchorId로 이동(클라이언트 전환 시 브라우저 기본 해시 스크롤이 안 될 수 있음) */
+  /** 문서 렌더 후 URL 해시(#id)로 이동 — 클라이언트 전환 시 기본 해시 스크롤이 안 될 수 있음 */
   useEffect(() => {
-    if (doc === undefined || doc === null || !bottomAnchorId) return
+    if (doc === undefined || doc === null) return
     if (typeof window === 'undefined') return
-    if (window.location.hash !== `#${bottomAnchorId}`) return
-    const id = bottomAnchorId
-    const scroll = () => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const raw = window.location.hash.replace(/^#/, '')
+    if (!raw) return
+    const scroll = () => {
+      try {
+        document.getElementById(decodeURIComponent(raw))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      } catch {
+        /* invalid fragment */
+      }
+    }
     requestAnimationFrame(() => requestAnimationFrame(scroll))
-  }, [doc, bottomAnchorId])
+  }, [doc])
 
   if (doc === undefined) {
     return (
@@ -83,5 +87,5 @@ export function HomepageDocClientView({
 
   const title = doc.title?.trim() || HOMEPAGE_DOC_DEFAULT_TITLES[docType]
   const html = sanitizeHomepageHtml(doc.bodyHtml || '')
-  return <HomepageDocBody title={title} html={html} bottomAnchorId={bottomAnchorId} />
+  return <HomepageDocBody title={title} html={html} />
 }

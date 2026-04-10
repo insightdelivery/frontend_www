@@ -256,24 +256,20 @@ export function applyMarks(root: HTMLElement | null, list: HighlightItem[]): voi
 }
 
 /**
- * 현재 Selection과 본문 루트에서 단일 문단 하이라이트용 payload 생성.
- * 선택이 한 문단 안에 있으면 1개, 여러 문단에 걸치면 문단별로 분할 (15.12).
+ * Range(문서 순서 start/end)와 본문 루트에서 payload 생성.
+ * 모바일에서 버튼 탭 시 selection이 이미 비어 있어도, 저장 직전에 넘긴 Range로 동일하게 계산할 수 있다.
  */
-export function selectionToPayloads(
+export function payloadsFromRange(
   root: HTMLElement,
   articleId: number,
-  selection: Selection,
+  range: Range,
   color: string = 'yellow',
   maxPrefixSuffix: number = 255
 ): HighlightCreatePayload[] {
-  const text = selection.toString().trim()
+  const text = range.toString().trim()
   if (!text) return []
   const paragraphs = getParagraphNodes(root)
   if (!paragraphs.length) return []
-
-  const anchorNode = selection.anchorNode
-  const focusNode = selection.focusNode
-  if (!anchorNode || !focusNode) return []
 
   const getBlock = (node: Node): Element | null => {
     let n: Node | null = node
@@ -284,8 +280,8 @@ export function selectionToPayloads(
     return null
   }
 
-  const startBlock = getBlock(anchorNode)
-  const endBlock = getBlock(focusNode)
+  const startBlock = getBlock(range.startContainer)
+  const endBlock = getBlock(range.endContainer)
   if (!startBlock || !endBlock) return []
 
   const startIdx = paragraphs.indexOf(startBlock)
@@ -293,16 +289,15 @@ export function selectionToPayloads(
   if (startIdx === -1 || endIdx === -1) return []
 
   const payloads: HighlightCreatePayload[] = []
-  const fullText = selection.toString()
+  const fullText = range.toString()
 
   if (startIdx === endIdx) {
     const block = paragraphs[startIdx]
     const blockText = block.textContent || ''
-    const range = selection.getRangeAt(0)
     const preRange = document.createRange()
     preRange.setStart(block, 0)
     preRange.setEnd(range.startContainer, range.startOffset)
-    const startOffset = (preRange.toString().length)
+    const startOffset = preRange.toString().length
     const endOffset = startOffset + fullText.length
     const prefix = blockText.slice(Math.max(0, startOffset - maxPrefixSuffix), startOffset)
     const suffix = blockText.slice(endOffset, endOffset + maxPrefixSuffix)
@@ -317,13 +312,11 @@ export function selectionToPayloads(
       color,
     })
   } else {
-    let offset = 0
     for (let i = startIdx; i <= endIdx; i++) {
       const block = paragraphs[i]
       const blockText = block.textContent || ''
       const len = blockText.length
       if (i === startIdx) {
-        const range = selection.getRangeAt(0)
         const preRange = document.createRange()
         preRange.setStart(block, 0)
         preRange.setEnd(range.startContainer, range.startOffset)
@@ -343,7 +336,6 @@ export function selectionToPayloads(
           color,
         })
       } else if (i === endIdx) {
-        const range = selection.getRangeAt(0)
         const preRange = document.createRange()
         preRange.setStart(block, 0)
         preRange.setEnd(range.endContainer, range.endOffset)
@@ -376,5 +368,22 @@ export function selectionToPayloads(
     }
   }
 
-  return payloads
+  // 여러 문단 선택 시 시작/끝 문단에서 slice가 빈 문자열이 될 수 있음(예: 범위 끝이 다음 문단 0번 offset).
+  // 서버는 highlightText blank를 거부하므로 빈 항목은 보내지 않는다.
+  return payloads.filter((p) => p.highlightText.trim().length > 0)
+}
+
+/**
+ * 현재 Selection과 본문 루트에서 단일 문단 하이라이트용 payload 생성.
+ * 선택이 한 문단 안에 있으면 1개, 여러 문단에 걸치면 문단별로 분할 (15.12).
+ */
+export function selectionToPayloads(
+  root: HTMLElement,
+  articleId: number,
+  selection: Selection,
+  color: string = 'yellow',
+  maxPrefixSuffix: number = 255
+): HighlightCreatePayload[] {
+  if (!selection.rangeCount) return []
+  return payloadsFromRange(root, articleId, selection.getRangeAt(0), color, maxPrefixSuffix)
 }

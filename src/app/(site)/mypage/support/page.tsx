@@ -209,49 +209,82 @@ function MypageSupportInner() {
             </div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>제목</TableHead>
-                    <TableHead className="w-[120px] min-w-[100px]">유형</TableHead>
-                    <TableHead className="w-[100px]">상태</TableHead>
-                    <TableHead className="w-[100px]">날짜</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(list ?? []).length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="py-8 text-center text-gray-500">
-                        문의 내역이 없습니다.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    (list ?? []).map((row) => (
-                      <TableRow key={row.id}>
-                        <TableCell>
-                          <Link
-                            href={`/mypage/support?id=${row.id}`}
-                            className="font-medium text-gray-900 hover:underline"
-                          >
-                            {row.title}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-600">
-                          {getSysCodeName(typeSysCodes, row.inquiry_type)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={row.status === 'answered' ? 'answered' : 'waiting'}>
-                            {row.status === 'answered' ? '답변완료' : '접수'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-500">
-                          {formatInquiryDate(row.created_at)}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+              {(list ?? []).length === 0 ? (
+                <p className="py-8 text-center text-gray-500">문의 내역이 없습니다.</p>
+              ) : (
+                <>
+                  {/* 모바일: 1행 제목 / 2행 유형·상태·날짜 */}
+                  <div className="divide-y divide-gray-200 md:hidden pt-5">
+                    {(list ?? []).map((row) => (
+                      <Link
+                        key={row.id}
+                        href={`/mypage/support?id=${row.id}`}
+                        className="block py-4 first:pt-0 hover:bg-gray-50/80"
+                      >
+                        <p className="text-[15px] font-medium leading-snug text-gray-900">{row.title}</p>
+                        <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] leading-5">
+                          <span className="shrink-0 text-gray-600">
+                            {getSysCodeName(typeSysCodes, row.inquiry_type)}
+                          </span>
+                          <div className="flex-1 flex justify-end items-center gap-x-3">
+                            <Badge
+                              variant={row.status === 'answered' ? 'answered' : 'waiting'}
+                              className="shrink-0 whitespace-nowrap"
+                            >
+                              {row.status === 'answered' ? '답변완료' : '접수'}
+                            </Badge>
+                            <span className="shrink-0 tabular-nums text-gray-500 whitespace-nowrap">
+                              {formatInquiryDate(row.created_at)}
+                            </span>
+                          </div>
+                     
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+
+                  <div className="hidden md:block md:overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>제목</TableHead>
+                          <TableHead className="w-[120px] min-w-[100px]">유형</TableHead>
+                          <TableHead className="w-[100px]">상태</TableHead>
+                          <TableHead className="min-w-[7.5rem] whitespace-nowrap text-right">날짜</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {(list ?? []).map((row) => (
+                          <TableRow key={row.id}>
+                            <TableCell>
+                              <Link
+                                href={`/mypage/support?id=${row.id}`}
+                                className="font-medium text-gray-900 hover:underline"
+                              >
+                                {row.title}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="text-sm text-gray-600">
+                              {getSysCodeName(typeSysCodes, row.inquiry_type)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={row.status === 'answered' ? 'answered' : 'waiting'}
+                                className="whitespace-nowrap"
+                              >
+                                {row.status === 'answered' ? '답변완료' : '접수'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap text-right text-sm text-gray-500 tabular-nums">
+                              {formatInquiryDate(row.created_at)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              )}
               <WwwPagination currentPage={page} totalPages={totalPages} onPageChange={setPage} className="mt-4" />
             </>
           )}
