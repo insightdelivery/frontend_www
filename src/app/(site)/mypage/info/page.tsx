@@ -1,11 +1,5 @@
-'use client'
-
-import ProfileForm from '@/components/profile/ProfileForm'
+import MypageInfoClient from './MypageInfoClient'
 
 export default function MypageInfoPage() {
-  return (
-    <div className="w-full max-w-[900px]">
-      <ProfileForm variant="mypage" />
-    </div>
-  )
+  return <MypageInfoClient />
 }

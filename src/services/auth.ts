@@ -1,4 +1,5 @@
 import apiClient, { resetAuthFailHandled, restoreSessionTokens } from '@/lib/axios'
+import { clearMypageProfileUnlockFlags } from '@/lib/mypageProfileUnlock'
 import { USER_INFO_COOKIE_EXPIRES_DAYS } from '@/constants/authCookies'
 import { clearMemoryAccessToken, getMemoryAccessToken, setMemoryAccessToken } from '@/lib/accessTokenMemory'
 import Cookies from 'js-cookie'
@@ -442,8 +443,35 @@ export const logout = async (): Promise<void> => {
     Cookies.remove('refreshToken', { path: '/' })
     Cookies.remove(OAUTH_PENDING_TEMP_COOKIE, { path: '/' })
     if (typeof window !== 'undefined') {
+      clearMypageProfileUnlockFlags()
       window.location.replace('/')
     }
+  }
+}
+
+/**
+ * 마이페이지 회원정보 수정 전 본인 확인(일반 가입만). 소셜 가입은 API가 skipped로 응답.
+ */
+export async function verifyProfilePassword(password: string): Promise<{ ok: boolean; skipped?: boolean }> {
+  try {
+    const res = await apiClient.post('/auth/verify-profile-password', { password: password.trim() })
+    const raw = res.data as Record<string, unknown>
+    const inner = unwrapApiResult<{ ok?: boolean; skipped?: boolean; error?: string }>(raw)
+    const d = inner ?? (raw as { ok?: boolean; skipped?: boolean; error?: string })
+    if (d?.error) throw new Error(d.error)
+    if (d?.ok || d?.skipped) return { ok: true, skipped: Boolean(d?.skipped) }
+    throw new Error('본인 확인에 실패했습니다.')
+  } catch (e: unknown) {
+    const ax = e as {
+      response?: { data?: { error?: string; detail?: string; IndeAPIResponse?: { Message?: string } } }
+    }
+    const msg =
+      ax.response?.data?.error ||
+      ax.response?.data?.detail ||
+      ax.response?.data?.IndeAPIResponse?.Message
+    if (msg) throw new Error(msg)
+    if (e instanceof Error) throw e
+    throw new Error('본인 확인에 실패했습니다.')
   }
 }
 

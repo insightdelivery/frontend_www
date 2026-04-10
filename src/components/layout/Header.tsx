@@ -149,7 +149,7 @@ export default function Header() {
                   alt="InDe"
                   width={73}
                   height={26}
-                  className="h-9 object-contain"
+                  className="h-9 w-auto object-contain"
                   priority
                 />
               </Link>
