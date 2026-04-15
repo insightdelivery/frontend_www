@@ -135,7 +135,7 @@ export interface ArticleDetailContentProps {
   fromShareLink?: boolean
 }
 
-const ARTICLE_DETAIL_PROSE_CLASS = `prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:!block [&_p]:!mb-2 [&_br]:block [&_hr]:my-8 [&_hr]:block [&_hr]:w-full [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-solid [&_hr]:border-[#e2e8f0] [&_blockquote]:border-l-[5px] [&_blockquote]:border-l-[#03c75a] [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:my-5 [&_blockquote]:bg-[#f6fff8] [&_blockquote]:text-[#222] [&_blockquote]:text-[15px] [&_mark]:!bg-[#F8EDFF] [&_mark]:rounded [&_mark]:px-1 [&_mark]:py-0.5 [&_mark[data-highlight-id]]:cursor-pointer [&_img]:max-w-full [&_img]:h-auto [&_figure]:my-6 [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-[#64748b]`
+const ARTICLE_DETAIL_PROSE_CLASS = `prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:!block [&_p:empty]:min-h-[1.5em] [&_p]:!mb-2 [&_br]:block [&_hr]:my-8 [&_hr]:block [&_hr]:w-full [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-solid [&_hr]:border-[#e2e8f0] [&_blockquote]:border-l-[5px] [&_blockquote]:border-l-[#03c75a] [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:my-5 [&_blockquote]:bg-[#f6fff8] [&_blockquote]:text-[#222] [&_blockquote]:text-[15px] [&_mark]:!bg-[#F8EDFF] [&_mark]:rounded [&_mark]:px-1 [&_mark]:py-0.5 [&_mark[data-highlight-id]]:cursor-pointer [&_img]:max-w-full [&_img]:h-auto [&_figure]:my-6 [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-[#64748b]`
 
 function DetailBottomWeeklyCard({ item }: { item: WeeklyCrossCardData }) {
   const grad = PLACEHOLDER_GRADIENTS[item.gradientIndex % PLACEHOLDER_GRADIENTS.length]
