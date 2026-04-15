@@ -118,15 +118,13 @@ function getCategoryName(categorySid: string): string {
 }
 
 /**
- * 본문 HTML을 관리자 상세 모달과 동일하게 줄바꿈이 보이도록 변환.
+ * 본문 HTML을 상세에서 줄바꿈 문자가 보이도록 변환.
  * - \r\n, \r, \n → <br />
- * - </p><p> (TipTap 단락) 사이에 <br /> 삽입 → 웹 상세에서도 단락 구분 표시
+ * - TipTap 단락(`</p><p>`) 사이에는 추가 치환하지 않음 — 저장 HTML과 동일 구조 유지.
  */
 function contentWithLineBreaks(html: string): string {
   if (!html || typeof html !== 'string') return html
-  return html
-    .replace(/\r\n|\r|\n/g, '<br />')
-    .replace(/<\/p>\s*<p>/gi, '</p><br /><p>')
+  return html.replace(/\r\n|\r|\n/g, '<br />')
 }
 
 export interface ArticleDetailContentProps {
