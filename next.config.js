@@ -1,6 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Next 16+: /etc/hosts 로 접속 시 dev 번들·HMR 차단 방지
+  allowedDevOrigins: [
+    'local.inde.kr',
+    'adminlocal.inde.kr',
+    'apilocal.inde.kr',
+    'admin-apilocal.inde.kr',
+  ],
   output: 'export',
   // false: /privacy → out/privacy.html (정적 호스팅이 /privacy 로 직접 매칭)
   // true: /privacy/ 만 실제 파일(privacy/index.html)과 일치 → /privacy 요청 시
