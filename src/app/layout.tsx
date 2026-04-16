@@ -10,16 +10,25 @@ const rawOrigin = (
 ).trim()
 const siteOrigin = (rawOrigin.replace(/\/$/, '') || 'https://www.inde.kr')
 
+/** `<title>`·`meta description` (검색 등). 하위 페이지는 `template` 또는 개별 metadata로 덮어씀 */
+const defaultTitle = 'InDe - 크리스천 인사이트 플랫폼'
+const defaultDescription =
+  'InDe는 말씀과 삶을 연결하는 크리스천 인사이트 플랫폼입니다. 아티클, 비디오 등을 통해 복음으로 세상을 조명하고, 일상에 적용하는 다양한 콘텐츠를 제공합니다.'
+
+/** OG·Twitter 미리보기용 (검색용 메타와 별도) */
+const ogTitle = 'InDe'
+const ogDescription = '복음은 실전이다, 크리스천 인사이트 루틴'
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin),
   title: {
-    default: 'InDe',
+    default: defaultTitle,
     template: '%s | InDe',
   },
-  description: '복음은 실전이다, 크리스천 인사이트 루틴',
+  description: defaultDescription,
   openGraph: {
-    title: 'InDe',
-    description: '복음은 실전이다, 크리스천 인사이트 루틴',
+    title: ogTitle,
+    description: ogDescription,
     siteName: 'InDe',
     type: 'website',
     locale: 'ko_KR',
@@ -32,8 +41,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'InDe',
-    description: '복음은 실전이다, 크리스천 인사이트 루틴',
+    title: ogTitle,
+    description: ogDescription,
     images: ['/indeOgLogo.jpeg?v=2'],
   },
   icons: {
