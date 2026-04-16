@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     locale: 'ko_KR',
     images: [
       {
-        url: '/indeOgLogo.jpeg',
+        url: '/indeOgLogo.jpeg?v=2',
         alt: 'InDe',
       },
     ],
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'InDe',
     description: '복음은 실전이다, 크리스천 인사이트 루틴',
-    images: ['/indeOgLogo.jpeg'],
+    images: ['/indeOgLogo.jpeg?v=2'],
   },
   icons: {
     icon: [
