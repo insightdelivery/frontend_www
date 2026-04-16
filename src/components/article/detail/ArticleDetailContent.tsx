@@ -131,7 +131,7 @@ export interface ArticleDetailContentProps {
   id: string
   /** `/s/{code}` 만료 후 리다이렉트 시 안내 (contentShareLinkCopy.md §6) */
   shareExpired?: boolean
-  /** `/s?code=` resolve 후 `/article/detail?...&from_share=1`로 들어온 경우 — 비회원 미리보기 CTA 문구 분기 */
+  /** `/s?code=` resolve 후 `/article/detail?...&from_share=1` — 공유 유입 문구·비회원 가입 CTA(전체 본문 열람 시에도) */
   fromShareLink?: boolean
 }
 
@@ -561,7 +561,13 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
   const displayTags = (article.tags ?? []).map((t) => formatArticleTagLabel(t)).filter(Boolean)
   const authorAvatarSrc =
     (article.authorProfileImage && article.authorProfileImage.trim()) || '/editorDefault.png'
+  /** 미리보기 본문 하단 페이드 — 실제로 잘렸을 때만 */
   const showPreviewFade = article.contentTruncated && !shareAsMember
+  /**
+   * 가입 유도 블록: 잘린 미리보기일 때 + 비회원이 공유 랜딩(`from_share=1`)으로 전체 본문을 읽는 경우에도 노출
+   * (회원·`shareAsMember` 전제의 로그인 사용자에게는 비노출)
+   */
+  const showGuestSignupCta = !authenticatedMember && (showPreviewFade || fromShareLink)
   const sermonHighlightText = article.sermonHighlight?.trim() ?? ''
 
   return (
@@ -767,7 +773,7 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
         </section>
       ) : null}
 
-      {showPreviewFade && (
+      {showGuestSignupCta ? (
         <section className="mt-8 mb-2 border-t border-[#e2e8f0] pt-10 text-center">
           <p className="text-[18px] sm:text-[19px] leading-[1.45] font-bold tracking-[-0.015em] text-[#0f172a]">
             {fromShareLink ? (
@@ -805,7 +811,7 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
             </Link>
           </p>
         </section>
-      )}
+      ) : null}
 
       {articleCopyright != null && (
         <section className="my-10">

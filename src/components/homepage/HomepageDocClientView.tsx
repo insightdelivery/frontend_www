@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { usePathname } from 'next/navigation'
 import type { HomepageDocPayload } from '@/types/homepageDoc'
 import type { HomepageDocType } from '@/constants/homepageDoc'
 import { HOMEPAGE_DOC_DEFAULT_TITLES } from '@/constants/homepageDoc'
@@ -8,11 +9,53 @@ import { sanitizeHomepageHtml } from '@/lib/sanitizeHomepageHtml'
 import { fetchHomepageDocPublic } from '@/services/homepageDoc'
 import { HomepageDocBody } from '@/components/homepage/HomepageDocBody'
 
+type FragmentNavigateEvent = Event & { hashChange?: boolean }
+
+function subscribeLocationHash(onChange: () => void) {
+  if (typeof window === 'undefined') return () => {}
+  window.addEventListener('hashchange', onChange)
+  window.addEventListener('popstate', onChange)
+  /** Next 등이 `history.pushState`로 해시만 바꿀 때 `hashchange`가 안 뜨는 경우 보완 */
+  const nav = (window as Window & { navigation?: EventTarget }).navigation
+  const onNavigate = (e: Event) => {
+    if ((e as FragmentNavigateEvent).hashChange) onChange()
+  }
+  nav?.addEventListener('navigate', onNavigate)
+  return () => {
+    window.removeEventListener('hashchange', onChange)
+    window.removeEventListener('popstate', onChange)
+    nav?.removeEventListener('navigate', onNavigate)
+  }
+}
+
+function getLocationHashSnapshot() {
+  return typeof window !== 'undefined' ? window.location.hash : ''
+}
+
+function scrollFragmentIntoView(behavior: ScrollBehavior) {
+  const raw = window.location.hash.replace(/^#/, '')
+  if (!raw) return
+  try {
+    document.getElementById(decodeURIComponent(raw))?.scrollIntoView({ behavior, block: 'start' })
+  } catch {
+    /* invalid fragment */
+  }
+}
+
+function scheduleScrollToFragment(behavior: ScrollBehavior) {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => scrollFragmentIntoView(behavior))
+  })
+}
+
 export function HomepageDocClientView({
   docType,
 }: {
   docType: HomepageDocType
 }) {
+  const pathname = usePathname()
+  const locationHash = useSyncExternalStore(subscribeLocationHash, getLocationHashSnapshot, () => '')
+  const bodyRootRef = useRef<HTMLDivElement>(null)
   const [doc, setDoc] = useState<HomepageDocPayload | null | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
 
@@ -39,21 +82,38 @@ export function HomepageDocClientView({
     }
   }, [docType])
 
-  /** 문서 렌더 후 URL 해시(#id)로 이동 — 클라이언트 전환 시 기본 해시 스크롤이 안 될 수 있음 */
+  /** 문서·해시·경로 반영 후 URL 해시(#id)로 이동 + 본문 이미지 로드로 레이아웃이 밀릴 때 보정 */
   useEffect(() => {
     if (doc === undefined || doc === null) return
     if (typeof window === 'undefined') return
-    const raw = window.location.hash.replace(/^#/, '')
-    if (!raw) return
-    const scroll = () => {
-      try {
-        document.getElementById(decodeURIComponent(raw))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      } catch {
-        /* invalid fragment */
+
+    scheduleScrollToFragment('smooth')
+
+    const root = bodyRootRef.current
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null
+    const onImgLoad = () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => {
+        debounceTimer = null
+        if (!window.location.hash.replace(/^#/, '')) return
+        scheduleScrollToFragment('auto')
+      }, 120)
+    }
+
+    const imgs = root ? Array.from(root.querySelectorAll('img')) : []
+    for (const img of imgs) {
+      if (!(img as HTMLImageElement).complete) {
+        img.addEventListener('load', onImgLoad)
       }
     }
-    requestAnimationFrame(() => requestAnimationFrame(scroll))
-  }, [doc])
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      for (const img of imgs) {
+        img.removeEventListener('load', onImgLoad)
+      }
+    }
+  }, [doc, locationHash, pathname])
 
   if (doc === undefined) {
     return (
@@ -87,5 +147,5 @@ export function HomepageDocClientView({
 
   const title = doc.title?.trim() || HOMEPAGE_DOC_DEFAULT_TITLES[docType]
   const html = sanitizeHomepageHtml(doc.bodyHtml || '')
-  return <HomepageDocBody title={title} html={html} />
+  return <HomepageDocBody ref={bodyRootRef} title={title} html={html} />
 }
