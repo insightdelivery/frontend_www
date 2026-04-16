@@ -16,6 +16,9 @@ const HERO_TITLE_CLASS =
   'text-[clamp(1.25rem,calc(3vw+0.65rem-1px),2.875rem)] md:text-[46px]'
 /** 부제 — 모바일 가변, md↑ 고정에 가깝게 */
 const HERO_SUBTITLE_SIZE = 'clamp(0.875rem, 1.35vw + 0.6rem, 1.25rem)'
+/** 배지 — 모바일은 글자·패딩을 기존(12px/px-3/py-1) 대비 약 1/2, md↑ 동일 */
+const HERO_BADGE_CLASS =
+  'inline-block rounded-full bg-[#e1f800] font-bold uppercase text-black text-[9px] leading-tight tracking-[0.15px] px-1.5 py-0.5 md:text-[12px] md:leading-normal md:tracking-[0.3px] md:px-3 md:py-1'
 /** 슬라이드가 멈춰 있는 시간(다음 장으로 넘어가기 전) */
 const SLIDE_HOLD_MS = 5000
 /** 왼쪽으로 넘어가는 트랜지션 시간 */
@@ -116,10 +119,8 @@ function SlideVisual({ slide }: { slide: DisplayEventHeroItem }) {
       />
       <div className="absolute inset-0 z-[2] flex flex-col justify-end p-6 sm:p-8 md:p-12 pointer-events-none text-white">
         {badge ? (
-          <div className="pb-4">
-            <span className="inline-block rounded-full bg-[#e1f800] px-3 py-1 font-bold text-[12px] uppercase tracking-[0.3px] text-black">
-              {badge}
-            </span>
+          <div className="pb-2 md:pb-4">
+            <span className={HERO_BADGE_CLASS}>{badge}</span>
           </div>
         ) : null}
         <h1 className={`font-bold leading-[1.12] tracking-tight text-white sm:leading-[1.1] ${HERO_TITLE_CLASS}`}>
@@ -206,10 +207,8 @@ function StaticHero() {
           }}
         />
         <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8 md:p-12">
-          <div className="pb-4">
-            <span className="inline-block rounded-full bg-[#e1f800] px-3 py-1 font-bold text-[12px] uppercase tracking-[0.3px] text-black">
-              Director&apos;s Pick
-            </span>
+          <div className="pb-2 md:pb-4">
+            <span className={HERO_BADGE_CLASS}>Director&apos;s Pick</span>
           </div>
           <h1
             className={`font-bold leading-[1.12] tracking-tight text-white sm:leading-[1.1] ${HERO_TITLE_CLASS}`}

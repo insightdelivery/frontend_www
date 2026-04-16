@@ -40,6 +40,15 @@ export const DISPLAY_CONTENT_TYPE_PARENT = 'SYS26320B009'
 /** 1:1 문의 유형 부모 코드 (userSupport.md — inquiry_inquiry.inquiry_type에 sysCodeSid 저장) */
 export const INQUIRY_TYPE_PARENT = 'SYS26330B001'
 
+/**
+ * 단일 시스코드 행(자기 자신). 부모-자식 구조가 아님 — 캐시 키=sid, 값은 0~1건 배열.
+ * 조회: `GET /systemmanage/syscode?sysCodeSid=` (공개 API)
+ */
+export const SYSCODE_SELF_SYS26416B001 = 'SYS26416B001'
+
+/** 접속·로그인 시 `sysCodeSid`로 별도 조회해 캐시하는 sid 목록 (bulk 대상 아님) */
+export const SYSCODE_SELF_CACHE_IDS: readonly string[] = [SYSCODE_SELF_SYS26416B001]
+
 /** 로그인 시 및 접속 시 공통으로 로드하는 부모 코드 ID 목록 */
 
 export const SYSCODE_PARENT_IDS = [
@@ -100,6 +109,18 @@ export const getSysCodeFromCache = (sysCodeGubn: string): SysCodeItem[] | null =
   }
 }
 
+/**
+ * 세미나 www 공개 여부 (`SYS26416B001` 캐시 첫 행 `sysCodeValue`).
+ * `N`이면 메인 세미나 블록 숨김·GNB는 링크 대신 안내. 캐시 없음·빈 배열은 공개로 간주.
+ */
+export function isSeminarWwwFeatureEnabledFromCache(): boolean {
+  const list = getSysCodeFromCache(SYSCODE_SELF_SYS26416B001)
+  if (list === null) return true
+  const row = list[0]
+  if (!row) return true
+  return String(row.sysCodeValue ?? 'Y').trim().toUpperCase() !== 'N'
+}
+
 // syscode 데이터를 localStorage에 저장
 export const setSysCodeToCache = (sysCodeGubn: string, data: SysCodeItem[]): void => {
   try {
@@ -130,6 +151,31 @@ function mapRawToSysCodeItem(item: Record<string, unknown>): SysCodeItem {
     sysCodeValue: String(item.sysCodeVal ?? item.sysCodeValue ?? item.sysCodeSid ?? ''),
     sysCodeSort: Number(item.sysCodeSort ?? 0),
     sysCodeUseFlag: String(item.sysCodeUse ?? item.sysCodeUseFlag ?? 'Y'),
+  }
+}
+
+/** 단일 sid 본인 행 조회 (자식 목록 아님) */
+const fetchSysCodeRowBySid = async (sysCodeSid: string): Promise<SysCodeItem[]> => {
+  try {
+    const response = await apiClient.get('/systemmanage/syscode', {
+      params: { sysCodeSid },
+    })
+    let syscodeList: unknown[] = []
+    if (response.data?.IndeAPIResponse?.ErrorCode === '00') {
+      syscodeList = response.data.IndeAPIResponse.Result || []
+    } else if (Array.isArray(response.data)) {
+      syscodeList = response.data
+    } else if (response.data?.results && Array.isArray(response.data.results)) {
+      syscodeList = response.data.results
+    } else {
+      return []
+    }
+    return (syscodeList as Record<string, unknown>[]).map((item: Record<string, unknown>) =>
+      mapRawToSysCodeItem(item)
+    )
+  } catch (error) {
+    console.error(`syscode 단일 조회 오류 (${sysCodeSid}):`, error)
+    return []
   }
 }
 
@@ -237,6 +283,10 @@ export const loadAllSysCodesOnLogin = async (): Promise<void> => {
     for (const parentId of SYSCODE_PARENT_IDS) {
       setSysCodeToCache(parentId, data[parentId] ?? [])
     }
+    for (const sid of SYSCODE_SELF_CACHE_IDS) {
+      const row = await fetchSysCodeRowBySid(sid)
+      setSysCodeToCache(sid, row)
+    }
   } catch (error) {
     console.error('sysCode 일괄 로드 실패:', error)
   }
@@ -250,9 +300,9 @@ export const loadAllSysCodesOnLogin = async (): Promise<void> => {
 export const ensureSysCodeLoaded = async (): Promise<void> => {
   if (typeof window === 'undefined') return
   try {
-    const allCached = SYSCODE_PARENT_IDS.every(
-      (id) => getSysCodeFromCache(id) !== null
-    )
+    const allCached =
+      SYSCODE_PARENT_IDS.every((id) => getSysCodeFromCache(id) !== null) &&
+      SYSCODE_SELF_CACHE_IDS.every((id) => getSysCodeFromCache(id) !== null)
     if (allCached) return
     await loadAllSysCodesOnLogin()
   } catch (error) {
@@ -264,7 +314,9 @@ export const ensureSysCodeLoaded = async (): Promise<void> => {
 export const getSysCode = async (sysCodeGubn: string): Promise<SysCodeItem[]> => {
   const cached = getSysCodeFromCache(sysCodeGubn)
   if (cached !== null) return cached
-  const apiData = await fetchSysCodeFromAPI(sysCodeGubn)
+  const apiData = SYSCODE_SELF_CACHE_IDS.includes(sysCodeGubn)
+    ? await fetchSysCodeRowBySid(sysCodeGubn)
+    : await fetchSysCodeFromAPI(sysCodeGubn)
   setSysCodeToCache(sysCodeGubn, apiData)
   return apiData
 }

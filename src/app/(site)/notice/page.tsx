@@ -10,6 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import WwwPagination from '@/components/common/WwwPagination'
 
 const NOTICE_NAV_PAGE_SIZE = 500
+/** 목록·상세 공통 본문 가로 최대 너비 */
+const NOTICE_MAX_WIDTH_CLASS = 'max-w-[768px]'
 
 /** 공지 상세 — 목록으로 (색·모양 통일) */
 const NOTICE_BACK_TO_LIST_CLASS =
@@ -137,7 +139,7 @@ function NoticeInner() {
     if (detailError) {
       return (
         <main className="min-h-screen bg-white font-sans">
-          <div className="mx-auto max-w-[960px] px-4 sm:px-6 py-12">
+          <div className={`mx-auto ${NOTICE_MAX_WIDTH_CLASS} px-4 sm:px-6 py-12`}>
             <div className="rounded-md bg-red-50 p-4 text-red-800">{detailError}</div>
             <div className="mt-8 flex justify-center">
               <Link href="/notice" className={NOTICE_BACK_TO_LIST_CLASS}>
@@ -150,7 +152,7 @@ function NoticeInner() {
     }
     return (
       <main className="min-h-screen bg-white font-sans">
-        <div className="mx-auto max-w-[960px] px-4 sm:px-6 py-8 sm:py-12">
+        <div className={`mx-auto ${NOTICE_MAX_WIDTH_CLASS} px-4 sm:px-6 py-8 sm:py-12`}>
           {detailLoading ? (
             <div className="space-y-4">
               <Skeleton className="h-12 w-full max-w-2xl" />
@@ -240,7 +242,7 @@ function NoticeInner() {
 
   return (
     <main className="min-h-screen bg-white">
-      <div className="mx-auto max-w-[960px] px-4 sm:px-6 py-10 sm:py-14">
+      <div className={`mx-auto ${NOTICE_MAX_WIDTH_CLASS} px-4 sm:px-6 py-10 sm:py-14`}>
         <header className="text-left">
           <h1 className="text-4xl sm:text-[40px] font-black tracking-tight text-[#0f172a]">공지사항</h1>
           <p className="mt-3 text-lg text-gray-500">InDe 공지사항을 확인하세요.</p>

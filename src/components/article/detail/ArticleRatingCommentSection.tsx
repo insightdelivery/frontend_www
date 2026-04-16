@@ -22,16 +22,17 @@ const COLORS = {
 
 const COMMENT_MAX_LENGTH = 500
 
+/** 댓글·대댓글 표시용 yy.mm.dd HH:MM (로컬) */
 function formatCommentListDate(iso: string | null): string {
   if (!iso) return ''
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ''
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const yy = String(d.getFullYear()).slice(-2)
+  const mo = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
-  const hh = String(d.getHours()).padStart(2, '0')
-  const mm = String(d.getMinutes()).padStart(2, '0')
-  return `${y}.${m}.${day} ${hh}:${mm}`
+  const HH = String(d.getHours()).padStart(2, '0')
+  const MM = String(d.getMinutes()).padStart(2, '0')
+  return `${yy}.${mo}.${day} ${HH}:${MM}`
 }
 
 function StarRowDisplay({ value }: { value: number | null | undefined }) {
@@ -43,7 +44,7 @@ function StarRowDisplay({ value }: { value: number | null | undefined }) {
         <Star
           key={i}
           className={`h-3.5 w-3.5 ${
-            i <= n ? 'fill-[#333333] text-[#333333]' : 'fill-none stroke-[#cbd5e1] text-[#cbd5e1]'
+            i <= n ? 'fill-[#333333] text-[#333333]' : 'fill-none stroke-[#cbcbcb] text-[#cbcbcb]'
           }`}
           strokeWidth={i <= n ? 0 : 1.5}
           aria-hidden
@@ -204,7 +205,7 @@ export default function ArticleRatingCommentSection({
           <MessageCircle className={`h-6 w-6 shrink-0 ${COLORS.textSecondary}`} strokeWidth={2} aria-hidden />
           <h2 className={`text-[18px] font-bold ${COLORS.text}`}>이 콘텐츠가 어떠셨나요?</h2>
         </div>
-        <div className="flex shrink-0 items-center gap-1 rounded-xl bg-[#d4d4d8] px-3 py-2 sm:pl-4">
+        <div className="flex shrink-0 items-center gap-1">
           {[1, 2, 3, 4, 5].map((n) => {
             const active = draftStars !== null && n <= draftStars
             return (
@@ -222,7 +223,7 @@ export default function ArticleRatingCommentSection({
               >
                 <Star
                   className={`h-7 w-7 ${
-                    active ? 'fill-[#333333] text-[#333333]' : 'fill-none stroke-2 stroke-white text-white'
+                    active ? 'fill-[#333333] text-[#333333]' : 'fill-none stroke-2 stroke-[#cbcbcb] text-[#cbcbcb]'
                   }`}
                   strokeWidth={active ? 0 : 2}
                 />
@@ -235,14 +236,16 @@ export default function ArticleRatingCommentSection({
       {authenticated ? (
         <>
           {allowComment ? (
-            <div className="mb-8 rounded-xl border border-[#e2e8f0] bg-white p-4">
-              <textarea
-                value={text}
-                maxLength={COMMENT_MAX_LENGTH}
-                onChange={(e) => setText(e.target.value.slice(0, COMMENT_MAX_LENGTH))}
-                placeholder="댓글을 남겨주세요. (선택사항)"
-                className={`min-h-[120px] w-full resize-none bg-transparent text-[15px] leading-6 ${COLORS.text} outline-none placeholder:text-slate-400`}
-              />
+            <div className="mb-8">
+              <div className="rounded-xl border border-[#e2e8f0] bg-white p-4">
+                <textarea
+                  value={text}
+                  maxLength={COMMENT_MAX_LENGTH}
+                  onChange={(e) => setText(e.target.value.slice(0, COMMENT_MAX_LENGTH))}
+                  placeholder="선한 인사이트로 연결하기, 생각을 자유롭게 나눠주세요."
+                  className={`min-h-[60px] w-full resize-none bg-transparent text-[15px] leading-6 ${COLORS.text} outline-none placeholder:text-slate-400`}
+                />
+              </div>
               <div className="mt-3 flex justify-end">
                 <button
                   type="button"
@@ -250,7 +253,7 @@ export default function ArticleRatingCommentSection({
                   onClick={() => void handleSave()}
                   className="rounded-xl bg-[#1e293b] px-8 py-2.5 text-[15px] font-bold text-white disabled:opacity-50"
                 >
-                  {submitting ? '저장 중...' : '저장하기'}
+                  {submitting ? '처리 중...' : '확인'}
                 </button>
               </div>
             </div>
@@ -263,7 +266,7 @@ export default function ArticleRatingCommentSection({
                 onClick={() => void handleSave()}
                 className="rounded-xl bg-[#1e293b] px-8 py-2.5 text-[15px] font-bold text-white disabled:opacity-50"
               >
-                {submitting ? '저장 중...' : '저장하기'}
+                {submitting ? '처리 중...' : '확인'}
               </button>
             </div>
           )}

@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getAccessToken, getUserInfo } from '@/services/auth'
 import { Search, Menu, X, Home } from 'lucide-react'
 import MainBar from '@/components/layout/MainBar'
+import GnbSeminarLink from '@/components/layout/GnbSeminarLink'
 import HeaderSearch from '@/components/layout/HeaderSearch'
 import { siteShellMaxWidthClass } from '@/lib/siteLayoutWidth'
 import { normalizeSearchQuery } from '@/lib/searchQuery'
@@ -125,12 +126,7 @@ export default function Header() {
               >
                 비디오
               </Link>
-              <Link
-                href="/seminar"
-                className={`transition-opacity hover:opacity-70 ${isSeminarSection ? 'underline underline-offset-4' : ''}`}
-              >
-                세미나
-              </Link>
+              <GnbSeminarLink isActive={isSeminarSection} />
             </nav>
 
             <button
@@ -149,7 +145,7 @@ export default function Header() {
                   alt="InDe"
                   width={73}
                   height={26}
-                  className="h-9 w-auto object-contain"
+                  className="object-contain max-md:h-5 max-md:w-auto md:h-[26px] md:w-[73px]"
                   priority
                 />
               </Link>
@@ -239,13 +235,12 @@ export default function Header() {
                 >
                   비디오
                 </Link>
-                <Link
-                  href="/seminar"
-                  className={`transition-opacity hover:opacity-70 ${isSeminarSection ? 'underline underline-offset-4' : ''}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  세미나
-                </Link>
+                <GnbSeminarLink
+                  isActive={isSeminarSection}
+                  wrapperClassName="block w-full"
+                  className="block w-full text-left"
+                  onNavigate={() => setMobileMenuOpen(false)}
+                />
                 <div className="space-y-3 border-t border-black/10 pt-4">
                   {showMemberChrome ? (
                     <>
