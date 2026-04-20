@@ -1,4 +1,5 @@
 import api from '@/lib/api'
+import { normalizeArticleTags } from '@/lib/articleTags'
 import type { PublicVideoDetail, PublicVideoListResponse } from '@/types/video'
 
 const BASE = '/api/videos'
@@ -41,5 +42,9 @@ export async function fetchPublicVideoList(
 /** 공개 비디오/세미나 상세 (인증 불필요) */
 export async function fetchPublicVideoDetail(id: number | string): Promise<PublicVideoDetail> {
   const { data } = await api.get(`${BASE}/${id}`)
-  return unwrapResult<PublicVideoDetail>(data)
+  const raw = unwrapResult<PublicVideoDetail>(data)
+  return {
+    ...raw,
+    tags: normalizeArticleTags((raw as PublicVideoDetail & { tags?: unknown }).tags),
+  }
 }

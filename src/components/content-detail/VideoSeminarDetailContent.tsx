@@ -33,6 +33,7 @@ import { fetchHomepageDocPublic } from '@/services/homepageDoc'
 import { HOMEPAGE_DOC_DEFAULT_TITLES } from '@/constants/homepageDoc'
 import type { HomepageDocPayload } from '@/types/homepageDoc'
 import { sanitizeHomepageHtml } from '@/lib/sanitizeHomepageHtml'
+import { formatArticleTagLabel, normalizeArticleTags } from '@/lib/articleTags'
 
 /** 아티클 상세(`ArticleDetailContent`)와 동일 콘텐츠 폭 */
 const CONTAINER = 'max-w-[720px] mx-auto'
@@ -410,7 +411,10 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
   const listUrl = getListUrl(type)
   const speakerDisplay = getVideoSpeakerDisplayFields(detail)
   const metaDateLine = formatDetailMetaDate(detail.createdAt)
-  const tags = Array.isArray(detail.tags) ? detail.tags.filter((t): t is string => Boolean(t && String(t).trim())) : []
+  const subtitleText = (detail.subtitle ?? '').trim()
+  const displayTags = normalizeArticleTags(detail.tags)
+    .map((t) => formatArticleTagLabel(t))
+    .filter(Boolean)
   const attachments = Array.isArray(detail.attachments) ? detail.attachments.filter((a) => a?.url?.trim()) : []
   const bodyHtml = (detail.body ?? '').trim()
   const categoryBreadcrumbLabel = (() => {
@@ -453,14 +457,24 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
       <header className="mb-8">
         <h1 className={`mb-4 font-bold text-[40px] leading-[1.2] tracking-[-0.025em] ${COLORS.text}`}>{detail.title}</h1>
 
-        {tags.length > 0 ? (
+        {subtitleText ? (
+          <p
+            className={`text-[18px] sm:text-[20px] leading-[1.4] ${COLORS.textSecondary} ${
+              displayTags.length > 0 ? 'mb-3' : 'mb-4'
+            }`}
+          >
+            {subtitleText}
+          </p>
+        ) : null}
+
+        {displayTags.length > 0 ? (
           <div className="mb-6 flex flex-wrap gap-2" aria-label="태그">
-            {tags.map((tag) => (
+            {displayTags.map((label, i) => (
               <span
-                key={tag}
+                key={`${label}-${i}`}
                 className="rounded-full bg-[#e8edf2] px-3 py-1 text-[12px] font-medium leading-snug text-[#475569]"
               >
-                {tag}
+                {label}
               </span>
             ))}
           </div>
