@@ -1,4 +1,5 @@
 import type { ArticleListItem } from '@/types/article'
+import { getContentNewBadgeMaxDaysFromCache } from '@/lib/syscode'
 
 export type ArticleCardBadge = 'NEW' | 'BEST'
 
@@ -17,7 +18,7 @@ export function normalizeContentCardBadges(badges?: ArticleCardBadge[]): Article
   return out
 }
 
-/** NEW(30일 이내)·BEST(당일 공유 랭킹 상위 3 contentCode) — 순서 NEW → BEST (list.md) */
+/** NEW(시스코드 `SYS26421B002`·`sysCodeValue` 일수, 없으면 14)·BEST(당일 공유 랭킹 상위 3) — 순서 NEW → BEST */
 export function contentCardBadges(
   createdAt: string | undefined | null,
   id: string | number,
@@ -26,7 +27,8 @@ export function contentCardBadges(
   const badges: ArticleCardBadge[] = []
   const t = createdAt ? new Date(createdAt).getTime() : 0
   const daysSinceCreation = (Date.now() - t) / (1000 * 60 * 60 * 24)
-  if (daysSinceCreation <= 30) badges.push('NEW')
+  const newMaxDays = getContentNewBadgeMaxDaysFromCache()
+  if (daysSinceCreation <= newMaxDays) badges.push('NEW')
   if (sharedTopIds.has(String(id))) badges.push('BEST')
   return badges
 }

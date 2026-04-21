@@ -46,8 +46,11 @@ export const INQUIRY_TYPE_PARENT = 'SYS26330B001'
  */
 export const SYSCODE_SELF_SYS26416B001 = 'SYS26416B001'
 
+/** 콘텐츠 카드 NEW 뱃지: 업로드 후 며칠 이내인지 — `sysCodeValue`에 일수(정수 문자열) */
+export const SYSCODE_SELF_NEW_BADGE_DAYS = 'SYS26421B002'
+
 /** 접속·로그인 시 `sysCodeSid`로 별도 조회해 캐시하는 sid 목록 (bulk 대상 아님) */
-export const SYSCODE_SELF_CACHE_IDS: readonly string[] = [SYSCODE_SELF_SYS26416B001]
+export const SYSCODE_SELF_CACHE_IDS: readonly string[] = [SYSCODE_SELF_SYS26416B001, SYSCODE_SELF_NEW_BADGE_DAYS]
 
 /** 로그인 시 및 접속 시 공통으로 로드하는 부모 코드 ID 목록 */
 
@@ -119,6 +122,23 @@ export function isSeminarWwwFeatureEnabledFromCache(): boolean {
   const row = list[0]
   if (!row) return true
   return String(row.sysCodeValue ?? 'Y').trim().toUpperCase() !== 'N'
+}
+
+const DEFAULT_NEW_BADGE_MAX_DAYS = 14
+
+/**
+ * 아티클·비디오·세미나 카드 NEW 뱃지: 업로드 후 며칠 이내인지.
+ * `SYS26421B002` 캐시 첫 행 `sysCodeValue`(양의 정수). 캐시 없음·비어 있음·파싱 실패 시 **14**.
+ */
+export function getContentNewBadgeMaxDaysFromCache(): number {
+  const list = getSysCodeFromCache(SYSCODE_SELF_NEW_BADGE_DAYS)
+  if (list === null || list.length === 0) return DEFAULT_NEW_BADGE_MAX_DAYS
+  const row = list[0]
+  const raw = String(row?.sysCodeValue ?? '').trim()
+  if (!raw) return DEFAULT_NEW_BADGE_MAX_DAYS
+  const n = parseInt(raw, 10)
+  if (!Number.isFinite(n) || n <= 0) return DEFAULT_NEW_BADGE_MAX_DAYS
+  return n
 }
 
 // syscode 데이터를 localStorage에 저장
