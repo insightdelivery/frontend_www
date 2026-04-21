@@ -6,6 +6,7 @@ import {
   getMemoryAccessToken,
   setMemoryAccessToken,
 } from '@/lib/accessTokenMemory'
+import { normalizeSitePathname } from '@/lib/postLoginRedirect'
 
 // 로컬 개발 시 기본값: localhost:8001 (공개 API), 프로덕션: api.inde.kr
 export const getApiBaseURL = (): string => {
@@ -47,8 +48,10 @@ const resolveRequestPath = (config: InternalAxiosRequestConfig): string => {
 
 const isPublicBoard = (url?: string) => {
   const path = pathOnly(url)
-  return /^\/api\/(notices|faqs|articles|content|events|videos|search|homepage-docs|library|comments)(\/|$)/.test(
-    path
+  return (
+    /^\/api\/(notices|faqs|articles|content|events|videos|search|homepage-docs|library|comments)(\/|$)/.test(path) ||
+    /** public_api SiteVisitRecordView — AllowAny, OAuth 콜백 직전 토큰 없을 때 ensureToken 금지 */
+    /^\/api\/site-visits\/?$/i.test(path)
   )
 }
 
@@ -138,9 +141,27 @@ export function handleAuthFail(): void {
   Cookies.remove('userInfo', { path: '/' })
   Cookies.remove('accessToken', { path: '/' })
   Cookies.remove('refreshToken', { path: '/' })
-  if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+  if (typeof window !== 'undefined') {
+    const path = normalizeSitePathname(window.location.pathname)
+    // 로그인(·회원가입) 화면에서는 전체 리로드 금지: 리로드 시 모듈 상태가 초기화되어
+    // 동일 401 → handleAuthFail → replace 무한 루프가 된다.
+    if (path === '/login') {
+      const url = new URL(window.location.href)
+      if (url.searchParams.get('error') !== 'UNAUTHORIZED') {
+        url.searchParams.set('error', 'UNAUTHORIZED')
+        window.history.replaceState(null, '', `${url.pathname}?${url.searchParams.toString()}`)
+      }
+      return
+    }
+    if (path === '/register') {
+      return
+    }
     const { pathname, search } = window.location
-    const next = encodeURIComponent(`${pathname}${search}`)
+    const snap =
+      path === '/auth/callback'
+        ? '/'
+        : `${pathname}${search}`
+    const next = encodeURIComponent(snap)
     window.location.replace(`/login?error=UNAUTHORIZED&next=${next}`)
   }
 }

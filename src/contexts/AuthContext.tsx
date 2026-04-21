@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { normalizeSitePathname } from '@/lib/postLoginRedirect'
 import { initAuth, logout as authLogout, type UserInfo } from '@/services/auth'
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated'
@@ -28,6 +29,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /** accessToken은 메모리만 — 새로고침 후 복구는 initAuth(restoreSessionTokens + getMe)로 비동기 처리 */
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const path = normalizeSitePathname(window.location.pathname)
+      const qs = new URLSearchParams(window.location.search)
+      // OAuth 콜백이 saveTokens·getMe·setUser를 처리하는 동안 병렬 initAuth가 tokenrefresh 401 →
+      // handleAuthFail로 방금 받은 access_token을 지우는 경합을 막는다.
+      if (path === '/auth/callback' && (qs.has('access_token') || qs.has('temp_token'))) {
+        return
+      }
+    }
     let cancelled = false
     const run = async () => {
       try {

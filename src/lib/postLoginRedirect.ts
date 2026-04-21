@@ -7,6 +7,13 @@ const MAX_LEN = 2048
 
 export const POST_LOGIN_NEXT_SESSION_KEY = 'inde_post_login_next'
 
+/** `/login/` 등 끝 슬래시를 제거해 가드 비교에 사용 — 401→login 리다이렉트 루프 방지 */
+export function normalizeSitePathname(pathname: string): string {
+  if (!pathname || pathname === '/') return '/'
+  const t = pathname.replace(/\/+$/, '')
+  return t === '' ? '/' : t
+}
+
 export function getSafePostLoginRedirect(next: string | null | undefined): string {
   if (next == null || typeof next !== 'string') return '/'
   const t = next.trim()
@@ -14,7 +21,9 @@ export function getSafePostLoginRedirect(next: string | null | undefined): strin
   if (/[\s\r\n]/.test(t)) return '/'
   if (t.includes('://')) return '/'
   if (t.length > MAX_LEN) return '/'
-  if (t === '/login' || t.startsWith('/login?')) return '/'
+  const pathBeforeQuery = t.split('?')[0] ?? t
+  const norm = normalizeSitePathname(pathBeforeQuery)
+  if (norm === '/login' || norm === '/auth/callback') return '/'
   return t
 }
 
@@ -22,7 +31,8 @@ export function getSafePostLoginRedirect(next: string | null | undefined): strin
 export function buildLoginHrefFromParts(pathname: string, searchWithoutQuestionMark: string | null | undefined): string {
   const q = searchWithoutQuestionMark && searchWithoutQuestionMark.length > 0 ? `?${searchWithoutQuestionMark}` : ''
   const full = `${pathname}${q}`
-  if (pathname === '/login' || pathname === '/register') return '/login'
+  const norm = normalizeSitePathname(pathname)
+  if (norm === '/login' || norm === '/register' || norm === '/auth/callback') return '/login'
   return `/login?next=${encodeURIComponent(full)}`
 }
 

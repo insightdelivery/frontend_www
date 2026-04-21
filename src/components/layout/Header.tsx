@@ -29,7 +29,8 @@ export default function Header() {
   const tokenPresent = clientReady && !!getAccessToken()
   /** accessToken은 메모리 복구 전까지 비어 있을 수 있음 — userInfo 쿠키로 로딩 중 GNB 낙관 표시 */
   const showMemberChrome =
-    status === 'authenticated' || (status === 'loading' && !!cookieUser) || (status === 'loading' && tokenPresent)
+    clientReady &&
+    (status === 'authenticated' || (status === 'loading' && !!cookieUser) || (status === 'loading' && tokenPresent))
   const displayUser = user ?? (showMemberChrome ? cookieUser : null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
