@@ -12,9 +12,8 @@ const CACHE_KEY = 'sysCodeData'
  * `SYS26416B001` 시스코드 기준 세미나 메뉴·메인 블록 공개 여부 (`sysCodeValue` !== `N`).
  */
 export function useSeminarWwwEnabled(): boolean {
-  const [enabled, setEnabled] = useState(() =>
-    typeof window === 'undefined' ? true : isSeminarWwwFeatureEnabledFromCache()
-  )
+  // SSR과 첫 클라이언트 렌더는 같은 값이어야 한다. 서버만 true·클라이언트만 캐시 false면 하이드레이션 불일치가 난다.
+  const [enabled, setEnabled] = useState(true)
 
   useEffect(() => {
     let alive = true

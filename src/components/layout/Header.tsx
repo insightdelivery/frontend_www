@@ -73,15 +73,6 @@ export default function Header() {
 
   const shellMax = siteShellMaxWidthClass(pathname)
 
-  if (status === 'loading' && !showMemberChrome) {
-    return (
-      <div className="sticky top-0 z-50">
-        <MainBar notice={gnbNotice} shellMaxClass={shellMax} />
-        <div className="h-[52px] bg-neon-yellow" aria-hidden />
-      </div>
-    )
-  }
-
   const isArticleSection = pathname === '/article' || pathname.startsWith('/article/')
   const isVideoSection = pathname.startsWith('/video')
   const isSeminarSection = pathname.startsWith('/seminar')
