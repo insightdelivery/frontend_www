@@ -16,6 +16,7 @@ import {
   isAuthenticated,
   sendProfilePhoneSms,
   verifySms,
+  checkMeEmailAvailable,
   type UserInfo,
 } from '@/services/auth'
 import { normalizePhoneKr } from '@/lib/phoneNormalize'
@@ -65,6 +66,10 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
   const [smsSending, setSmsSending] = useState(false)
   const [verifyingSms, setVerifyingSms] = useState(false)
   const [phoneInlineError, setPhoneInlineError] = useState<string | null>(null)
+  /** 소문자 정규화된 이메일 — 중복확인 통과 시에만 값 설정, 입력이 바뀌면 useEffect에서 초기화 */
+  const [emailConfirmedLower, setEmailConfirmedLower] = useState<string | null>(null)
+  const [emailDupChecking, setEmailDupChecking] = useState(false)
+  const originalEmailRef = useRef<string>('')
 
   const {
     register,
@@ -99,6 +104,8 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
   const applyUserToForm = useCallback(
     (user: UserInfo) => {
       setUserEmail(user.email)
+      originalEmailRef.current = (user.email || '').trim()
+      setEmailConfirmedLower(null)
       setJoinedVia(user.joined_via || 'LOCAL')
       originalPhoneNormRef.current = normalizePhoneKr(user.phone || '')
       setVerifiedPhoneNorm(null)
@@ -151,8 +158,54 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
     }
   }, [normalizedInputPhone, verifiedPhoneNorm])
 
+  useEffect(() => {
+    const cur = userEmail.trim().toLowerCase()
+    if (emailConfirmedLower !== null && cur !== emailConfirmedLower) {
+      setEmailConfirmedLower(null)
+    }
+  }, [userEmail, emailConfirmedLower])
+
+  const handleEmailDuplicateCheck = async () => {
+    setError(null)
+    const cur = userEmail.trim()
+    if (!cur) {
+      setError('이메일을 입력해 주세요.')
+      return
+    }
+    if (cur.toLowerCase() === originalEmailRef.current.trim().toLowerCase()) {
+      setEmailConfirmedLower(cur.toLowerCase())
+      return
+    }
+    setEmailDupChecking(true)
+    try {
+      const r = await checkMeEmailAvailable(cur)
+      if (r.available) {
+        setEmailConfirmedLower(cur.toLowerCase())
+      } else {
+        setError(r.error || '이미 사용 중인 이메일입니다.')
+      }
+    } catch (err: unknown) {
+      setError(
+        err && typeof err === 'object' && 'response' in err && err.response && typeof (err.response as any).data?.error === 'string'
+          ? (err.response as any).data.error
+          : err instanceof Error
+            ? err.message
+            : '이메일 확인에 실패했습니다.',
+      )
+    } finally {
+      setEmailDupChecking(false)
+    }
+  }
+
   const onSubmit = async (data: ProfileFormData) => {
     setError(null)
+    const curEmailLower = userEmail.trim().toLowerCase()
+    const origLower = originalEmailRef.current.trim().toLowerCase()
+    const emailDirty = curEmailLower !== origLower
+    if (emailDirty && curEmailLower !== emailConfirmedLower) {
+      setError('이메일을 변경하는 경우 [중복확인]으로 사용 가능 여부를 확인한 뒤 저장해 주세요.')
+      return
+    }
     if (needsPhoneVerification && !phoneChangeOk) {
       setError('휴대폰 번호를 변경한 경우에는 문자 인증을 완료한 뒤 저장해 주세요.')
       return
@@ -256,6 +309,8 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
   }[joinedVia] || '일반 가입'
 
   const isLocal = joinedVia === 'LOCAL'
+  const emailDirtyForDupButton =
+    userEmail.trim().toLowerCase() !== originalEmailRef.current.trim().toLowerCase()
 
   if (isLoadingUser) {
     return (
@@ -310,14 +365,35 @@ export default function ProfileForm({ variant = 'standalone' }: ProfileFormProps
       <div className="space-y-4">
         <div>
           <Label htmlFor="email">이메일</Label>
-          <Input
-            id="email"
-            type="email"
-            value={userEmail}
-            disabled
-            className="mt-1 bg-gray-100"
-          />
-          <p className="mt-1 text-xs text-gray-500">이메일은 변경할 수 없습니다.</p>
+          <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Input
+              id="email"
+              type="email"
+              value={userEmail}
+              onChange={(e) => setUserEmail(e.target.value)}
+              autoComplete="email"
+              className="sm:flex-1"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0"
+              disabled={emailDupChecking || !emailDirtyForDupButton}
+              onClick={() => void handleEmailDuplicateCheck()}
+            >
+              {emailDupChecking ? '확인 중…' : '중복확인'}
+            </Button>
+          </div>
+          <p className="mt-1 text-xs text-gray-500">
+            이메일을 바꾸면 [중복확인] 후 저장할 수 있습니다. 변경 시 인증 메일이 발송될 수 있습니다.
+          </p>
+          {emailConfirmedLower !== null && userEmail.trim().toLowerCase() === emailConfirmedLower && (
+            <p className="mt-1 text-xs text-emerald-700">
+              {userEmail.trim().toLowerCase() === originalEmailRef.current.trim().toLowerCase()
+                ? '현재 사용 중인 이메일입니다.'
+                : '사용 가능한 이메일입니다. 저장 시 반영됩니다.'}
+            </p>
+          )}
         </div>
 
         {isLocal && (

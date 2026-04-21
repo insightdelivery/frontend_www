@@ -291,24 +291,82 @@ export const clearOauthPendingTempToken = () => {
   Cookies.remove(OAUTH_PENDING_TEMP_COOKIE, { path: '/' })
 }
 
+export type OAuthPendingClaims = {
+  email: string
+  name: string
+  nickname: string
+  provider: string
+  kakao_placeholder_email: boolean
+}
+
+/** SNS 가입 세션 JWT에서 프리필용 클레임 조회 (로그인 불필요) */
+export async function fetchOAuthPendingClaims(tempToken: string): Promise<OAuthPendingClaims> {
+  const response = await apiClient.post<Record<string, unknown>>('/auth/oauth-pending-claims', { temp_token: tempToken })
+  const raw = response.data
+  const inner = unwrapApiResult<OAuthPendingClaims>(raw)
+  const d = inner ?? (raw as OAuthPendingClaims)
+  return {
+    email: typeof d.email === 'string' ? d.email : '',
+    name: typeof d.name === 'string' ? d.name : '',
+    nickname: typeof d.nickname === 'string' ? d.nickname : '',
+    provider: typeof d.provider === 'string' ? d.provider : '',
+    kakao_placeholder_email: !!d.kakao_placeholder_email,
+  }
+}
+
+/** SNS 가입 단계 비로그인 이메일 중복 확인 */
+export async function checkSignupEmailAvailable(email: string): Promise<{ available: boolean; error?: string }> {
+  const response = await apiClient.post<Record<string, unknown>>('/auth/signup-email-availability', {
+    email: email.trim(),
+  })
+  const raw = response.data
+  const inner = unwrapApiResult<{ available?: boolean; error?: string }>(raw)
+  const d = inner ?? (raw as { available?: boolean; error?: string })
+  return {
+    available: !!d?.available,
+    error: typeof d?.error === 'string' ? d.error : undefined,
+  }
+}
+
+export type OauthCompleteSignupProfile = {
+  email: string
+  name: string
+  nickname: string
+  /** 미전달 시 서버 기본 true(뉴스레터·이벤트 수신 동의) */
+  newsletter_agree?: boolean
+}
+
 /**
- * SNS 최초 가입 마무리: temp_token(oauth_pending JWT) + 휴대폰(SMS 인증 완료된 번호)
+ * SNS 최초 가입 마무리: temp_token(oauth_pending JWT) + 휴대폰(SMS 인증 완료) + 이메일·이름·닉네임(요청 시 JWT 값 덮어씀)
  */
-export const oauthCompleteSignup = async (tempToken: string, phone: string): Promise<OAuthCompleteSignupResult> => {
+export const oauthCompleteSignup = async (
+  tempToken: string,
+  phone: string,
+  profile?: OauthCompleteSignupProfile,
+): Promise<OAuthCompleteSignupResult> => {
   try {
+    const requestBody: Record<string, string | boolean> = { temp_token: tempToken, phone: phone.trim() }
+    if (profile) {
+      requestBody.email = profile.email.trim()
+      requestBody.name = profile.name.trim()
+      requestBody.nickname = profile.nickname.trim()
+      if (profile.newsletter_agree !== undefined) {
+        requestBody.newsletter_agree = profile.newsletter_agree
+      }
+    }
     const response = await apiClient.post<OAuthCompleteSignupResult & { IndeAPIResponse?: { Result?: OAuthCompleteSignupResult } }>(
       '/auth/oauth-complete-signup',
-      { temp_token: tempToken, phone },
+      requestBody,
     )
     const raw = response.data
-    const body =
+    const result =
       raw?.IndeAPIResponse?.Result ?? (raw && 'access_token' in raw && raw.access_token ? raw : null)
-    if (!body?.access_token || !body?.user) {
+    if (!result?.access_token || !result?.user) {
       throw new Error('응답 형식이 올바르지 않습니다.')
     }
-    saveTokens(body.access_token, body.refresh_token || '', body.user)
+    saveTokens(result.access_token, result.refresh_token || '', result.user)
     clearOauthPendingTempToken()
-    return body
+    return result
   } catch (error: unknown) {
     throw new Error(messageFromApiError(error, '가입 완료 처리에 실패했습니다.'))
   }
@@ -394,6 +452,23 @@ export const initAuth = async (): Promise<UserInfo | null> => {
   return initAuthInFlight
 }
 
+
+/**
+ * 로그인 상태에서 이메일 사용 가능 여부 (다른 회원과 중복 아님). GET /me/email-availability?email=
+ */
+export async function checkMeEmailAvailable(email: string): Promise<{ available: boolean; error?: string }> {
+  const trimmed = email.trim()
+  const response = await apiClient.get<Record<string, unknown>>(
+    `/me/email-availability?email=${encodeURIComponent(trimmed)}`,
+  )
+  const raw = response.data
+  const inner = unwrapApiResult<{ available?: boolean; error?: string }>(raw)
+  const d = inner ?? (raw as { available?: boolean; error?: string })
+  return {
+    available: !!d?.available,
+    error: typeof d?.error === 'string' ? d.error : undefined,
+  }
+}
 
 /**
  * 프로필 완성/수정 (구글 부가정보 입력 등)
