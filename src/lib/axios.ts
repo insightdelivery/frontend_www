@@ -102,9 +102,10 @@ function isAuthRequiredContentPath(path: string): boolean {
   )
 }
 
+/** 로그인·refresh 없이 호출되는 공개 인증 API — 여기 없으면 `ensureToken('strict')` → tokenrefresh 선행 */
 const isPublicAuthFlow = (url?: string) => {
   const path = pathOnly(url)
-  return /^\/auth\/(send-sms|verify-sms|register|login|send-sms-find-id|find-id|send-password-reset-code|verify-password-reset-code|reset-password)(\/|$)/i.test(
+  return /^\/auth\/(send-sms|verify-sms|register|login|send-sms-find-id|find-id|send-password-reset-code|verify-password-reset-code|reset-password|oauth-complete-signup|verify-email|resend-verification-email)(\/|$)/i.test(
     path
   )
 }
