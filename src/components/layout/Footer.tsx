@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Facebook, Instagram, Youtube, BookOpen } from 'lucide-react'
 import { fetchHomepageDocPublic } from '@/services/homepageDoc'
 import { siteShellMaxWidthClass } from '@/lib/siteLayoutWidth'
+import FooterSitemapLinks from '@/components/layout/FooterSitemapLinks'
 
 const SNS_LINKS = [
   { href: 'https://www.facebook.com/indemgz/?locale=ko_KR', label: 'Facebook', Icon: Facebook },
@@ -92,47 +92,7 @@ export default function Footer() {
 
           {/* 모바일: 소개(왼쪽) | 서비스(오른쪽) 2열 — md+: 상위 4열 그리드에 직접 참여 */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-0 items-start md:contents">
-            <div className="min-w-0 md:col-span-1">
-              <p className="text-[12px] font-extrabold text-gray-700">소개</p>
-              <ul className="mt-4 sm:mt-5 space-y-2 text-[12px] text-gray-600">
-                <li><Link href="/about/companyInfo" className="hover:text-gray-900 transition-colors">인디소개</Link></li>
-                <li>
-                  {recruitHref ? (
-                    <a href={recruitHref} target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
-                      인재채용
-                    </a>
-                  ) : (
-                    <span className="text-gray-400">인재채용</span>
-                  )}
-                </li>
-                <li>
-                  {partnershipHref ? (
-                    <a href={partnershipHref} target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
-                      광고 및 협업 문의
-                    </a>
-                  ) : (
-                    <span className="text-gray-400">광고 및 협업 문의</span>
-                  )}
-                </li>
-                <li>
-                  <Link href="/about/companyInfo#partners" className="hover:text-gray-900 transition-colors">
-                    협력 업체
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div className="min-w-0 md:col-span-1">
-              <p className="text-[12px] font-extrabold text-gray-700">서비스</p>
-              <ul className="mt-4 sm:mt-5 space-y-2 text-[12px] text-gray-600">
-                <li><Link href="/notice" className="hover:text-gray-900 transition-colors">공지사항</Link></li>
-                <li><Link href="/faq" className="hover:text-gray-900 transition-colors">FAQ</Link></li>
-                <li><Link href="/mypage/support" className="hover:text-gray-900 transition-colors">1:1 문의</Link></li>
-                <li><Link href="/terms" className="hover:text-gray-900 transition-colors">이용약관</Link></li>
-                <li><Link href="/privacy" className="hover:text-gray-900 transition-colors">개인정보처리방침</Link></li>
-                <li><Link href="/membership/checkout" className="hover:text-gray-900 transition-colors">결제</Link></li>
-              </ul>
-            </div>
+            <FooterSitemapLinks recruitHref={recruitHref} partnershipHref={partnershipHref} layout="footer" />
           </div>
         </div>
 

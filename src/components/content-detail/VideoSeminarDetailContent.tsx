@@ -34,6 +34,8 @@ import { HOMEPAGE_DOC_DEFAULT_TITLES } from '@/constants/homepageDoc'
 import type { HomepageDocPayload } from '@/types/homepageDoc'
 import { sanitizeHomepageHtml } from '@/lib/sanitizeHomepageHtml'
 import { formatArticleTagLabel, normalizeArticleTags } from '@/lib/articleTags'
+import { plainTextExcerptFromHtml } from '@/lib/plainTextExcerpt'
+import { useDetailOpenGraphMeta } from '@/components/seo/useDetailOpenGraphMeta'
 
 /** 아티클 상세(`ArticleDetailContent`)와 동일 콘텐츠 폭 */
 const CONTAINER = 'max-w-[720px] mx-auto'
@@ -189,6 +191,21 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
   }, [idValidForCopyright, copyrightDocType])
 
   const shareEntitlementOnly = detail ? !authenticated && detail.shareEntitlement === true : false
+
+  const videoOgDescription = useMemo(() => {
+    if (!detail?.id) return ''
+    const st = (detail.subtitle ?? '').trim()
+    if (st) return st
+    return plainTextExcerptFromHtml(detail.body ?? '', 200)
+  }, [detail])
+
+  useDetailOpenGraphMeta({
+    active: Boolean(detail?.id),
+    title: detail?.title ?? '',
+    description: videoOgDescription,
+    imageUrl: detail ? resolveThumbnailUrl(detail.thumbnail) : null,
+    ogType: 'website',
+  })
 
   const viewCalled = useRef(new Set<string>())
   useEffect(() => {

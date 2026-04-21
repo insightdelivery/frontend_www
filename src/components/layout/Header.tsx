@@ -35,7 +35,6 @@ export default function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [gnbNotice, setGnbNotice] = useState<NoticeListItem | null>(null)
   const gnbFetchedRef = useRef(false)
-
   const closeSearch = useCallback(() => setIsSearchOpen(false), [])
   const greetLabel = displayUser?.nickname?.trim() || displayUser?.name?.trim() || null
 
@@ -287,6 +286,22 @@ export default function Header() {
                       </button>
                     </>
                   )}
+                </div>
+                <div className="mt-4 flex flex-col gap-4 border-t border-black/10 pt-4">
+                  <Link
+                    href="/about/companyInfo"
+                    className="transition-opacity hover:opacity-70"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    인디소개
+                  </Link>
+                  <Link
+                    href="/notice"
+                    className="transition-opacity hover:opacity-70"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    공지사항
+                  </Link>
                 </div>
               </nav>
             </div>

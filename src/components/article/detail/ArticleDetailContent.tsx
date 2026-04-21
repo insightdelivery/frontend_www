@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useId } from 'react'
+import { useState, useEffect, useCallback, useRef, useId, useMemo } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Bookmark, Share2, Search, Link2 } from 'lucide-react'
 import { fetchArticleDetail, fetchArticleList, resolveArticlesByRanking } from '@/services/article'
@@ -37,6 +37,8 @@ import {
   payloadsFromRange,
 } from '@/components/highlight'
 import { getHighlightApiErrorMessage } from '@/services/highlight'
+import { useDetailOpenGraphMeta } from '@/components/seo/useDetailOpenGraphMeta'
+import { plainTextExcerptFromHtml } from '@/lib/plainTextExcerpt'
 
 /** 아티클 상세 페이지 전체(GNB 제외) 가로 폭 */
 const DETAIL_MAX = 'max-w-[720px] mx-auto'
@@ -350,18 +352,23 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
     }
   }, [article?.id, article?.category])
 
-  // §6 SEO: title, description (detail.md)
-  useEffect(() => {
-    if (!article) return
-    const prevTitle = document.title
-    document.title = article.title ? `${article.title} | InDe` : 'InDe'
-    const desc = (article as { summary?: string }).summary ?? article.subtitle ?? ''
-    const metaDesc = document.querySelector('meta[name="description"]')
-    if (metaDesc && desc) metaDesc.setAttribute('content', desc)
-    return () => {
-      document.title = prevTitle
-    }
+  const articleOgDescription = useMemo(() => {
+    if (!article?.id) return ''
+    const a = article as ArticleDetail & { summary?: string }
+    const summary = typeof a.summary === 'string' ? a.summary.trim() : ''
+    if (summary) return summary
+    const st = article.subtitle?.trim()
+    if (st) return st
+    return plainTextExcerptFromHtml(article.content, 200)
   }, [article])
+
+  useDetailOpenGraphMeta({
+    active: Boolean(article?.id),
+    title: article?.title ?? '',
+    description: articleOgDescription,
+    imageUrl: article ? resolveArticleThumbnailUrl(article.thumbnail) : null,
+    ogType: 'article',
+  })
 
   const showBookmarkTooltip = useCallback((message: string) => {
     if (bookmarkTooltipTimerRef.current) clearTimeout(bookmarkTooltipTimerRef.current)
