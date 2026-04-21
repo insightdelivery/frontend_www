@@ -5,7 +5,8 @@ import { useEffect, useRef } from 'react'
 import { postSiteVisit } from '@/services/siteVisit'
 
 const VID_COOKIE = 'inde_visit_vid'
-const COOKIE_MAX_AGE_SEC = 365 * 24 * 60 * 60
+/** js-cookie는 `expires`만 일 단위로 지원(maxAge 미지원) — 약 1년 */
+const COOKIE_EXPIRES_DAYS = 365
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -25,7 +26,7 @@ function getOrCreateVisitorId(): string {
   const existing = Cookies.get(VID_COOKIE)?.trim()
   if (existing && UUID_RE.test(existing)) return existing
   const id = randomUuidV4()
-  Cookies.set(VID_COOKIE, id, { path: '/', maxAge: COOKIE_MAX_AGE_SEC, sameSite: 'lax' })
+  Cookies.set(VID_COOKIE, id, { path: '/', expires: COOKIE_EXPIRES_DAYS, sameSite: 'lax' })
   return id
 }
 
