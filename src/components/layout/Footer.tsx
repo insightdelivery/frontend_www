@@ -2,16 +2,17 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { Facebook, Instagram, Youtube, BookOpen } from 'lucide-react'
+import { Facebook, Instagram, Youtube, MessageCircle } from 'lucide-react'
 import { fetchHomepageDocPublic } from '@/services/homepageDoc'
 import { siteShellMaxWidthClass } from '@/lib/siteLayoutWidth'
 import FooterSitemapLinks from '@/components/layout/FooterSitemapLinks'
+import NewsletterModal from '@/components/newsletter/NewsletterModal'
 
 const SNS_LINKS = [
   { href: 'https://www.facebook.com/indemgz/?locale=ko_KR', label: 'Facebook', Icon: Facebook },
-  { href: 'https://www.instagram.com/inde_magazine/', label: 'Instagram', Icon: Instagram },
+  { href: 'https://www.instagram.com/inde_sight_/', label: 'Instagram', Icon: Instagram },
   { href: 'https://www.youtube.com/channel/UCqgFRdCTkW12o9IZGPXgq8A', label: 'YouTube', Icon: Youtube },
-  { href: 'https://blog.naver.com/indemgz', label: 'Blog', Icon: BookOpen },
+  { href: 'https://pf.kakao.com/_NwxgPn', label: '카카오톡 채널', Icon: MessageCircle },
 ] as const
 
 export default function Footer() {
@@ -21,6 +22,7 @@ export default function Footer() {
     recruitUrl: '',
     partnershipUrl: '',
   })
+  const [openNewsletterModal, setOpenNewsletterModal] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -50,6 +52,7 @@ export default function Footer() {
 
   return (
     <footer className="mt-8 sm:mt-10 bg-[#F8F8F8]">
+      <NewsletterModal open={openNewsletterModal} onClose={() => setOpenNewsletterModal(false)} />
       <div className={`mx-auto ${shellMax} px-4 sm:px-6 md:px-8 py-10 sm:py-16 md:py-20`}>
         {/* Top Section - Three Columns */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
@@ -70,7 +73,7 @@ export default function Footer() {
               // 실제 이미지보다 작은 경우 축소는 가능, 확대는 불가
             />
             <p className="mt-4 sm:mt-5 text-[11px] sm:text-[12px] leading-[1.6] text-gray-600 max-w-full md:max-w-[360px]">
-            InDe는 말씀과 삶을 연결하는 크리스천 인사이트 플랫폼으로, 정기적인 콘텐츠를 통해 세상의 개념과 정의를 복음으로 조명하고, 매주 듣는 말씀을 일상의 언어와 시각으로 적용할 수 있도록 돕습니다.
+            InDe는 교회에서 들은 말씀을 실제 삶으로 이어갈 수 있도록, 시의적이고도 핫한 콘텐츠로 신앙 인사이트 루틴 형성을 돕습니다.
             </p>
             <div className="flex flex-wrap gap-4 mt-5 sm:mt-6 text-[12px] font-normal text-gray-700 tracking-wide">
               {SNS_LINKS.map(({ href, label, Icon }) => (
@@ -92,7 +95,12 @@ export default function Footer() {
 
           {/* 모바일: 소개(왼쪽) | 서비스(오른쪽) 2열 — md+: 상위 4열 그리드에 직접 참여 */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-0 items-start md:contents">
-            <FooterSitemapLinks recruitHref={recruitHref} partnershipHref={partnershipHref} layout="footer" />
+            <FooterSitemapLinks
+              recruitHref={recruitHref}
+              partnershipHref={partnershipHref}
+              layout="footer"
+              onNewsletterClick={() => setOpenNewsletterModal(true)}
+            />
           </div>
         </div>
 

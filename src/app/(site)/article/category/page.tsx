@@ -42,7 +42,15 @@ function ArticleCategoryContent() {
   const [articles, setArticles] = useState<ArticleListItem[]>([])
   const [articlesLoading, setArticlesLoading] = useState(true)
   const [articlesError, setArticlesError] = useState<string | null>(null)
-  const [sortBy, setSortBy] = useState<'latest' | 'popular'>('latest')
+  const [sortBy, setSortBy] = useState<'latest' | 'popular'>(() =>
+    searchParams.get('sort') === 'popular' ? 'popular' : 'latest',
+  )
+
+  useEffect(() => {
+    const s = searchParams.get('sort')
+    if (s === 'popular') setSortBy('popular')
+    else if (s === 'latest') setSortBy('latest')
+  }, [searchParams])
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [total, setTotal] = useState(0)

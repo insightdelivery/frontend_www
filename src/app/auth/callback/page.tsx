@@ -9,6 +9,7 @@ import {
   POST_LOGIN_NEXT_SESSION_KEY,
 } from '@/lib/postLoginRedirect'
 import { useAuth } from '@/contexts/AuthContext'
+import { gaLoginMethodFromJoinedVia, gaTrackLoginSuccess } from '@/lib/analytics/gtag'
 
 const ERROR_MESSAGES: Record<string, string> = {
   OAUTH_DENIED: '소셜 로그인이 취소되었습니다.',
@@ -65,6 +66,7 @@ function AuthCallbackContent() {
           const user = await getMe()
           saveTokens(accessToken, refreshToken || '', user)
           setUser(user)
+          gaTrackLoginSuccess(gaLoginMethodFromJoinedVia(user.joined_via))
           const fromSignup = params.get('from') === 'signup'
           if (fromSignup) {
             try {

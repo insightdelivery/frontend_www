@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { ArticleCard } from './ArticleCard'
+import { ArticleCategoryPills } from './ArticleCategoryPills'
 import { articleCardBadges } from './articleBadges'
 import { EditorPickCard } from './EditorPickCard'
 import {
@@ -152,28 +153,7 @@ export function ArticleListContent() {
         )}
       </section>
 
-      <section className="mt-10 sm:mt-14">
-        <h2 className="text-[18px] sm:text-[20px] font-black text-gray-800 mb-4">
-          아티클 카테고리
-        </h2>
-        <div className="flex flex-wrap gap-2 justify-center">
-          <Link
-            href="/article/category?category=all"
-            className="inline-flex px-4 py-2.5 rounded-full text-[13px] sm:text-[14px] font-bold text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
-          >
-            전체
-          </Link>
-          {categories.map((cat) => (
-            <Link
-              key={cat.sysCodeSid}
-              href={`/article/category?category=${encodeURIComponent(cat.sysCodeSid)}`}
-              className="inline-flex px-4 py-2.5 rounded-full text-[13px] sm:text-[14px] font-bold text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
-            >
-              {cat.sysCodeName}
-            </Link>
-          ))}
-        </div>
-      </section>
+      <ArticleCategoryPills />
 
       {hotArticles.length > 0 && (
         <section className="mt-10 sm:mt-14">

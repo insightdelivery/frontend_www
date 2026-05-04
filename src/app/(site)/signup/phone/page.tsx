@@ -300,7 +300,9 @@ export default function SignupPhonePage() {
           <Image src="/inde_logo1.png" alt="InDe" width={140} height={40} className="mx-auto object-contain" priority />
           <h1 className="mt-6 text-xl font-bold text-gray-900">회원 정보 · 휴대폰 인증</h1>
           <p className="mt-2 text-sm text-gray-600">
-            {pv} 계정으로 가입을 마칩니다. 이메일·이름·닉네임을 확인한 뒤 휴대폰 인증을 완료해 주세요.
+            {pv} 계정으로 가입을 마칩니다.
+            <br />
+            이메일·이름·닉네임을 확인한 뒤 휴대폰 인증을 완료해 주세요.
           </p>
         </div>
 

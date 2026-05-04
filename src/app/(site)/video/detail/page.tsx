@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import VideoSeminarDetailContent from '@/components/content-detail/VideoSeminarDetailContent'
 import TopButton from '@/components/common/TopButton'
+import KakaoChannelAddButton from '@/components/common/KakaoChannelAddButton'
 
 function VideoDetailInner() {
   const searchParams = useSearchParams()
@@ -21,6 +22,7 @@ function VideoDetailInner() {
   return (
     <main className="min-h-screen bg-white">
       <VideoSeminarDetailContent type="video" id={id} shareExpired={shareExpired} />
+      <KakaoChannelAddButton />
       <TopButton />
     </main>
   )

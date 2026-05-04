@@ -4,9 +4,12 @@ import { useState, useEffect, useMemo, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Calendar, Eye } from 'lucide-react'
+import { WWW_RICH_BODY_INNERHTML_BASE_CLASS } from '@/constants/wwwRichBodyHtml'
 import { fetchNotices, fetchNotice } from '@/services/board'
 import type { NoticeListItem, NoticeDetail } from '@/types/board'
 import { Skeleton } from '@/components/ui/skeleton'
+import TopButton from '@/components/common/TopButton'
+import KakaoChannelAddButton from '@/components/common/KakaoChannelAddButton'
 import WwwPagination from '@/components/common/WwwPagination'
 
 const NOTICE_NAV_PAGE_SIZE = 500
@@ -184,7 +187,7 @@ function NoticeInner() {
               </header>
 
               <div
-                className="notice-detail-body max-w-none pt-8 text-[18px] font-normal leading-[32.4px] tracking-normal text-[#444444] [&_a]:text-[#444444] [&_a]:underline [&_p]:mb-4 [&_p]:text-[18px] [&_p]:leading-[32.4px] [&_p]:text-[#444444] [&_p:last-child]:mb-0 [&_ul]:my-4 [&_ul]:pl-5 [&_ol]:my-4 [&_ol]:pl-5 [&_li]:my-1 [&_img]:max-w-full [&_img]:h-auto"
+                className={`notice-detail-body pt-8 ${WWW_RICH_BODY_INNERHTML_BASE_CLASS}`}
                 dangerouslySetInnerHTML={{ __html: detail.content }}
               />
 
@@ -236,6 +239,8 @@ function NoticeInner() {
             </article>
           ) : null}
         </div>
+        <TopButton />
+        <KakaoChannelAddButton />
       </main>
     )
   }

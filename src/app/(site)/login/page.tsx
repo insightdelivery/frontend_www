@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { IconKakao, IconNaver, IconGoogle } from '@/components/login/SocialLoginIcons'
 import { cn } from '@/lib/utils'
 import { getSafePostLoginRedirect, persistPostLoginNextForOAuth } from '@/lib/postLoginRedirect'
+import { gaTrackLoginSuccess, gaTrackSocialLoginStart } from '@/lib/analytics/gtag'
 
 const loginSchema = z.object({
   email: z.string().email('올바른 이메일 형식이 아닙니다.'),
@@ -49,6 +50,7 @@ function LoginForm() {
     try {
       const response = await login(data)
       setUser(response.user)
+      gaTrackLoginSuccess('email')
 
       try {
         await loadAllSysCodesOnLogin()
@@ -67,6 +69,7 @@ function LoginForm() {
   }
 
   const handleSNSLogin = (provider: 'kakao' | 'naver' | 'google') => {
+    gaTrackSocialLoginStart(provider)
     persistPostLoginNextForOAuth(searchParams.get('next'))
     const base = getApiBaseURL().replace(/\/$/, '')
     const next = searchParams.get('next')

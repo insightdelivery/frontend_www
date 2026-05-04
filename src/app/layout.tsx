@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import GoogleAnalytics from '@/components/analytics/GoogleAnalytics'
 import SiteVisitBeacon from '@/components/SiteVisitBeacon'
 import SysCodeLoader from '@/components/SysCodeLoader'
 import { AuthProvider } from '@/contexts/AuthContext'
@@ -74,6 +75,7 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <AuthProvider>
           <SysCodeLoader />
+          <GoogleAnalytics />
           <SiteVisitBeacon />
           {children}
         </AuthProvider>

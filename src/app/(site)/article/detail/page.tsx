@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import ArticleDetailContent from '@/components/article/detail/ArticleDetailContent'
 import TopButton from '@/components/common/TopButton'
+import KakaoChannelAddButton from '@/components/common/KakaoChannelAddButton'
 
 function ArticleDetailInner() {
   const searchParams = useSearchParams()
@@ -15,6 +16,7 @@ function ArticleDetailInner() {
   return (
     <main className="bg-white min-h-screen">
       <ArticleDetailContent id={id} shareExpired={shareExpired} fromShareLink={fromShareLink} />
+      <KakaoChannelAddButton />
       <TopButton />
     </main>
   )

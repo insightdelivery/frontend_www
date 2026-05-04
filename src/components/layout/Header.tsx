@@ -13,6 +13,7 @@ import GnbSeminarLink from '@/components/layout/GnbSeminarLink'
 import HeaderSearch from '@/components/layout/HeaderSearch'
 import { siteShellMaxWidthClass } from '@/lib/siteLayoutWidth'
 import { normalizeSearchQuery } from '@/lib/searchQuery'
+import { gaTrackLoginNavClick } from '@/lib/analytics/gtag'
 import { fetchNotices } from '@/services/board'
 import type { NoticeListItem } from '@/types/board'
 
@@ -155,7 +156,14 @@ export default function Header() {
                 </>
               ) : (
                 <>
-                  <button type="button" className="transition-opacity hover:opacity-70" onClick={() => router.push(loginHref)}>
+                  <button
+                    type="button"
+                    className="transition-opacity hover:opacity-70"
+                    onClick={() => {
+                      gaTrackLoginNavClick('gnb_desktop')
+                      router.push(loginHref)
+                    }}
+                  >
                     로그인
                   </button>
                   <button type="button" className="transition-opacity hover:opacity-70" onClick={() => router.push('/register')}>
@@ -260,6 +268,7 @@ export default function Header() {
                         type="button"
                         className="block w-full text-left text-[14px] font-bold transition-opacity hover:opacity-70"
                         onClick={() => {
+                          gaTrackLoginNavClick('gnb_mobile')
                           router.push(loginHref)
                           setMobileMenuOpen(false)
                         }}

@@ -51,47 +51,103 @@ export default function HomeLatestVideos() {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="animate-pulse rounded-[8px] border border-[#e5e7eb] bg-gray-100 aspect-[16/9] min-h-[180px]"
-            />
-          ))}
-        </div>
+        <>
+          <div className="flex gap-3 overflow-x-auto pb-2 sm:hidden -mx-4 px-4 [scrollbar-width:thin]">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="w-[min(88vw,300px)] shrink-0 snap-start overflow-hidden rounded-lg ring-1 ring-black/5"
+              >
+                <div className="aspect-video animate-pulse bg-gray-200" />
+                <div className="space-y-2 bg-[#f3f4f6] p-3">
+                  <div className="h-4 w-[80%] animate-pulse rounded bg-gray-200" />
+                  <div className="h-3 w-[45%] animate-pulse rounded bg-gray-200" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden grid-cols-2 gap-6 sm:grid lg:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="animate-pulse rounded-[8px] border border-[#e5e7eb] bg-gray-100 aspect-[16/9] min-h-[180px]"
+              />
+            ))}
+          </div>
+        </>
       ) : items.length === 0 ? (
         <p className="text-sm text-[#6b7280]">공개된 비디오가 없습니다.</p>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((v, i) => (
-            <Link key={v.id} href={`/video/detail?id=${v.id}`}>
-              <div className="group">
-                <div className="relative aspect-[16/9] overflow-hidden rounded-[8px] bg-[#f3f4f6]">
+        <>
+          <div className="flex gap-3 overflow-x-auto scroll-smooth pb-2 sm:hidden -mx-4 px-4 [scrollbar-width:thin] snap-x snap-mandatory">
+            {items.map((v, i) => (
+              <Link
+                key={v.id}
+                href={`/video/detail?id=${v.id}`}
+                className="group w-[min(88vw,300px)] shrink-0 snap-start overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/[0.06]"
+              >
+                <div className="relative aspect-video overflow-hidden bg-[#f3f4f6]">
                   {v.thumbnail ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={v.thumbnail} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                    <img
+                      src={v.thumbnail}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                    />
                   ) : (
                     <div className={`absolute inset-0 ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]}`} />
                   )}
-                  <span className="absolute left-3 top-3 z-[10] rounded-[8px] bg-[#FFDF38] px-2 py-1 font-bold text-black text-[10px] max-w-[85%] truncate">
+                  <span className="absolute left-2 top-2 z-[10] max-w-[calc(100%-1rem)] truncate rounded-md bg-[#FFDF38] px-2 py-1 text-[10px] font-bold text-black">
                     {categoryLabel(v.category) || v.category?.trim() || '—'}
                   </span>
-                  <div className="absolute inset-0 z-[1] flex items-center justify-center bg-black/20">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/50 bg-white/20 backdrop-blur-[2px] text-white">
+                  <div className="absolute inset-0 z-[1] flex items-center justify-center bg-black/15">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/55 bg-white/25 text-sm text-white backdrop-blur-[2px]">
                       ▶
                     </div>
                   </div>
                 </div>
-                <p className="mt-3 line-clamp-2 text-[16px] font-medium leading-6 text-[#202020] group-hover:underline">
-                  {v.title}
-                </p>
-                {v.speaker ? (
-                  <p className="mt-1 font-normal text-[#6b7280] text-[12px] leading-[16px]">{v.speaker}</p>
-                ) : null}
-              </div>
-            </Link>
-          ))}
-        </div>
+                <div className="bg-[#f3f4f6] px-3 py-3">
+                  <p className="line-clamp-2 text-[15px] font-bold leading-snug text-[#202020] group-hover:underline">
+                    {v.title}
+                  </p>
+                  {v.speaker ? (
+                    <p className="mt-1 text-[12px] font-normal leading-4 text-[#6b7280]">{v.speaker}</p>
+                  ) : null}
+                </div>
+              </Link>
+            ))}
+          </div>
+          <div className="hidden grid-cols-2 gap-6 sm:grid lg:grid-cols-3">
+            {items.map((v, i) => (
+              <Link key={v.id} href={`/video/detail?id=${v.id}`}>
+                <div className="group">
+                  <div className="relative aspect-[16/9] overflow-hidden rounded-[8px] bg-[#f3f4f6]">
+                    {v.thumbnail ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={v.thumbnail} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                    ) : (
+                      <div className={`absolute inset-0 ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]}`} />
+                    )}
+                    <span className="absolute left-3 top-3 z-[10] rounded-[8px] bg-[#FFDF38] px-2 py-1 font-bold text-black text-[10px] max-w-[85%] truncate">
+                      {categoryLabel(v.category) || v.category?.trim() || '—'}
+                    </span>
+                    <div className="absolute inset-0 z-[1] flex items-center justify-center bg-black/20">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/50 bg-white/20 backdrop-blur-[2px] text-white">
+                        ▶
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-3 line-clamp-2 text-[16px] font-medium leading-6 text-[#202020] group-hover:underline">
+                    {v.title}
+                  </p>
+                  {v.speaker ? (
+                    <p className="mt-1 font-normal text-[#6b7280] text-[12px] leading-[16px]">{v.speaker}</p>
+                  ) : null}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </>
       )}
     </section>
   )

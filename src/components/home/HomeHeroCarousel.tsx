@@ -9,22 +9,13 @@ import { heroInternalHref } from '@/lib/heroRoutes'
 import { resolveHeroEventTypeCode } from '@/lib/heroEventType'
 import { getApiBaseURL } from '@/lib/axios'
 
-/** 히어로(메인·비디오·세미나 리스트) 배너 비율 16:9 — 컨테이너 너비에 맞춰 높이 자동 */
-const HERO_ASPECT = 'aspect-[16/9]'
-/** 모바일 히어로 타이틀: 가로 비례 clamp + 1px 축소 보정 / md↑ 46px 고정 */
-const HERO_TITLE_CLASS =
-  'text-[clamp(1.25rem,calc(3vw+0.65rem-1px),2.875rem)] md:text-[46px]'
-/** 부제 — 모바일 가변, md↑ 고정에 가깝게 */
-const HERO_SUBTITLE_SIZE = 'clamp(0.875rem, 1.35vw + 0.6rem, 1.25rem)'
-/** 배지 — 모바일은 글자·패딩을 기존(12px/px-3/py-1) 대비 약 1/2, md↑ 동일 */
-const HERO_BADGE_CLASS =
-  'inline-block rounded-full bg-[#e1f800] font-bold uppercase text-black text-[9px] leading-tight tracking-[0.15px] px-1.5 py-0.5 md:text-[12px] md:leading-normal md:tracking-[0.3px] md:px-3 md:py-1'
-/** 슬라이드가 멈춰 있는 시간(다음 장으로 넘어가기 전) */
 const SLIDE_HOLD_MS = 5000
-/** 왼쪽으로 넘어가는 트랜지션 시간 */
 const SLIDE_TRANSITION_MS = 550
 
-/** 백엔드 상대 경로(/media/…)는 브라우저가 www 오리진으로 요청하지 않도록 API 베이스를 붙임 */
+const BADGE_CLASS =
+  'inline-block rounded-md bg-[#e1f800] px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-black md:text-xs'
+
+/** 백엔드 상대 경로(/media/…)는 API 베이스를 붙임 */
 function resolveHeroImageUrl(url: string | null | undefined): string | null {
   if (!url?.trim()) return null
   const u = url.trim()
@@ -66,9 +57,6 @@ function usePrefersReducedMotion(): boolean {
   return reduced
 }
 
-/**
- * 캐러셀 뷰포트 너비 — 로딩 후 트랙이 마운트된 뒤(enabled) 측정.
- */
 function useContainerWidth<T extends HTMLElement>(enabled: boolean) {
   const ref = useRef<T | null>(null)
   const [width, setWidth] = useState(0)
@@ -91,71 +79,49 @@ function useContainerWidth<T extends HTMLElement>(enabled: boolean) {
   return { ref, width }
 }
 
-function SlideVisual({ slide }: { slide: DisplayEventHeroItem }) {
-  const title = slide.title || '제목 없음'
-  const subtitle = slide.subtitle || ''
-  const badge = slide.badgeText?.trim() || ''
-  const bg = resolveHeroImageUrl(slide.imageUrl)
-
-  return (
-    <>
-      <div
-        className="absolute inset-0 z-0 opacity-90 bg-cover bg-center"
-        style={
-          bg
-            ? { backgroundImage: `url(${bg})` }
-            : {
-                background:
-                  'linear-gradient(180deg, #374151 0%, #1f2937 50%, #111827 100%)',
-              }
-        }
-      />
-      <div
-        className="absolute inset-0 z-[1]"
-        style={{
-          background:
-            'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)',
-        }}
-      />
-      <div className="absolute inset-0 z-[2] flex flex-col justify-end p-6 sm:p-8 md:p-12 pointer-events-none text-white">
-        {badge ? (
-          <div className="pb-2 md:pb-4">
-            <span className={HERO_BADGE_CLASS}>{badge}</span>
-          </div>
-        ) : null}
-        <h1 className={`font-bold leading-[1.12] tracking-tight text-white sm:leading-[1.1] ${HERO_TITLE_CLASS}`}>
-          {title}
-        </h1>
-        {subtitle ? (
-          <p
-            className="mt-2 max-w-[672px] font-normal leading-snug text-white/80 sm:leading-[28px]"
-            style={{ fontSize: HERO_SUBTITLE_SIZE }}
-          >
-            {subtitle}
-          </p>
-        ) : null}
-      </div>
-    </>
-  )
+type SplitSlideShellProps = {
+  slide: DisplayEventHeroItem
+  cellWidth?: number
 }
 
-function HeroSlideCell({
-  slide,
-  cellWidth,
-}: {
-  slide: DisplayEventHeroItem
-  cellWidth: number
-}) {
+/** Director's Pick: 좌 이미지 + 우 연회색 텍스트 패널 (wwwMainPage §2.1 / 참고 시안) */
+function HeroSplitSlideShell({ slide, cellWidth }: SplitSlideShellProps) {
   const title = slide.title || '제목 없음'
+  const subtitle = (slide.subtitle || '').trim()
+  const badge = slide.badgeText?.trim() || ''
+  const bg = resolveHeroImageUrl(slide.imageUrl)
   const href = resolveSlideHref(slide)
-  const w = cellWidth > 0 ? cellWidth : undefined
 
-  const shell = (
+  const body = (
     <div
-      className={`relative ${HERO_ASPECT} shrink-0 overflow-hidden`}
-      style={{ width: w ?? '100%' }}
+      className="flex min-h-[220px] w-full flex-col bg-[#f2f2f2] md:min-h-[280px] md:max-h-[min(70vh,520px)] md:flex-row md:items-stretch"
+      style={cellWidth ? { width: cellWidth } : undefined}
     >
-      <SlideVisual slide={slide} />
+      <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-neutral-900 md:aspect-auto md:h-auto md:min-h-0 md:w-[58%]">
+        {bg ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={bg}
+            alt=""
+            className="h-full w-full object-cover md:absolute md:inset-0 md:min-h-full"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-600 via-gray-800 to-gray-950" />
+        )}
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col justify-between px-5 py-5 md:w-[42%] md:px-7 md:py-7">
+        <div>
+          {badge ? <span className={BADGE_CLASS}>{badge}</span> : null}
+          <h2 className="mt-3 text-[22px] font-bold leading-snug tracking-tight text-black md:mt-4 md:text-[28px] md:leading-tight">
+            {title}
+          </h2>
+          {subtitle ? (
+            <p className="mt-2 line-clamp-3 text-sm font-medium leading-relaxed text-black/80 md:mt-3 md:text-[15px]">
+              {subtitle}
+            </p>
+          ) : null}
+        </div>
+      </div>
     </div>
   )
 
@@ -164,10 +130,10 @@ function HeroSlideCell({
       <Link
         href={href.path}
         className="block shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e1f800]"
-        style={{ width: w }}
+        style={cellWidth ? { width: cellWidth } : undefined}
         aria-label={title}
       >
-        {shell}
+        {body}
       </Link>
     )
   }
@@ -178,49 +144,73 @@ function HeroSlideCell({
         target="_blank"
         rel="noopener noreferrer"
         className="block shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e1f800]"
-        style={{ width: w }}
+        style={cellWidth ? { width: cellWidth } : undefined}
         aria-label={title}
       >
-        {shell}
+        {body}
       </a>
     )
   }
-  return <div className="shrink-0">{shell}</div>
+  return (
+    <div className="block shrink-0" style={cellWidth ? { width: cellWidth } : undefined}>
+      {body}
+    </div>
+  )
+}
+
+function HeroDots({
+  slides,
+  activeIndex,
+  moduloLen,
+  onSelect,
+}: {
+  slides: DisplayEventHeroItem[]
+  activeIndex: number
+  moduloLen: number
+  onSelect: (i: number) => void
+}) {
+  const cur = activeIndex % moduloLen
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full bg-neutral-800/90 px-2.5 py-1.5 shadow-sm">
+      {slides.map((s, i) => (
+        <button
+          key={s.displayEventId}
+          type="button"
+          aria-label={`배너 ${i + 1}로 이동`}
+          aria-current={i === cur ? 'true' : undefined}
+          className={`h-1.5 w-1.5 rounded-full transition-colors ${
+            i === cur ? 'bg-white' : 'bg-white/35 hover:bg-white/60'
+          }`}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onSelect(i)
+          }}
+        />
+      ))}
+    </div>
+  )
 }
 
 function StaticHero() {
   return (
-    <section className="mb-8 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
-      <div className={`relative ${HERO_ASPECT} w-full`}>
-        <div
-          className="absolute inset-0 opacity-90"
-          style={{
-            background:
-              'linear-gradient(180deg, #374151 0%, #1f2937 50%, #111827 100%)',
-          }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)',
-          }}
-        />
-        <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8 md:p-12">
-          <div className="pb-2 md:pb-4">
-            <span className={HERO_BADGE_CLASS}>Director&apos;s Pick</span>
+    <section className="mb-8 overflow-hidden rounded-xl bg-[#f2f2f2] shadow-sm ring-1 ring-black/5">
+      <div className="flex min-h-[220px] w-full flex-col md:min-h-[300px] md:max-h-[min(70vh,520px)] md:flex-row">
+        <div className="relative aspect-video w-full shrink-0 bg-gradient-to-br from-slate-600 to-slate-900 md:aspect-auto md:h-auto md:w-[58%]">
+          <div className="absolute inset-0 flex items-end justify-start p-6 md:p-10">
+            <span className="font-serif text-3xl font-light tracking-wide text-white/90 md:text-4xl">inde</span>
           </div>
-          <h1
-            className={`font-bold leading-[1.12] tracking-tight text-white sm:leading-[1.1] ${HERO_TITLE_CLASS}`}
-          >
-            소망의 시작, 파격적이고 명료한 복음이 바꾸는 당신의 일상
-          </h1>
-          <p
-            className="mt-2 max-w-[672px] font-normal leading-snug text-white/80 sm:leading-[28px]"
-            style={{ fontSize: HERO_SUBTITLE_SIZE }}
-          >
-            디렉터 추천 콘텐츠 - 아티클, 비디오 등 디렉터가 엄선한 5개의 콘텐츠를 만나보세요.
-          </p>
+        </div>
+        <div className="flex flex-1 flex-col justify-between px-5 py-5 md:w-[42%] md:px-7 md:py-7">
+          <div>
+            <span className={BADGE_CLASS}>Director&apos;s Pick</span>
+            <h2 className="mt-3 text-[22px] font-bold leading-snug text-black md:mt-4 md:text-[28px]">
+              소망의 시작, 파격적이고 명료한 복음이 바꾸는 당신의 일상
+            </h2>
+            <p className="mt-2 line-clamp-3 text-sm font-medium text-black/80 md:mt-3 md:text-[15px]">
+              디렉터 추천 콘텐츠 — 아티클, 비디오 등 엄선된 콘텐츠를 만나보세요.
+            </p>
+          </div>
         </div>
       </div>
     </section>
@@ -228,46 +218,16 @@ function StaticHero() {
 }
 
 function ReducedMotionHero({ slides }: { slides: DisplayEventHeroItem[] }) {
-  const slide = slides[0]
-  const title = slide.title || '제목 없음'
-  const href = resolveSlideHref(slide)
-  const body = (
-    <>
-      <SlideVisual slide={slide} />
-    </>
-  )
+  const slide = slides[0]!
   return (
-    <section className="mb-8 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
-      <div className={`relative ${HERO_ASPECT} w-full`}>
-        {href?.kind === 'internal' ? (
-          <Link href={href.path} className="absolute inset-0 block" aria-label={title}>
-            {body}
-          </Link>
-        ) : href?.kind === 'external' ? (
-          <a
-            href={href.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="absolute inset-0 block"
-            aria-label={title}
-          >
-            {body}
-          </a>
-        ) : (
-          <div className="absolute inset-0">{body}</div>
-        )}
-      </div>
+    <section className="mb-8 overflow-hidden rounded-xl bg-[#f2f2f2] shadow-sm ring-1 ring-black/5">
+      <HeroSplitSlideShell slide={slide} />
     </section>
   )
 }
 
 export type HomeHeroCarouselProps = {
-  /** 지정 시 `resolveHeroEventTypeCode`를 쓰지 않고 이 코드로만 조회 (비디오 리스트 Hero 전용) */
   forcedEventTypeCode?: string
-  /**
-   * `inner`: 비디오·세미나 목록 등 — 메인과 동일한 대형 로딩 블록이면 '메인이 로딩되는 것처럼' 보이므로 컴팩트 스켈레톤
-   * `home`(기본): 메인 히어로
-   */
   variant?: 'home' | 'inner'
 }
 
@@ -318,7 +278,6 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
     void load()
   }, [load])
 
-  /** 무한 루프: [...slides, slides[0]] — 마지막에서 첫으로 “되감기” 없이 이어짐 */
   const trackSlides = slides.length > 1 ? [...slides, slides[0]!] : slides
   const cloneIndex = slides.length > 1 ? slides.length : 0
 
@@ -338,7 +297,6 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
     activeIndexRef.current = activeIndex
   }, [activeIndex])
 
-  /** 수동 이전·다음 후 자동 재생 카운트다운을 다시 잡기 위한 일시 정지 */
   const resumeAutoplayTimerRef = useRef<number | null>(null)
   const scheduleAutoplayResume = useCallback(() => {
     setAutoplayPaused(true)
@@ -408,26 +366,37 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
     })
   }
 
+  const onDotSelect = useCallback(
+    (i: number) => {
+      scheduleAutoplayResume()
+      setTransitionEnabled(true)
+      setActiveIndex(i)
+    },
+    [scheduleAutoplayResume],
+  )
+
+  const splitLoading = (
+    <div className="flex min-h-[200px] w-full animate-pulse flex-col md:min-h-[260px] md:flex-row">
+      <div className="aspect-video w-full bg-neutral-300 md:w-[58%] md:max-w-[58%]" />
+      <div className="flex flex-1 flex-col gap-3 p-5 md:w-[42%] md:p-7">
+        <div className="h-5 w-24 rounded-md bg-neutral-300" />
+        <div className="h-8 w-full max-w-md rounded-md bg-neutral-200" />
+        <div className="h-4 w-full rounded-md bg-neutral-200" />
+        <div className="h-4 w-[85%] rounded-md bg-neutral-200" />
+      </div>
+    </div>
+  )
+
   if (loading) {
     if (variant === 'inner') {
       return (
-        <section className="mb-8 sm:mb-10 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
-          <div
-            className={`relative ${HERO_ASPECT} w-full flex items-center justify-center bg-gradient-to-b from-gray-200 to-gray-300 text-gray-600 text-sm animate-pulse`}
-          >
-            상단 배너 불러오는 중…
-          </div>
+        <section className="mb-8 overflow-hidden rounded-xl bg-[#f2f2f2] sm:mb-10">
+          {splitLoading}
         </section>
       )
     }
     return (
-      <section className="mb-8 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
-        <div
-          className={`relative ${HERO_ASPECT} w-full flex items-center justify-center bg-gradient-to-b from-gray-700 to-gray-900 text-white/70 text-sm`}
-        >
-          배너 불러오는 중…
-        </div>
-      </section>
+      <section className="mb-8 overflow-hidden rounded-xl bg-[#f2f2f2] ring-1 ring-black/5">{splitLoading}</section>
     )
   }
 
@@ -437,11 +406,14 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
 
   if (slides.length === 0) {
     return (
-      <section className="mb-8 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
-        <div
-          className={`relative ${HERO_ASPECT} flex items-center justify-center rounded-[12px] bg-gray-100 px-4 text-center text-gray-500 text-sm`}
-        >
-          등록된 Hero 배너가 없습니다. (eventTypeCode: {resolvedEventTypeCode})
+      <section className="mb-8 overflow-hidden rounded-xl bg-[#f2f2f2] ring-1 ring-black/5">
+        <div className="flex min-h-[200px] flex-col md:flex-row">
+          <div className="flex aspect-video w-full items-center justify-center bg-neutral-100 md:w-[58%]">
+            <span className="px-4 text-center text-sm text-neutral-500">등록된 Hero 배너가 없습니다.</span>
+          </div>
+          <div className="flex flex-1 items-center border-t border-neutral-200/80 p-5 text-xs text-neutral-500 md:border-t-0 md:border-l md:w-[42%]">
+            eventTypeCode: {resolvedEventTypeCode}
+          </div>
         </div>
       </section>
     )
@@ -451,15 +423,17 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
     return <ReducedMotionHero slides={slides} />
   }
 
-  /** 배너 1장만 있을 때는 자동 슬라이드 없음 */
+  const chevronBtn =
+    'z-[6] flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black/45 text-white shadow-md backdrop-blur-[2px] opacity-0 pointer-events-none transition-[opacity,background-color] duration-200 group-hover:pointer-events-auto group-hover:opacity-100 hover:bg-black/60 focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e1f800] md:h-12 md:w-12'
+
   if (slides.length === 1) {
     return (
-      <section className="mb-8 overflow-hidden rounded-[12px] bg-[#f3f4f6]">
-        <div ref={containerRef} className="relative w-full overflow-hidden rounded-[12px]">
+      <section className="mb-8 overflow-hidden rounded-xl bg-[#f2f2f2] shadow-sm ring-1 ring-black/5">
+        <div ref={containerRef} className="relative w-full overflow-hidden">
           {containerW > 0 ? (
-            <HeroSlideCell slide={slides[0]!} cellWidth={containerW} />
+            <HeroSplitSlideShell slide={slides[0]!} cellWidth={containerW} />
           ) : (
-            <div className={`${HERO_ASPECT} w-full bg-gradient-to-b from-gray-700 to-gray-900`} aria-hidden />
+            <div className="min-h-[220px] w-full bg-neutral-200 md:min-h-[280px]" aria-hidden />
           )}
         </div>
       </section>
@@ -469,10 +443,10 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
   const translatePx = containerW > 0 ? activeIndex * containerW : 0
 
   return (
-    <section className="mb-8 rounded-[12px] bg-[#f3f4f6]">
+    <section className="mb-8 rounded-xl bg-[#f2f2f2] shadow-sm ring-1 ring-black/5">
       <div
         ref={containerRef}
-        className="group relative w-full overflow-hidden rounded-[12px]"
+        className="group relative w-full overflow-hidden rounded-xl"
         onMouseEnter={() => setAutoplayPaused(true)}
         onMouseLeave={() => setAutoplayPaused(false)}
       >
@@ -489,46 +463,48 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
               onTransitionEnd={handleTrackTransitionEnd}
             >
               {trackSlides.map((slide, i) => (
-                <HeroSlideCell key={`${slide.displayEventId}-${i}`} slide={slide} cellWidth={containerW} />
+                <HeroSplitSlideShell key={`${slide.displayEventId}-${i}`} slide={slide} cellWidth={containerW} />
               ))}
             </div>
             <button
               type="button"
               aria-label="이전 이벤트"
-              className="absolute left-2 top-1/2 z-[4] flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e1f800] sm:left-4 sm:h-14 sm:w-14 pointer-events-auto"
-              onClick={goToPrev}
+              className={`${chevronBtn} absolute left-2 top-1/3 -translate-y-1/2 md:left-5 md:top-1/2`}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                goToPrev()
+              }}
             >
-              <ChevronLeft className="h-9 w-9 sm:h-11 sm:w-11 shrink-0" strokeWidth={2.25} aria-hidden />
+              <ChevronLeft className="h-6 w-6 md:h-7 md:w-7" strokeWidth={2.25} aria-hidden />
             </button>
             <button
               type="button"
               aria-label="다음 이벤트"
-              className="absolute right-2 top-1/2 z-[4] flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e1f800] sm:right-4 sm:h-14 sm:w-14 pointer-events-auto"
-              onClick={goToNext}
+              className={`${chevronBtn} absolute right-2 top-1/3 -translate-y-1/2 md:right-auto md:left-[calc(58%-3.25rem)] md:top-1/2`}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                goToNext()
+              }}
             >
-              <ChevronRight className="h-9 w-9 sm:h-11 sm:w-11 shrink-0" strokeWidth={2.25} aria-hidden />
+              <ChevronRight className="h-6 w-6 md:h-7 md:w-7" strokeWidth={2.25} aria-hidden />
             </button>
-            <div className="absolute bottom-4 left-1/2 z-[3] flex -translate-x-1/2 gap-2 pointer-events-auto">
-              {slides.map((s, i) => (
-                <button
-                  key={s.displayEventId}
-                  type="button"
-                  aria-label={`배너 ${i + 1}로 이동`}
-                  aria-current={i === activeIndex % slides.length ? 'true' : undefined}
-                  className={`h-2.5 w-2.5 rounded-full transition-colors ${
-                    i === activeIndex % slides.length ? 'bg-white' : 'bg-white/40 hover:bg-white/70'
-                  }`}
-                  onClick={() => {
-                    scheduleAutoplayResume()
-                    setTransitionEnabled(true)
-                    setActiveIndex(i)
-                  }}
-                />
-              ))}
+            <div className="pointer-events-none absolute inset-0 flex items-end justify-end pb-4 pr-4 md:pb-6 md:pr-8">
+              <div className="pointer-events-auto w-[min(100%,42%)] max-w-[320px]">
+                <div className="flex justify-end">
+                  <HeroDots
+                    slides={slides}
+                    activeIndex={activeIndex}
+                    moduloLen={slides.length}
+                    onSelect={onDotSelect}
+                  />
+                </div>
+              </div>
             </div>
           </>
         ) : (
-          <div className={`${HERO_ASPECT} w-full bg-gradient-to-b from-gray-700 to-gray-900`} aria-hidden />
+          <div className="min-h-[220px] w-full bg-neutral-200 md:min-h-[280px]" aria-hidden />
         )}
       </div>
     </section>

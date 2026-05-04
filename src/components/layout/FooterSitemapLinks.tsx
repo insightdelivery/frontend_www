@@ -10,6 +10,8 @@ type Props = {
   layout?: FooterSitemapLinksLayout
   /** GNB 등 — 링크 클릭 후 드로어 닫기 */
   onNavigate?: () => void
+  /** 있으면 「뉴스레터 신청」을 1:1 문의 아래에 표시 (newsLetterModelPlan.md §1-1) */
+  onNewsletterClick?: () => void
 }
 
 /**
@@ -22,6 +24,7 @@ export default function FooterSitemapLinks({
   partnershipHref,
   layout = 'footer',
   onNavigate,
+  onNewsletterClick,
 }: Props) {
   const col =
     layout === 'footer' ? 'min-w-0 md:col-span-1' : 'min-w-0'
@@ -102,6 +105,20 @@ export default function FooterSitemapLinks({
               1:1 문의
             </Link>
           </li>
+          {onNewsletterClick ? (
+            <li>
+              <button
+                type="button"
+                className={`${linkClass} w-full text-left bg-transparent border-0 p-0 cursor-pointer font-inherit`}
+                onClick={() => {
+                  onNewsletterClick()
+                  onNavigate?.()
+                }}
+              >
+                뉴스레터 신청
+              </button>
+            </li>
+          ) : null}
           <li>
             <Link href="/terms" className={linkClass} onClick={onNavigate}>
               이용약관

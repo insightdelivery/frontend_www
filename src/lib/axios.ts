@@ -8,11 +8,13 @@ import {
 } from '@/lib/accessTokenMemory'
 import { normalizeSitePathname } from '@/lib/postLoginRedirect'
 
-// 로컬 개발 시 기본값: localhost:8001 (공개 API), 프로덕션: api.inde.kr
+// 개발: NEXT_PUBLIC_API_URL 비우면 동일 출처 + next.config.js rewrites → 8001 (CORS 회피)
+// 프로덕션·정적 호스트: api.inde.kr 또는 env 절대 URL
 export const getApiBaseURL = (): string => {
-  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL
+  const fromEnv = (process.env.NEXT_PUBLIC_API_URL || '').trim().replace(/\/$/, '')
+  if (fromEnv) return fromEnv
   if (typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
-    return 'http://localhost:8001'
+    return ''
   }
   return 'https://api.inde.kr'
 }
@@ -49,9 +51,10 @@ const resolveRequestPath = (config: InternalAxiosRequestConfig): string => {
 const isPublicBoard = (url?: string) => {
   const path = pathOnly(url)
   return (
-    /^\/api\/(notices|faqs|articles|content|events|videos|search|homepage-docs|library|comments)(\/|$)/.test(path) ||
+    /^\/api\/(notices|faqs|articles|content|events|videos|search|homepage-docs|library|comments|curation)(\/|$)/.test(path) ||
     /** public_api SiteVisitRecordView — AllowAny, OAuth 콜백 직전 토큰 없을 때 ensureToken 금지 */
-    /^\/api\/site-visits\/?$/i.test(path)
+    /^\/api\/site-visits\/?$/i.test(path) ||
+    /^\/api\/newsletter\//.test(path)
   )
 }
 

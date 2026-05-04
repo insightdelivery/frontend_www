@@ -2,7 +2,10 @@
 
 import HomeHeroCarousel from '@/components/home/HomeHeroCarousel'
 import HomeLatestArticles from '@/components/home/HomeLatestArticles'
+import HomeCuration from '@/components/home/HomeCuration'
 import HomeLatestVideos from '@/components/home/HomeLatestVideos'
+import HomePopularArticles from '@/components/home/HomePopularArticles'
+import { ArticleCategoryPills } from '@/components/article/ArticleCategoryPills'
 import { SeminarHomeProvider } from '@/components/home/SeminarHomeContext'
 import HomeSeminarReplay from '@/components/home/HomeSeminarReplay'
 import HomeUpcomingSeminars from '@/components/home/HomeUpcomingSeminars'
@@ -10,7 +13,7 @@ import { useSeminarWwwEnabled } from '@/hooks/useSeminarWwwEnabled'
 
 /**
  * 메인 페이지 (`_docsRules/frontend_www/main.md`)
- * - 히어로 → 다가오는 세미나(가로 단일 카드) → 최신 아티클 → 최신 비디오 → 세미나 다시보기
+ * - 히어로 → 다가오는 세미나 → 최신 아티클 → 특집 → 아티클 카테고리 → 최신 비디오 → 인기 아티클 → 세미나 다시보기
  * - `SYS26416B001` sysCodeValue `N`이면 다가오는 세미나·세미나 다시보기 미표시
  */
 export default function Home() {
@@ -27,8 +30,13 @@ export default function Home() {
 
             <HomeLatestArticles />
 
+            <HomeCuration />
+
+            <ArticleCategoryPills />
+
             <div className="pb-12">
               <HomeLatestVideos />
+              <HomePopularArticles />
               <HomeSeminarReplay />
             </div>
           </SeminarHomeProvider>
@@ -36,8 +44,13 @@ export default function Home() {
           <>
             <HomeLatestArticles />
 
+            <HomeCuration />
+
+            <ArticleCategoryPills />
+
             <div className="pb-12">
               <HomeLatestVideos />
+              <HomePopularArticles />
             </div>
           </>
         )}
