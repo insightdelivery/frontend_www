@@ -26,6 +26,7 @@ import type { ArticleDetail, ArticleListItem } from '@/types/article'
 import { getSysCodeName, getSysCodeFromCache } from '@/lib/syscode'
 import { formatArticleTagLabel } from '@/lib/articleTags'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
+import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
 import { fetchWeeklyCrossRanking, resolveWeeklyCrossCards, type WeeklyCrossCardData } from '@/services/weeklyCrossRanking'
 import { useLoginHref } from '@/hooks/useLoginHref'
 import {
@@ -147,12 +148,16 @@ function DetailBottomWeeklyCard({ item }: { item: WeeklyCrossCardData }) {
     <Link href={item.href} className="block group">
       <div
         className={`aspect-[3/2] rounded-xl overflow-hidden mb-4 relative ${
-          thumbSrc ? 'bg-slate-100 border border-slate-100' : grad
+          thumbSrc ? 'bg-slate-100 border border-slate-100' : `${grad} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`
         }`}
       >
         {thumbSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumbSrc} alt="" className="h-full w-full object-cover" />
+          <img
+            src={thumbSrc}
+            alt=""
+            className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+          />
         ) : null}
       </div>
       <p className={`text-[16px] font-medium leading-6 text-[#202020] group-hover:underline line-clamp-2`}>
@@ -173,12 +178,16 @@ function DetailBottomArticleCard({ item, index }: { item: ArticleListItem; index
     <Link href={detailUrl(String(item.id))} className="block group">
       <div
         className={`aspect-[3/2] rounded-xl overflow-hidden mb-4 relative ${
-          thumbSrc ? 'bg-slate-100 border border-slate-100' : grad
+          thumbSrc ? 'bg-slate-100 border border-slate-100' : `${grad} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`
         }`}
       >
         {thumbSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumbSrc} alt="" className="h-full w-full object-cover" />
+          <img
+            src={thumbSrc}
+            alt=""
+            className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+          />
         ) : null}
       </div>
       <p className={`text-[16px] font-medium leading-6 text-[#202020] group-hover:underline line-clamp-2`}>
@@ -646,7 +655,7 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
                 ) : null}
               </div>
               <p className={`text-[14px] leading-5 ${COLORS.textSecondary} mt-0.5`}>
-                {formatDate(article.createdAt)}
+                {formatDate(article.publishedAt ?? article.createdAt)}
               </p>
             </div>
           </div>

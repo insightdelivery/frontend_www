@@ -3,6 +3,12 @@ import { getContentNewBadgeMaxDaysFromCache } from '@/lib/syscode'
 
 export type ArticleCardBadge = 'NEW' | 'BEST'
 
+/**
+ * 콘텐츠 카드 썸네일 호버 줌 — 부모 링크/카드에 `group`, 썸네일 래퍼에 `overflow-hidden` 필요.
+ */
+export const CONTENT_CARD_HOVER_ZOOM_CLASS =
+  'transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.06]'
+
 /** list.md §7 — ArticleCard와 동일 */
 export const CONTENT_CARD_BADGE_STYLES: Record<ArticleCardBadge, string> = {
   NEW: 'bg-[#fde048] text-black',

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
+import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
 
 export interface EditorPickCardProps {
   id: string
@@ -32,17 +33,19 @@ export function EditorPickCard({
       href={`/article/detail?id=${encodeURIComponent(id)}`}
       className="flex gap-3 sm:gap-4 p-4 rounded-xl border border-gray-200 bg-gray-50/50 shadow-sm group hover:border-gray-300 hover:bg-gray-50 transition-colors min-w-0"
     >
-      {thumbSrc ? (
-        <img
-          src={thumbSrc}
-          alt=""
-          className={`w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 object-cover ${shapeClass}`}
-        />
-      ) : (
-        <div
-          className={`w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 overflow-hidden ${gradient} ${shapeClass}`}
-        />
-      )}
+      <div
+        className={`relative h-14 w-14 shrink-0 overflow-hidden sm:h-16 sm:w-16 ${shapeClass}`}
+      >
+        {thumbSrc ? (
+          <img
+            src={thumbSrc}
+            alt=""
+            className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+          />
+        ) : (
+          <div className={`h-full w-full ${gradient} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`} />
+        )}
+      </div>
       <div className="min-w-0 flex-1 flex flex-col justify-center">
         <p className="text-[14px] sm:text-[15px] font-extrabold leading-snug line-clamp-2 group-hover:text-gray-600 transition-colors">
           {title}

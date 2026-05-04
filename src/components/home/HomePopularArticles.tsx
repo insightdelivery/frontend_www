@@ -6,6 +6,7 @@ import { Bookmark } from 'lucide-react'
 import { fetchArticleList } from '@/services/article'
 import type { ArticleListItem } from '@/types/article'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
+import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
 
 const PLACEHOLDER_GRADIENTS = [
   'bg-gradient-to-br from-stone-400 via-stone-500 to-stone-700',
@@ -78,15 +79,15 @@ export default function HomePopularArticles() {
                     <img
                       src={thumbSrc}
                       alt=""
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                      className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
                     />
                   ) : (
                     <div
-                      className={`h-full w-full ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]}`}
+                      className={`h-full w-full ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
                     />
                   )}
                   <span
-                    className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-md bg-white/90 text-neutral-700 shadow-sm ring-1 ring-black/5"
+                    className="absolute left-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-md bg-white/90 text-neutral-700 shadow-sm ring-1 ring-black/5"
                     aria-hidden
                   >
                     <Bookmark className="h-3.5 w-3.5" strokeWidth={2} />

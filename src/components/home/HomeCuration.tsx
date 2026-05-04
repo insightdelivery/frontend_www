@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, FileText, Presentation, Video } from 'lucide-react'
 import { fetchCurationHomeList, type CurationHomeItem } from '@/services/curation'
+import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
 
 const PLACEHOLDER_GRADIENTS = [
   'bg-gradient-to-br from-stone-400 via-stone-500 to-stone-700',
@@ -39,20 +40,20 @@ function CurationCard({ item, toneIdx }: { item: CurationHomeItem; toneIdx: numb
           <img
             src={thumb}
             alt=""
-            className="aspect-video w-full object-cover transition-all duration-300 group-hover:scale-105"
+            className={`aspect-video w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
           />
         ) : (
           <div
-            className={`aspect-video w-full ${PLACEHOLDER_GRADIENTS[toneIdx % PLACEHOLDER_GRADIENTS.length]}`}
+            className={`aspect-video w-full ${PLACEHOLDER_GRADIENTS[toneIdx % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
           />
         )}
         {(item.categoryName || '').trim() ? (
-          <span className="absolute left-2 top-2 rounded-md bg-orange-400 px-2 py-1 text-xs text-white">
+          <span className="absolute left-2 top-2 z-10 rounded-md bg-orange-400 px-2 py-1 text-xs text-white">
             {item.categoryName}
           </span>
         ) : null}
         <span
-          className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm"
+          className="absolute bottom-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm"
           title={item.contentType}
         >
           <TypeIcon type={item.contentType} />

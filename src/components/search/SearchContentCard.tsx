@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import type { SearchContentItem, SearchContentKind } from '@/types/search'
 import { resolveSearchCategoryLabel } from '@/components/search/resolveSearchCategoryLabel'
+import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
 
 const THUMB_PLACEHOLDER =
   'data:image/svg+xml,' +
@@ -52,17 +53,19 @@ export default function SearchContentCard({ item, kind }: Props) {
   return (
     <Link
       href={detailHref(kind, item.id)}
-      className="flex gap-4 rounded-lg border border-gray-100 p-3 transition-colors hover:bg-gray-50"
+      className="group flex gap-4 rounded-lg border border-gray-100 p-3 transition-colors hover:bg-gray-50"
     >
-      <img
-        src={item.thumbnail || THUMB_PLACEHOLDER}
-        alt=""
-        className="h-[80px] w-[120px] shrink-0 rounded bg-gray-100 object-cover"
-        onError={(e) => {
-          e.currentTarget.onerror = null
-          e.currentTarget.src = THUMB_PLACEHOLDER
-        }}
-      />
+      <div className="relative h-[80px] w-[120px] shrink-0 overflow-hidden rounded bg-gray-100">
+        <img
+          src={item.thumbnail || THUMB_PLACEHOLDER}
+          alt=""
+          className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+          onError={(e) => {
+            e.currentTarget.onerror = null
+            e.currentTarget.src = THUMB_PLACEHOLDER
+          }}
+        />
+      </div>
       <div className="flex min-w-0 flex-col">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm text-gray-500">{categoryLabel || '—'}</span>

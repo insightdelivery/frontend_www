@@ -36,6 +36,7 @@ import { sanitizeHomepageHtml } from '@/lib/sanitizeHomepageHtml'
 import { formatArticleTagLabel, normalizeArticleTags } from '@/lib/articleTags'
 import { plainTextExcerptFromHtml } from '@/lib/plainTextExcerpt'
 import { useDetailOpenGraphMeta } from '@/components/seo/useDetailOpenGraphMeta'
+import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
 
 /** 아티클 상세(`ArticleDetailContent`)와 동일 콘텐츠 폭 */
 const CONTAINER = 'max-w-[720px] mx-auto'
@@ -427,7 +428,7 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
   const listLabel = getListLabel(type)
   const listUrl = getListUrl(type)
   const speakerDisplay = getVideoSpeakerDisplayFields(detail)
-  const metaDateLine = formatDetailMetaDate(detail.createdAt)
+  const metaDateLine = formatDetailMetaDate(detail.publishedAt ?? detail.createdAt)
   const subtitleText = (detail.subtitle ?? '').trim()
   const displayTags = normalizeArticleTags(detail.tags)
     .map((t) => formatArticleTagLabel(t))
@@ -703,9 +704,15 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
                   <div className="relative mb-4 aspect-[16/9] overflow-hidden rounded-xl border border-slate-100 bg-[#f3f4f6]">
                     {thumb ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={thumb} alt="" className="h-full w-full object-cover" />
+                      <img
+                        src={thumb}
+                        alt=""
+                        className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+                      />
                     ) : (
-                      <div className={`h-full w-full ${RELATED_PLACEHOLDERS[i % RELATED_PLACEHOLDERS.length]}`} />
+                      <div
+                        className={`h-full w-full ${RELATED_PLACEHOLDERS[i % RELATED_PLACEHOLDERS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+                      />
                     )}
                   </div>
                   <p className="line-clamp-2 text-[16px] font-medium leading-6 text-[#202020] group-hover:underline">

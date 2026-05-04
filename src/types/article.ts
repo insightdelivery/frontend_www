@@ -9,6 +9,8 @@ export interface ArticleListItem {
   author: string
   /** ContentAuthor 프로필(presigned). 목록 API가 내려줄 때만 */
   authorProfileImage?: string | null
+  /** 연결 ContentAuthor 에디터 소개(있을 때만) */
+  authorEditorIntro?: string | null
   authorAffiliation: string | null
   isEditorPick: number | boolean
   viewCount: number
@@ -16,6 +18,8 @@ export interface ArticleListItem {
   highlightCount: number
   /** API는 콤마 구분 문자열 또는 문자열 배열 가능 — `fetchArticleList`에서 `string[]`로 정규화 */
   tags: string[]
+  /** 즉시 공개 시점 또는 예약 시각 기준 발행일 */
+  publishedAt?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -42,6 +46,8 @@ export interface ArticleDetail {
   author_id?: number | null
   /** 연결 ContentAuthor 프로필(presigned URL). 없으면 null → www는 `/editorDefault.png` */
   authorProfileImage?: string | null
+  /** 연결 ContentAuthor 에디터 소개(있을 때만) */
+  authorEditorIntro?: string | null
   authorAffiliation: string | null
   isEditorPick: boolean
   viewCount: number
@@ -51,6 +57,8 @@ export interface ArticleDetail {
   questionCount: number
   /** API는 콤마 구분 문자열 또는 문자열 배열 가능 — `fetchArticleDetail`에서 `string[]`로 정규화 */
   tags: string[]
+  /** 즉시 공개 시점 또는 예약 시각 기준 발행일 */
+  publishedAt?: string | null
   createdAt: string
   updatedAt: string
   /** 비회원일 때 본문이 previewLength(%)로 잘렸으면 true — API에서만 설정 */

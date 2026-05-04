@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
 import {
   CONTENT_CARD_BADGE_STYLES,
+  CONTENT_CARD_HOVER_ZOOM_CLASS,
   normalizeContentCardBadges,
   type ArticleCardBadge,
 } from '@/components/article/articleBadges'
@@ -51,17 +52,19 @@ export function ArticleCard({
   return (
     <Link href={`/article/detail?id=${encodeURIComponent(id)}`} className="block group">
       <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        {thumbSrc ? (
-          <img
-            src={thumbSrc}
-            alt=""
-            className="aspect-[3/2] w-full object-cover"
-          />
-        ) : (
-          <div className={`aspect-[3/2] ${gradient}`} />
-        )}
+        <div className="relative aspect-[3/2] w-full overflow-hidden">
+          {thumbSrc ? (
+            <img
+              src={thumbSrc}
+              alt=""
+              className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+            />
+          ) : (
+            <div className={`h-full w-full ${gradient} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`} />
+          )}
+        </div>
         {badgeList.length > 0 ? (
-          <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+          <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
             {badgeList.map((b) => (
               <span
                 key={b}

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { useSeminarHome } from '@/components/home/SeminarHomeContext'
 import type { PublicVideoListItem } from '@/types/video'
+import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
 
 const PLACEHOLDER =
   'bg-gradient-to-br from-violet-200 via-violet-400 to-violet-800'
@@ -60,9 +61,15 @@ function UpcomingSeminarCard({ item }: { item: PublicVideoListItem }) {
       <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden rounded-[8px] bg-[#f3f4f6] sm:h-[104px] sm:w-[calc(104px*16/9)] sm:aspect-auto">
         {item.thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.thumbnail} alt="" className="h-full w-full object-cover" />
+          <img
+            src={item.thumbnail}
+            alt=""
+            className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+          />
         ) : (
-          <div className={`h-full min-h-[120px] w-full sm:min-h-0 ${PLACEHOLDER}`} />
+          <div
+            className={`h-full min-h-[120px] w-full sm:min-h-0 ${PLACEHOLDER} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+          />
         )}
       </div>
 

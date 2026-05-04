@@ -12,6 +12,7 @@ export interface PublicVideoListItem {
   speakerAffiliation: string | null
   speakerProfileImage?: string | null
   viewCount: number
+  publishedAt?: string | null
   createdAt: string
   updatedAt: string
   isNewBadge?: boolean
@@ -56,6 +57,7 @@ export interface PublicVideoDetail {
   viewCount?: number
   rating?: number | null
   commentCount?: number
+  publishedAt?: string | null
   createdAt?: string
   category?: string
   videoStreamInfo?: {

@@ -18,6 +18,7 @@ import {
   contentCardBadges,
   sharedTopIdsFromRankingList,
   CONTENT_CARD_BADGE_STYLES,
+  CONTENT_CARD_HOVER_ZOOM_CLASS,
   normalizeContentCardBadges,
 } from '@/components/article/articleBadges'
 import { fetchArticleRankingShare } from '@/services/libraryRanking'
@@ -247,13 +248,19 @@ export default function PublicVideoSeminarListPage({
                       <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-gray-200 bg-[#f3f4f6] shadow-sm">
                         {thumb ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={thumb} alt="" className="h-full w-full object-cover" />
+                          <img
+                            src={thumb}
+                            alt=""
+                            className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+                          />
                         ) : (
-                          <div className={`h-full w-full ${PLACEHOLDER_GRADIENTS[idx % PLACEHOLDER_GRADIENTS.length]}`} />
+                          <div
+                            className={`h-full w-full ${PLACEHOLDER_GRADIENTS[idx % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+                          />
                         )}
                       </div>
                       {badges.length > 0 ? (
-                        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+                        <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
                           {badges.map((b) => (
                             <span
                               key={b}
@@ -267,7 +274,7 @@ export default function PublicVideoSeminarListPage({
                         </div>
                       ) : null}
                       {durStr ? (
-                        <span className="absolute bottom-3 right-3 rounded bg-black/70 px-2 py-0.5 text-[11px] text-white">
+                        <span className="absolute bottom-3 right-3 z-10 rounded bg-black/70 px-2 py-0.5 text-[11px] text-white">
                           {durStr}
                         </span>
                       ) : null}

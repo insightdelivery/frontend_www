@@ -29,6 +29,24 @@ export async function fetchArticleDetail(id: number | string): Promise<ArticleDe
   }
 }
 
+/** 공개 저자 프로필 (에디터 페이지 등, 글 0건일 때 소개 조회용) */
+export interface PublicContentAuthorProfile {
+  author_id: number
+  name: string
+  authorAffiliation: string
+  authorProfileImage: string | null
+  authorEditorIntro: string | null
+}
+
+export async function fetchPublicContentAuthorProfile(
+  authorId: number
+): Promise<PublicContentAuthorProfile> {
+  const { data } = await api.get('/api/content-author/profile', {
+    params: { author_id: authorId },
+  })
+  return unwrapResult<PublicContentAuthorProfile>(data)
+}
+
 export interface FetchArticleListParams {
   page?: number
   pageSize?: number
@@ -71,6 +89,8 @@ export function articleDetailToListItem(d: ArticleDetail): ArticleListItem {
     thumbnail: d.thumbnail,
     category: d.category,
     author: d.author,
+    authorProfileImage: d.authorProfileImage,
+    authorEditorIntro: d.authorEditorIntro,
     authorAffiliation: d.authorAffiliation,
     isEditorPick: d.isEditorPick ? 1 : 0,
     viewCount: d.viewCount,

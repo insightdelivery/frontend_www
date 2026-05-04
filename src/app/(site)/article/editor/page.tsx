@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { getSysCode, getSysCodeName, ARTICLE_CATEGORY_PARENT } from '@/lib/syscode'
 import type { SysCodeItem } from '@/lib/syscode'
-import { fetchArticleList } from '@/services/article'
+import { fetchArticleList, fetchPublicContentAuthorProfile } from '@/services/article'
 import { fetchArticleRankingShare } from '@/services/libraryRanking'
 import type { ArticleListItem } from '@/types/article'
 import { ArticleCard } from '@/components/article/ArticleCard'
@@ -43,6 +43,7 @@ function ArticleEditorContent() {
   const [currentPage, setCurrentPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [sharedTopIds, setSharedTopIds] = useState<Set<string>>(() => new Set())
+  const [profileIntro, setProfileIntro] = useState<string | null>(null)
   const pageSize = 12
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
@@ -101,6 +102,28 @@ function ArticleEditorContent() {
     setCurrentPage(1)
   }, [authorId])
 
+  useEffect(() => {
+    if (!idValid || authorId == null) return
+    let cancelled = false
+    if (articlesLoading) return
+    if (articles.length > 0) {
+      setProfileIntro(null)
+      return
+    }
+    void fetchPublicContentAuthorProfile(authorId)
+      .then((p) => {
+        if (cancelled) return
+        const t = (p.authorEditorIntro ?? '').trim()
+        setProfileIntro(t || null)
+      })
+      .catch(() => {
+        if (!cancelled) setProfileIntro(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [idValid, authorId, articlesLoading, articles.length])
+
   const metaArticle = articles.length > 0 ? articles[0] : null
   const headingName =
     metaArticle?.author?.trim()
@@ -111,6 +134,8 @@ function ArticleEditorContent() {
   const headingAffiliation = metaArticle?.authorAffiliation?.trim() || ''
   const headingAvatarSrc =
     (metaArticle?.authorProfileImage && metaArticle.authorProfileImage.trim()) || '/editorDefault.png'
+  const editorIntro = (metaArticle?.authorEditorIntro ?? '').trim()
+  const introText = editorIntro || (profileIntro ?? '').trim()
 
   if (!idValid) {
     return (
@@ -163,6 +188,11 @@ function ArticleEditorContent() {
               )}
             </div>
           </div>
+          {introText ? (
+            <p className="mt-4 max-w-2xl whitespace-pre-wrap text-[14px] sm:text-[15px] leading-relaxed text-gray-700">
+              {introText}
+            </p>
+          ) : null}
           <div className="mt-5 border-b border-[#e2e8f0]" aria-hidden />
         </div>
 

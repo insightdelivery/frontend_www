@@ -7,6 +7,7 @@ import type { ArticleListItem } from '@/types/article'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
 import { getSysCode, getSysCodeName, ARTICLE_CATEGORY_PARENT } from '@/lib/syscode'
 import type { SysCodeItem } from '@/lib/syscode'
+import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
 
 const PLACEHOLDER_GRADIENTS = [
   'bg-gradient-to-br from-stone-400 via-stone-500 to-stone-700',
@@ -87,11 +88,17 @@ export default function HomeLatestArticles() {
                   <div className="relative h-[76px] w-[104px] shrink-0 overflow-hidden rounded-lg bg-[#f3f4f6]">
                     {thumbSrc ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={thumbSrc} alt="" className="h-full w-full object-cover" />
+                      <img
+                        src={thumbSrc}
+                        alt=""
+                        className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+                      />
                     ) : (
-                      <div className={`h-full w-full ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]}`} />
+                      <div
+                        className={`h-full w-full ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+                      />
                     )}
-                    <span className="absolute left-2 top-2 max-w-[calc(100%-0.5rem)] truncate rounded-md bg-[#FF9F8A] px-1.5 py-0.5 text-[9px] font-bold text-black">
+                    <span className="absolute left-2 top-2 z-10 max-w-[calc(100%-0.5rem)] truncate rounded-md bg-[#FF9F8A] px-1.5 py-0.5 text-[9px] font-bold text-black">
                       {catName}
                     </span>
                   </div>
@@ -113,20 +120,22 @@ export default function HomeLatestArticles() {
             {items.map((a, i) => {
               const thumbSrc = resolveArticleThumbnailUrl(a.thumbnail)
               return (
-                <Link key={a.id} href={`/article/detail?id=${a.id}`}>
-                  <div className="group">
+                <Link key={a.id} href={`/article/detail?id=${a.id}`} className="group block">
+                  <div>
                     <div className="relative overflow-hidden rounded-[8px] bg-[#f3f4f6]">
                       {thumbSrc ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={thumbSrc}
                           alt=""
-                          className="aspect-[3/2] w-full object-cover"
+                          className={`aspect-[3/2] w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
                         />
                       ) : (
-                        <div className={`aspect-[3/2] ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]}`} />
+                        <div
+                          className={`aspect-[3/2] w-full ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+                        />
                       )}
-                      <span className="absolute left-3 top-3 rounded-[8px] bg-[#FF9F8A] px-2 py-1 font-bold text-black text-[10px]">
+                      <span className="absolute left-3 top-3 z-10 rounded-[8px] bg-[#FF9F8A] px-2 py-1 font-bold text-black text-[10px]">
                         {getSysCodeName(categories, a.category)}
                       </span>
                     </div>

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useSeminarHome } from '@/components/home/SeminarHomeContext'
 import { useSysCodeCategoryLabel } from '@/hooks/useSysCodeCategoryLabel'
 import { SEMINAR_CATEGORY_PARENT } from '@/lib/syscode'
+import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
 
 /** `HomeLatestVideos`와 동일 — 재생 오버레이·카테고리 뱃지·16:9 */
 const PLACEHOLDER_GRADIENTS = [
@@ -41,16 +42,22 @@ export default function HomeSeminarReplay() {
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {replay.map((v, i) => (
-            <Link key={v.id} href={`/seminar/detail?id=${v.id}`}>
-              <div className="group">
+            <Link key={v.id} href={`/seminar/detail?id=${v.id}`} className="group block">
+              <div>
                 <div className="relative aspect-[16/9] overflow-hidden rounded-[8px] bg-[#f3f4f6]">
                   {v.thumbnail ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={v.thumbnail} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                    <img
+                      src={v.thumbnail}
+                      alt=""
+                      className={`absolute inset-0 h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+                    />
                   ) : (
-                    <div className={`absolute inset-0 ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]}`} />
+                    <div
+                      className={`absolute inset-0 ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+                    />
                   )}
-                  <span className="absolute left-3 top-3 z-[10] rounded-[8px] bg-[#EA90FF] px-2 py-1 font-bold text-black text-[10px] max-w-[85%] truncate">
+                  <span className="absolute left-3 top-3 z-[10] max-w-[85%] truncate rounded-[8px] bg-[#EA90FF] px-2 py-1 text-[10px] font-bold text-black">
                     {categoryLabel(v.category) || v.category?.trim() || '세미나'}
                   </span>
                   <div className="absolute inset-0 z-[1] flex items-center justify-center bg-black/20">
@@ -63,7 +70,7 @@ export default function HomeSeminarReplay() {
                   {v.title}
                 </p>
                 {v.speaker ? (
-                  <p className="mt-1 font-normal text-[#6b7280] text-[12px] leading-[16px]">{v.speaker}</p>
+                  <p className="mt-1 text-[12px] font-normal leading-[16px] text-[#6b7280]">{v.speaker}</p>
                 ) : null}
               </div>
             </Link>
