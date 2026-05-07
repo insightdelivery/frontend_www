@@ -71,8 +71,14 @@ export default function HomeLatestVideos() {
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="animate-pulse rounded-[8px] border border-[#e5e7eb] bg-gray-100 aspect-[16/9] min-h-[180px]"
-              />
+                className="flex h-full min-h-0 flex-col overflow-hidden rounded-[8px] border border-[#e5e7eb] ring-1 ring-black/[0.06]"
+              >
+                <div className="aspect-[16/9] shrink-0 animate-pulse bg-gray-200" />
+                <div className="flex min-h-0 flex-1 flex-col space-y-2 bg-[#f3f4f6] p-3">
+                  <div className="h-4 w-[80%] animate-pulse rounded bg-gray-200" />
+                  <div className="h-3 w-[55%] animate-pulse rounded bg-gray-200" />
+                </div>
+              </div>
             ))}
           </div>
         </>
@@ -114,7 +120,7 @@ export default function HomeLatestVideos() {
                     {v.title}
                   </p>
                   {v.speaker ? (
-                    <p className="mt-1 text-[12px] font-normal leading-4 text-[#6b7280]">{v.speaker}</p>
+                    <p className="mt-1.5 text-[12px] font-normal leading-6 text-[#6b7280]">{v.speaker}</p>
                   ) : null}
                 </div>
               </Link>
@@ -125,35 +131,39 @@ export default function HomeLatestVideos() {
               const sub = (v.subtitle || '').trim()
               const secondLine = sub || (v.speaker || '').trim()
               return (
-                <Link key={v.id} href={`/video/detail?id=${v.id}`} className="group block">
-                  <div>
-                    <div className="relative aspect-[16/9] overflow-hidden rounded-[8px] bg-[#f3f4f6]">
-                      {v.thumbnail ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={v.thumbnail}
-                          alt=""
-                          className={`absolute inset-0 h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-                        />
-                      ) : (
-                        <div
-                          className={`absolute inset-0 ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-                        />
-                      )}
-                      <span className="absolute left-3 top-3 z-[10] rounded-[8px] bg-[#FFDF38] px-2 py-1 text-[10px] font-bold text-black max-w-[85%] truncate">
-                        {categoryLabel(v.category) || v.category?.trim() || '—'}
-                      </span>
-                      <div className="absolute inset-0 z-[1] flex items-center justify-center bg-black/20">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/50 bg-white/20 backdrop-blur-[2px] text-white">
-                          ▶
-                        </div>
+                <Link
+                  key={v.id}
+                  href={`/video/detail?id=${v.id}`}
+                  className="group flex h-full min-h-0 flex-col overflow-hidden rounded-[8px] bg-white shadow-sm ring-1 ring-black/[0.06]"
+                >
+                  <div className="relative aspect-[16/9] shrink-0 overflow-hidden bg-[#f3f4f6]">
+                    {v.thumbnail ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={v.thumbnail}
+                        alt=""
+                        className={`absolute inset-0 h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+                      />
+                    ) : (
+                      <div
+                        className={`absolute inset-0 ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+                      />
+                    )}
+                    <span className="absolute left-3 top-3 z-[10] rounded-[8px] bg-[#FFDF38] px-2 py-1 text-[10px] font-bold text-black max-w-[85%] truncate">
+                      {categoryLabel(v.category) || v.category?.trim() || '—'}
+                    </span>
+                    <div className="absolute inset-0 z-[1] flex items-center justify-center bg-black/20">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/50 bg-white/20 backdrop-blur-[2px] text-white">
+                        ▶
                       </div>
                     </div>
-                    <p className="mt-3 line-clamp-2 text-[16px] font-medium leading-6 text-[#202020] group-hover:underline md:text-[20px] md:font-bold md:text-black">
+                  </div>
+                  <div className="flex min-h-0 flex-1 flex-col bg-[#f3f4f6] px-3 py-3">
+                    <p className="line-clamp-2 text-[16px] font-medium leading-snug text-[#202020] group-hover:underline md:text-[20px] md:font-bold md:text-black">
                       {v.title}
                     </p>
                     {secondLine ? (
-                      <p className="mt-1 line-clamp-2 text-[12px] font-normal leading-[16px] text-[#6b7280] md:text-[18px] md:text-black">
+                      <p className="mt-2 line-clamp-2 text-[12px] font-normal leading-6 text-[#6b7280] md:mt-2.5 md:text-[18px] md:leading-8 md:text-black">
                         {secondLine}
                       </p>
                     ) : null}
