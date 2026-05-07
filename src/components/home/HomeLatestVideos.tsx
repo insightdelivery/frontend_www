@@ -163,7 +163,7 @@ export default function HomeLatestVideos() {
                       {v.title}
                     </p>
                     {secondLine ? (
-                      <p className="mt-2 line-clamp-2 text-[12px] font-normal leading-6 text-[#6b7280] md:mt-2.5 md:text-[18px] md:leading-8 md:text-black">
+                      <p className="mt-2 line-clamp-2 text-[12px] font-normal leading-6 text-[#6b7280] md:mt-2.5 md:text-[18px] md:leading-6 md:text-black">
                         {secondLine}
                       </p>
                     ) : null}
