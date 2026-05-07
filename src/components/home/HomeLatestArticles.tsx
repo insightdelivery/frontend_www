@@ -119,6 +119,7 @@ export default function HomeLatestArticles() {
           <div className="hidden grid-cols-2 gap-6 sm:grid lg:grid-cols-3">
             {items.map((a, i) => {
               const thumbSrc = resolveArticleThumbnailUrl(a.thumbnail)
+              const sub = (a.subtitle || '').trim()
               return (
                 <Link key={a.id} href={`/article/detail?id=${a.id}`} className="group block">
                   <div>
@@ -139,9 +140,14 @@ export default function HomeLatestArticles() {
                         {getSysCodeName(categories, a.category)}
                       </span>
                     </div>
-                    <p className="mt-3 line-clamp-2 text-[16px] font-medium leading-6 text-[#202020] group-hover:underline">
+                    <p className="mt-3 line-clamp-2 text-[16px] font-medium leading-6 text-[#202020] group-hover:underline md:text-[20px] md:font-bold md:text-black">
                       {a.title}
                     </p>
+                    {sub ? (
+                      <p className="mt-1 line-clamp-2 text-[14px] font-normal leading-snug text-[#4b5563] md:text-[18px] md:text-black">
+                        {sub}
+                      </p>
+                    ) : null}
                   </div>
                 </Link>
               )

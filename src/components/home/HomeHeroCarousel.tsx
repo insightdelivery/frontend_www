@@ -171,7 +171,10 @@ function HeroDots({
 }) {
   const cur = activeIndex % moduloLen
   return (
-    <div className="inline-flex items-center gap-2 rounded-full bg-neutral-800/90 px-2.5 py-1.5 shadow-sm">
+    <div
+      className="inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 shadow-sm"
+      style={{ backgroundColor: 'rgba(38,38,38,0.30)' }} // #262626 is neutral-800
+    >
       {slides.map((s, i) => (
         <button
           key={s.displayEventId}
@@ -481,7 +484,7 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
             <button
               type="button"
               aria-label="다음 이벤트"
-              className={`${chevronBtn} absolute right-2 top-1/3 -translate-y-1/2 md:right-auto md:left-[calc(58%-3.25rem)] md:top-1/2`}
+              className={`${chevronBtn} absolute right-2 top-1/3 -translate-y-1/2 md:left-auto md:right-8 md:top-1/2`}
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()

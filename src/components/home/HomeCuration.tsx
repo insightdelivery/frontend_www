@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ChevronLeft, ChevronRight, FileText, Presentation, Video } from 'lucide-react'
 import { fetchCurationHomeList, type CurationHomeItem } from '@/services/curation'
 import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
+import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
 
 const PLACEHOLDER_GRADIENTS = [
   'bg-gradient-to-br from-stone-400 via-stone-500 to-stone-700',
@@ -30,21 +31,22 @@ function TypeIcon({ type }: { type: string }) {
 }
 
 function CurationCard({ item, toneIdx }: { item: CurationHomeItem; toneIdx: number }) {
-  const thumb = (item.thumbnail || '').trim()
+  /** API presigned URL 또는 `/api/…` 상대 경로 — 아티클·비디오 카드와 동일 규칙(articleThumbnailUrl.ts) */
+  const thumb = resolveArticleThumbnailUrl(item.thumbnail || null)
   const href = hrefForItem(item)
   return (
-    <Link href={href} className="group block min-w-0">
-      <div className="relative overflow-hidden rounded-lg">
+    <Link href={href} className="group block min-w-0 w-full max-w-full overflow-hidden">
+      <div className="relative aspect-video w-full max-w-full overflow-hidden rounded-lg bg-[#f3f4f6]">
         {thumb ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={thumb}
             alt=""
-            className={`aspect-video w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+            className={`absolute inset-0 h-full w-full max-w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
           />
         ) : (
           <div
-            className={`aspect-video w-full ${PLACEHOLDER_GRADIENTS[toneIdx % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+            className={`absolute inset-0 h-full w-full ${PLACEHOLDER_GRADIENTS[toneIdx % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
           />
         )}
         {(item.categoryName || '').trim() ? (
@@ -60,8 +62,12 @@ function CurationCard({ item, toneIdx }: { item: CurationHomeItem; toneIdx: numb
         </span>
       </div>
       <div className="mt-3">
-        <h3 className="line-clamp-2 font-semibold text-[#202020] group-hover:underline">{item.title}</h3>
-        <p className="mt-1 line-clamp-2 text-sm text-gray-500">{item.summary || '\u00a0'}</p>
+        <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-[#202020] group-hover:underline md:text-[20px] md:font-bold md:text-black">
+          {item.title}
+        </h3>
+        <p className="mt-1 line-clamp-2 text-sm leading-snug text-gray-500 md:text-[18px] md:font-normal md:text-black">
+          {item.summary || '\u00a0'}
+        </p>
       </div>
     </Link>
   )
@@ -123,9 +129,12 @@ export default function HomeCuration() {
         </div>
       ) : (
         <>
-          <div className="md:hidden -mx-4 flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory px-4 pb-1 [scrollbar-width:thin]">
+          <div className="md:hidden -mx-4 flex min-w-0 gap-4 overflow-x-auto overflow-y-hidden scroll-smooth snap-x snap-mandatory px-4 pb-1 [scrollbar-width:thin]">
             {items.map((item, i) => (
-              <div key={item.id} className="min-w-[80%] shrink-0 snap-start">
+              <div
+                key={item.id}
+                className="w-[min(80%,calc(100vw-3rem))] max-w-[calc(100vw-3rem)] shrink-0 grow-0 snap-start min-w-0 overflow-hidden"
+              >
                 <CurationCard item={item} toneIdx={i} />
               </div>
             ))}

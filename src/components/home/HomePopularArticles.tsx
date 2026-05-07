@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Bookmark } from 'lucide-react'
 import { fetchArticleList } from '@/services/article'
 import type { ArticleListItem } from '@/types/article'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
+import { getSysCode, getSysCodeName, ARTICLE_CATEGORY_PARENT } from '@/lib/syscode'
+import type { SysCodeItem } from '@/lib/syscode'
 import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
 
 const PLACEHOLDER_GRADIENTS = [
@@ -21,15 +22,21 @@ const MORE_HREF = '/article/category?category=all&sort=popular'
 
 export default function HomePopularArticles() {
   const [items, setItems] = useState<ArticleListItem[]>([])
+  const [categories, setCategories] = useState<SysCodeItem[]>([])
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetchArticleList({ page: 1, pageSize: 6, sort: 'popular' })
+      const [res, cats] = await Promise.all([
+        fetchArticleList({ page: 1, pageSize: 6, sort: 'popular' }),
+        getSysCode(ARTICLE_CATEGORY_PARENT),
+      ])
       setItems((res.articles ?? []).slice(0, 6))
+      setCategories(cats ?? [])
     } catch {
       setItems([])
+      setCategories([])
     } finally {
       setLoading(false)
     }
@@ -67,6 +74,7 @@ export default function HomePopularArticles() {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-6">
           {items.map((a, i) => {
             const thumbSrc = resolveArticleThumbnailUrl(a.thumbnail)
+            const catName = getSysCodeName(categories, a.category) || '—'
             return (
               <Link
                 key={a.id}
@@ -86,18 +94,15 @@ export default function HomePopularArticles() {
                       className={`h-full w-full ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
                     />
                   )}
-                  <span
-                    className="absolute left-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-md bg-white/90 text-neutral-700 shadow-sm ring-1 ring-black/5"
-                    aria-hidden
-                  >
-                    <Bookmark className="h-3.5 w-3.5" strokeWidth={2} />
+                  <span className="absolute left-2 top-2 z-10 max-w-[calc(100%-0.5rem)] truncate rounded-md bg-[#FF9F8A] px-1.5 py-0.5 text-[9px] font-bold text-black sm:left-3 sm:top-3 sm:rounded-[8px] sm:px-2 sm:py-1 sm:text-[10px]">
+                    {catName}
                   </span>
                 </div>
                 <div className="min-w-0 flex-1 self-start pt-0.5">
-                  <h3 className="line-clamp-2 text-[16px] font-bold leading-snug text-[#202020] group-hover:underline">
+                  <h3 className="line-clamp-2 text-[16px] font-bold leading-snug text-[#202020] group-hover:underline md:text-[20px] md:text-black">
                     {a.title}
                   </h3>
-                  <p className="mt-1.5 line-clamp-2 text-[13px] font-normal leading-relaxed text-gray-700">
+                  <p className="mt-1.5 line-clamp-2 text-[13px] font-normal leading-relaxed text-gray-700 md:text-[18px] md:text-black">
                     {(a.subtitle || '').trim() || '\u00a0'}
                   </p>
                 </div>

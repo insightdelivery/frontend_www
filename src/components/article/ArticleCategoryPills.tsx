@@ -15,7 +15,7 @@ export function ArticleCategoryPills() {
 
   return (
     <section className="mt-10 sm:mt-14">
-      <h2 className="mb-4 text-[18px] font-black text-gray-800 sm:text-[20px]">아티클 카테고리</h2>
+      <h2 className="mb-4 text-[18px] font-bold text-black sm:text-[24px]">아티클 카테고리</h2>
       <div className="flex flex-wrap justify-center gap-2">
         <Link
           href="/article/category?category=all"
