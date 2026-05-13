@@ -26,6 +26,7 @@ import type { ArticleDetail, ArticleListItem } from '@/types/article'
 import { getSysCodeName, getSysCodeFromCache } from '@/lib/syscode'
 import { formatArticleTagLabel } from '@/lib/articleTags'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
+import { articleDetailPath } from '@/lib/contentDetailRoutes'
 import {
   editorialCardLift,
   editorialCatBadge,
@@ -112,7 +113,7 @@ function shufflePick<T>(items: T[], count: number): T[] {
 }
 
 function detailUrl(id: string) {
-  return `/article/detail?id=${encodeURIComponent(id)}`
+  return articleDetailPath(id)
 }
 
 function getCategoryName(categorySid: string): string {

@@ -10,7 +10,7 @@ export default function SeminarPage() {
     <PublicVideoSeminarListPage
       heroEventTypeCode={SEMINAR_LIST_HERO_EVENT_TYPE_CODE}
       listContentType="seminar"
-      detailPathPrefix="/seminar/detail"
+      detailPathPrefix="/seminar"
       pageTitle="세미나"
       pageSubtitle=""
       emptyListMessage="등록된 세미나가 없습니다"

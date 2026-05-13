@@ -10,6 +10,7 @@ import {
   editorialThumbHover,
 } from '@/components/home/editorialClasses'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
+import { publicContentDetailPath } from '@/lib/contentDetailRoutes'
 
 const PLACEHOLDER_GRADIENTS = [
   'bg-gradient-to-br from-stone-500 via-stone-600 to-stone-800',
@@ -18,10 +19,9 @@ const PLACEHOLDER_GRADIENTS = [
 ]
 
 function hrefForItem(item: CurationHomeItem): string {
-  const id = encodeURIComponent(String(item.contentCode))
-  if (item.contentType === 'ARTICLE') return `/article/detail?id=${id}`
-  if (item.contentType === 'VIDEO') return `/video/detail?id=${id}`
-  if (item.contentType === 'SEMINAR') return `/seminar/detail?id=${id}`
+  if (item.contentType === 'ARTICLE' || item.contentType === 'VIDEO' || item.contentType === 'SEMINAR') {
+    return publicContentDetailPath(item.contentType, item.contentCode)
+  }
   return '/'
 }
 

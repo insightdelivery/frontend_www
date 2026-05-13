@@ -19,6 +19,7 @@ import {
   editorialCatBadge,
   editorialThumbHover,
 } from '@/components/home/editorialClasses'
+import { seminarDetailPath, videoDetailPath } from '@/lib/contentDetailRoutes'
 
 const PAGE_SIZE = 12
 
@@ -73,7 +74,7 @@ function PublicVideoSeminarCard({
   const gradient = PLACEHOLDER_GRADIENTS[index % PLACEHOLDER_GRADIENTS.length]
   const subtitle = row.subtitle?.trim() ?? ''
   const catName = categoryName || row.category?.trim() || '—'
-  const href = `${detailPathPrefix}?id=${row.id}`
+  const href = detailPathPrefix.includes('seminar') ? seminarDetailPath(row.id) : videoDetailPath(row.id)
 
   return (
     <>

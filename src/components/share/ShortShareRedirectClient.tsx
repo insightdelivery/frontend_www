@@ -7,6 +7,13 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { visitShareShortCode } from '@/services/contentShare'
+import { articleDetailPath, seminarDetailPath, videoDetailPath } from '@/lib/contentDetailRoutes'
+
+function appendQuery(path: string, params: URLSearchParams): string {
+  const qs = params.toString()
+  if (!qs) return path
+  return `${path}${path.includes('?') ? '&' : '?'}${qs}`
+}
 
 export default function ShortShareRedirectClient({ code }: { code: string }) {
   const router = useRouter()
@@ -24,22 +31,25 @@ export default function ShortShareRedirectClient({ code }: { code: string }) {
         if (cancelled) return
         const ct = (res.contentType || '').toUpperCase()
         const id = res.contentId
-        const expiredQ = res.expired ? '&share_expired=1' : ''
         if (ct === 'ARTICLE') {
           const idStr = String(id)
-          const params = new URLSearchParams({ id: idStr, from_share: '1' })
+          const params = new URLSearchParams({ from_share: '1' })
           if (res.expired) params.set('share_expired', '1')
           // router.replace만 쓰면 정적 export·클라이언트 라우팅에서 주소창에 from_share 등 쿼리가 남지 않는 경우가 있어 전체 이동으로 고정
-          const url = `${window.location.origin}/article/detail?${params.toString()}`
+          const url = `${window.location.origin}${appendQuery(articleDetailPath(idStr), params)}`
           window.location.replace(url)
           return
         }
         if (ct === 'VIDEO') {
-          router.replace(`/video/detail?id=${id}${res.expired ? '&share_expired=1' : ''}`)
+          const params = new URLSearchParams()
+          if (res.expired) params.set('share_expired', '1')
+          router.replace(appendQuery(videoDetailPath(id), params))
           return
         }
         if (ct === 'SEMINAR') {
-          router.replace(`/seminar/detail?id=${id}${res.expired ? '&share_expired=1' : ''}`)
+          const params = new URLSearchParams()
+          if (res.expired) params.set('share_expired', '1')
+          router.replace(appendQuery(seminarDetailPath(id), params))
           return
         }
         setMessage('지원하지 않는 링크입니다.')

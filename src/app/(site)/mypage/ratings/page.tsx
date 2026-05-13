@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { getMeRatings, type ActivityLogItem, type ContentType } from '@/services/libraryUseractivity'
 import WwwPagination from '@/components/common/WwwPagination'
+import { publicContentDetailPath } from '@/lib/contentDetailRoutes'
 
 /** 리스트는 페이지당 최대 7건 (userStarScore.md) */
 const PAGE_SIZE = 7
@@ -14,11 +15,9 @@ type SortType = 'latest' | 'high' | 'low'
 function contentHref(contentType: ContentType, contentCode: string): string {
   switch (contentType) {
     case 'ARTICLE':
-      return `/article/detail?id=${encodeURIComponent(contentCode)}`
     case 'VIDEO':
-      return `/video/detail?id=${encodeURIComponent(contentCode)}`
     case 'SEMINAR':
-      return `/seminar/detail?id=${encodeURIComponent(contentCode)}`
+      return publicContentDetailPath(contentType, contentCode)
     default:
       return '#'
   }

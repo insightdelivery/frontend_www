@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { useSeminarHome } from '@/components/home/SeminarHomeContext'
+import { seminarDetailPath } from '@/lib/contentDetailRoutes'
 import type { PublicVideoListItem } from '@/types/video'
 import { editorialSectionHeadBorder } from '@/components/home/editorialClasses'
 
@@ -50,7 +51,7 @@ function metaLine(item: PublicVideoListItem): string {
 
 function UpcomingSeminarCard({ item }: { item: PublicVideoListItem }) {
   const dday = ddayLabel(item.createdAt) ?? ddayLabel(item.updatedAt)
-  const href = `/seminar/detail?id=${item.id}`
+  const href = seminarDetailPath(item.id)
 
   return (
     <Link

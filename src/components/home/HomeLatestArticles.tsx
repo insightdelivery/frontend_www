@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { fetchArticleList } from '@/services/article'
 import type { ArticleListItem } from '@/types/article'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
+import { articleDetailPath } from '@/lib/contentDetailRoutes'
 import { getSysCode, getSysCodeName, ARTICLE_CATEGORY_PARENT } from '@/lib/syscode'
 import type { SysCodeItem } from '@/lib/syscode'
 import {
@@ -102,7 +103,7 @@ export default function HomeLatestArticles() {
               return (
                 <Link
                   key={`m-${a.id}`}
-                  href={`/article/detail?id=${a.id}`}
+                  href={articleDetailPath(a.id)}
                   className={`group flex gap-3 text-left ${editorialCardLift}`}
                 >
                   <div className={MOBILE_THUMB_CLASS}>
@@ -136,7 +137,7 @@ export default function HomeLatestArticles() {
               return (
                 <Link
                   key={`d-${a.id}`}
-                  href={`/article/detail?id=${a.id}`}
+                  href={articleDetailPath(a.id)}
                   className={`group block ${editorialCardLift}`}
                 >
                   <div className="relative mb-3 aspect-[4/3] w-full overflow-hidden rounded-none bg-cream-2">

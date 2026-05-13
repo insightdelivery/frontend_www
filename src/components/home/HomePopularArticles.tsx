@@ -5,6 +5,7 @@ import type { ArticleListItem } from '@/types/article'
 import Link from 'next/link'
 import { fetchArticleList } from '@/services/article'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
+import { articleDetailPath } from '@/lib/contentDetailRoutes'
 import { getSysCode, getSysCodeName, ARTICLE_CATEGORY_PARENT } from '@/lib/syscode'
 import type { SysCodeItem } from '@/lib/syscode'
 import {
@@ -95,7 +96,7 @@ export default function HomePopularArticles() {
         <div className="mt-12 grid grid-cols-1 gap-12 md:grid-cols-[1.2fr_1fr] md:items-start">
           {displayArticle ? (
             <Link
-              href={`/article/detail?id=${displayArticle.id}`}
+              href={articleDetailPath(displayArticle.id)}
               className={`group block min-w-0 ${editorialCardLift}`}
             >
               <div className="relative aspect-[4/3] w-full overflow-hidden bg-cream-2">
@@ -133,7 +134,7 @@ export default function HomePopularArticles() {
               return (
                 <Link
                   key={a.id}
-                  href={`/article/detail?id=${a.id}`}
+                  href={articleDetailPath(a.id)}
                   onMouseEnter={() => setPreview(a)}
                   className="group/row -mx-2 grid grid-cols-[44px_1fr] gap-3 rounded-sm border-b border-ink-100 px-2 py-3 transition-[background-color,box-shadow,color] last:border-b-0 hover:bg-paper hover:shadow-[inset_3px_0_0_0_#D9F032]"
                 >

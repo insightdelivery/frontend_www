@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
+import { articleDetailPath } from '@/lib/contentDetailRoutes'
 import {
   editorialCardLift,
   editorialCatBadge,
@@ -48,7 +49,7 @@ export function ArticleCard({
   const sub = typeof subtitle === 'string' ? subtitle.trim() : ''
   const thumbSrc = resolveArticleThumbnailUrl(thumbnail ?? null)
   const catName = categoryName.trim() || '—'
-  const href = `/article/detail?id=${encodeURIComponent(id)}`
+  const href = articleDetailPath(id)
 
   return (
     <>

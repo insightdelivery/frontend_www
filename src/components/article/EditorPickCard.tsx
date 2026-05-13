@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
+import { articleDetailPath } from '@/lib/contentDetailRoutes'
 import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
 
 export interface EditorPickCardProps {
@@ -30,7 +31,7 @@ export function EditorPickCard({
   const thumbSrc = resolveArticleThumbnailUrl(thumbnail ?? null)
   return (
     <Link
-      href={`/article/detail?id=${encodeURIComponent(id)}`}
+      href={articleDetailPath(id)}
       className="flex gap-3 sm:gap-4 p-4 rounded-xl border border-gray-200 bg-gray-50/50 shadow-sm group hover:border-gray-300 hover:bg-gray-50 transition-colors min-w-0"
     >
       <div

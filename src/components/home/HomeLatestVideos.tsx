@@ -6,6 +6,7 @@ import { fetchPublicVideoList } from '@/services/video'
 import type { PublicVideoListItem } from '@/types/video'
 import { useSysCodeCategoryLabel } from '@/hooks/useSysCodeCategoryLabel'
 import { VIDEO_CATEGORY_PARENT } from '@/lib/syscode'
+import { videoDetailPath } from '@/lib/contentDetailRoutes'
 import {
   editorialCardLift,
   editorialCatBadge,
@@ -174,7 +175,7 @@ export default function HomeLatestVideos() {
               return (
                 <Link
                   key={`m-${v.id}`}
-                  href={`/video/detail?id=${v.id}`}
+                  href={videoDetailPath(v.id)}
                   className={`group block overflow-hidden border border-ink-100 bg-paper shadow-sm ${MOBILE_CARD_WIDTH_CLASS} ${editorialCardLift}`}
                 >
                   <VideoCardBody v={v} i={i} cat={cat} secondLine={secondLine} variant="mobile" />
@@ -187,7 +188,7 @@ export default function HomeLatestVideos() {
               const cat = categoryLabel(v.category) || v.category?.trim() || '—'
               const secondLine = (v.subtitle || '').trim() || (v.speaker || '').trim()
               return (
-                <Link key={`d-${v.id}`} href={`/video/detail?id=${v.id}`} className={`group block ${editorialCardLift}`}>
+                <Link key={`d-${v.id}`} href={videoDetailPath(v.id)} className={`group block ${editorialCardLift}`}>
                   <VideoCardBody v={v} i={i} cat={cat} secondLine={secondLine} variant="desktop" />
                 </Link>
               )

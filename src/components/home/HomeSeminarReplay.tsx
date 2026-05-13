@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useSeminarHome } from '@/components/home/SeminarHomeContext'
+import { seminarDetailPath } from '@/lib/contentDetailRoutes'
 import { useSysCodeCategoryLabel } from '@/hooks/useSysCodeCategoryLabel'
 import { SEMINAR_CATEGORY_PARENT } from '@/lib/syscode'
 import {
@@ -52,7 +53,7 @@ export default function HomeSeminarReplay() {
       ) : (
         <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {replay.map((v, i) => (
-            <Link key={v.id} href={`/seminar/detail?id=${v.id}`} className={`group block ${editorialCardLift}`}>
+            <Link key={v.id} href={seminarDetailPath(v.id)} className={`group block ${editorialCardLift}`}>
               <div className="relative mb-3 aspect-video w-full overflow-hidden bg-ink-700">
                 {v.thumbnail ? (
                   // eslint-disable-next-line @next/next/no-img-element

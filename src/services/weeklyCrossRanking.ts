@@ -4,6 +4,7 @@
 import { fetchArticleDetail, articleDetailToListItem } from '@/services/article'
 import { fetchPublicVideoDetail } from '@/services/video'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
+import { articleDetailPath, seminarDetailPath, videoDetailPath } from '@/lib/contentDetailRoutes'
 import api from '@/lib/api'
 
 function unwrapResult<T>(data: unknown): T {
@@ -51,7 +52,7 @@ export async function resolveWeeklyCrossCards(rows: WeeklyCrossRankingRow[]): Pr
         /** 상세 하단 추천 카드와 동일 — 부제목만(에디터 이름은 표시하지 않음) */
         const line2 = (d.subtitle?.trim() || '').trim()
         out.push({
-          href: `/article/detail?id=${encodeURIComponent(code)}`,
+          href: articleDetailPath(code),
           title: d.title,
           line2,
           thumbSrc: resolveArticleThumbnailUrl(item.thumbnail),
@@ -59,10 +60,10 @@ export async function resolveWeeklyCrossCards(rows: WeeklyCrossRankingRow[]): Pr
         })
       } else if (ct === 'VIDEO' || ct === 'SEMINAR') {
         const d = await fetchPublicVideoDetail(code)
-        const path = ct === 'VIDEO' ? '/video/detail' : '/seminar/detail'
+        const href = ct === 'VIDEO' ? videoDetailPath(code) : seminarDetailPath(code)
         const line2 = [d.speaker, d.speakerAffiliation].filter(Boolean).join(' · ') || d.editor || ''
         out.push({
-          href: `${path}?id=${encodeURIComponent(code)}`,
+          href,
           title: d.title,
           line2,
           thumbSrc: resolveArticleThumbnailUrl(d.thumbnail ?? null),

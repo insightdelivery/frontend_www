@@ -36,6 +36,7 @@ import { sanitizeHomepageHtml } from '@/lib/sanitizeHomepageHtml'
 import { formatArticleTagLabel, normalizeArticleTags } from '@/lib/articleTags'
 import { plainTextExcerptFromHtml } from '@/lib/plainTextExcerpt'
 import { useDetailOpenGraphMeta } from '@/components/seo/useDetailOpenGraphMeta'
+import { seminarDetailPath, videoDetailPath } from '@/lib/contentDetailRoutes'
 import {
   editorialCardLift,
   editorialCatBadge,
@@ -57,7 +58,7 @@ const COLORS = {
 export type ContentDetailType = 'video' | 'seminar'
 
 function getDetailUrl(type: ContentDetailType, rid: string) {
-  return type === 'video' ? `/video/detail?id=${encodeURIComponent(rid)}` : `/seminar/detail?id=${encodeURIComponent(rid)}`
+  return type === 'video' ? videoDetailPath(rid) : seminarDetailPath(rid)
 }
 
 function getListUrl(type: ContentDetailType) {

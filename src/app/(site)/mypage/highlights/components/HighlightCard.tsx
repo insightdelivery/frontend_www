@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Trash2 } from 'lucide-react'
 import type { HighlightMypageItem } from '@/services/highlightMypage'
+import { articleDetailPath } from '@/lib/contentDetailRoutes'
 
 function formatItemTime(iso: string): string {
   try {
@@ -26,7 +27,7 @@ export interface HighlightCardProps {
 }
 
 export default function HighlightCard({ item, onDelete }: HighlightCardProps) {
-  const href = `/article/detail?id=${encodeURIComponent(String(item.articleId))}`
+  const href = articleDetailPath(item.articleId)
 
   return (
     <div className="flex min-h-[400px] flex-col rounded-xl bg-gray-100 p-5 shadow-sm transition hover:shadow-md">

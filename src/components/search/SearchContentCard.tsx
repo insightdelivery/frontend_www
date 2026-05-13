@@ -4,6 +4,7 @@ import Link from 'next/link'
 import type { SearchContentItem, SearchContentKind } from '@/types/search'
 import { resolveSearchCategoryLabel } from '@/components/search/resolveSearchCategoryLabel'
 import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
+import { articleDetailPath, seminarDetailPath, videoDetailPath } from '@/lib/contentDetailRoutes'
 
 const THUMB_PLACEHOLDER =
   'data:image/svg+xml,' +
@@ -12,10 +13,9 @@ const THUMB_PLACEHOLDER =
   )
 
 function detailHref(kind: SearchContentKind, id: number): string {
-  const q = `id=${encodeURIComponent(String(id))}`
-  if (kind === 'article') return `/article/detail?${q}`
-  if (kind === 'video') return `/video/detail?${q}`
-  return `/seminar/detail?${q}`
+  if (kind === 'article') return articleDetailPath(id)
+  if (kind === 'video') return videoDetailPath(id)
+  return seminarDetailPath(id)
 }
 
 function matchPriorityLabel(kind: SearchContentKind, p: number | undefined): string | null {

@@ -10,7 +10,7 @@ export default function VideoPage() {
     <PublicVideoSeminarListPage
       heroEventTypeCode={VIDEO_LIST_HERO_EVENT_TYPE_CODE}
       listContentType="video"
-      detailPathPrefix="/video/detail"
+      detailPathPrefix="/video"
       pageTitle="비디오"
       pageSubtitle=""
       emptyListMessage="등록된 비디오가 없습니다"
