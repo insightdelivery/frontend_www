@@ -26,7 +26,6 @@ import type { ArticleDetail, ArticleListItem } from '@/types/article'
 import { getSysCodeName, getSysCodeFromCache } from '@/lib/syscode'
 import { formatArticleTagLabel } from '@/lib/articleTags'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
-import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
 import {
   editorialCardLift,
   editorialCatBadge,
@@ -144,38 +143,65 @@ export interface ArticleDetailContentProps {
 }
 
 const ARTICLE_DETAIL_PROSE_CLASS = `prose prose-lg max-w-none text-[18px] leading-[1.625] ${COLORS.text} py-4 [&_p]:!block [&_p:empty]:min-h-[1.5em] [&_p]:!mb-2 [&_br]:block [&_hr]:my-8 [&_hr]:block [&_hr]:w-full [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-solid [&_hr]:border-[#e2e8f0] [&_blockquote]:border-l-[5px] [&_blockquote]:border-l-[#03c75a] [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:my-5 [&_blockquote]:bg-[#f6fff8] [&_blockquote]:text-[#222] [&_blockquote]:text-[15px] [&_mark]:!bg-[#F8EDFF] [&_mark]:rounded [&_mark]:px-1 [&_mark]:py-0.5 [&_mark[data-highlight-id]]:cursor-pointer [&_img]:max-w-full [&_img]:h-auto [&_figure]:my-6 [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-[#64748b]`
-const RELATED_ARTICLE_GRID_CLASS =
+const DETAIL_BOTTOM_CARD_GRID_CLASS =
   'mt-10 grid grid-cols-1 gap-5 sm:mt-12 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3'
-const RELATED_ARTICLE_MOBILE_THUMB_CLASS =
+const DETAIL_BOTTOM_MOBILE_THUMB_CLASS =
   'relative h-[120px] w-[160px] shrink-0 overflow-hidden rounded-none bg-cream-2'
 
 function DetailBottomWeeklyCard({ item }: { item: WeeklyCrossCardData }) {
   const grad = PLACEHOLDER_GRADIENTS[item.gradientIndex % PLACEHOLDER_GRADIENTS.length]
   const thumbSrc = item.thumbSrc
   const subtitleLine = item.line2?.trim() ?? ''
+  const categoryName = item.href.startsWith('/video/')
+    ? '비디오'
+    : item.href.startsWith('/seminar/')
+      ? '세미나'
+      : '아티클'
+
   return (
-    <Link href={item.href} className="block group">
-      <div
-        className={`aspect-[3/2] rounded-xl overflow-hidden mb-4 relative ${
-          thumbSrc ? 'bg-slate-100 border border-slate-100' : `${grad} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`
-        }`}
-      >
-        {thumbSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={thumbSrc}
-            alt=""
-            className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-          />
+    <>
+      <Link href={item.href} className={`group flex gap-3 text-left sm:hidden ${editorialCardLift}`}>
+        <div className={DETAIL_BOTTOM_MOBILE_THUMB_CLASS}>
+          {thumbSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thumbSrc} alt="" className={`h-full w-full object-cover ${editorialThumbHover}`} />
+          ) : (
+            <div className={`h-full w-full ${grad} ${editorialThumbHover}`} />
+          )}
+          <span className={editorialCatBadge}>{categoryName}</span>
+        </div>
+        <div className="min-w-0 flex-1 self-start pt-0.5">
+          <h3 className="m-0 line-clamp-2 text-[20px] font-bold leading-snug tracking-tight text-ink-900">
+            {item.title}
+          </h3>
+          {subtitleLine ? (
+            <p className="mt-1.5 line-clamp-2 text-[18px] font-normal leading-relaxed text-ink-500">
+              {subtitleLine}
+            </p>
+          ) : null}
+        </div>
+      </Link>
+
+      <Link href={item.href} className={`group hidden sm:block ${editorialCardLift}`}>
+        <div className="relative mb-3 aspect-[4/3] w-full overflow-hidden rounded-none bg-cream-2">
+          {thumbSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thumbSrc} alt="" className={`h-full w-full object-cover ${editorialThumbHover}`} />
+          ) : (
+            <div className={`h-full w-full ${grad} ${editorialThumbHover}`} />
+          )}
+          <span className={editorialCatBadge}>{categoryName}</span>
+        </div>
+        <h3 className="m-0 line-clamp-2 text-[20px] font-extrabold leading-[1.35] tracking-[-0.02em] text-ink-900">
+          {item.title}
+        </h3>
+        {subtitleLine ? (
+          <p className="mt-2 line-clamp-2 text-[16px] leading-[1.55] text-ink-500">
+            {subtitleLine}
+          </p>
         ) : null}
-      </div>
-      <p className={`text-[16px] font-medium leading-6 text-[#202020] group-hover:underline line-clamp-2`}>
-        {item.title}
-      </p>
-      {subtitleLine ? (
-        <p className={`text-[14px] leading-5 ${COLORS.textSecondary} mt-1 line-clamp-2`}>{subtitleLine}</p>
-      ) : null}
-    </Link>
+      </Link>
+    </>
   )
 }
 
@@ -183,29 +209,53 @@ function DetailBottomArticleCard({ item, index }: { item: ArticleListItem; index
   const grad = PLACEHOLDER_GRADIENTS[index % PLACEHOLDER_GRADIENTS.length]
   const thumbSrc = resolveArticleThumbnailUrl(item.thumbnail)
   const subtitleLine = item.subtitle?.trim() ?? ''
+  const categoryName = item.category?.trim() ? getCategoryName(item.category) : '—'
+  const href = detailUrl(String(item.id))
+
   return (
-    <Link href={detailUrl(String(item.id))} className="block group">
-      <div
-        className={`aspect-[3/2] rounded-xl overflow-hidden mb-4 relative ${
-          thumbSrc ? 'bg-slate-100 border border-slate-100' : `${grad} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`
-        }`}
-      >
-        {thumbSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={thumbSrc}
-            alt=""
-            className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-          />
+    <>
+      <Link href={href} className={`group flex gap-3 text-left sm:hidden ${editorialCardLift}`}>
+        <div className={DETAIL_BOTTOM_MOBILE_THUMB_CLASS}>
+          {thumbSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thumbSrc} alt="" className={`h-full w-full object-cover ${editorialThumbHover}`} />
+          ) : (
+            <div className={`h-full w-full ${grad} ${editorialThumbHover}`} />
+          )}
+          <span className={editorialCatBadge}>{categoryName}</span>
+        </div>
+        <div className="min-w-0 flex-1 self-start pt-0.5">
+          <h3 className="m-0 line-clamp-2 text-[20px] font-bold leading-snug tracking-tight text-ink-900">
+            {item.title}
+          </h3>
+          {subtitleLine ? (
+            <p className="mt-1.5 line-clamp-2 text-[18px] font-normal leading-relaxed text-ink-500">
+              {subtitleLine}
+            </p>
+          ) : null}
+        </div>
+      </Link>
+
+      <Link href={href} className={`group hidden sm:block ${editorialCardLift}`}>
+        <div className="relative mb-3 aspect-[4/3] w-full overflow-hidden rounded-none bg-cream-2">
+          {thumbSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thumbSrc} alt="" className={`h-full w-full object-cover ${editorialThumbHover}`} />
+          ) : (
+            <div className={`h-full w-full ${grad} ${editorialThumbHover}`} />
+          )}
+          <span className={editorialCatBadge}>{categoryName}</span>
+        </div>
+        <h3 className="m-0 line-clamp-2 text-[20px] font-extrabold leading-[1.35] tracking-[-0.02em] text-ink-900">
+          {item.title}
+        </h3>
+        {subtitleLine ? (
+          <p className="mt-2 line-clamp-2 text-[16px] leading-[1.55] text-ink-500">
+            {subtitleLine}
+          </p>
         ) : null}
-      </div>
-      <p className={`text-[16px] font-medium leading-6 text-[#202020] group-hover:underline line-clamp-2`}>
-        {item.title}
-      </p>
-      {subtitleLine ? (
-        <p className={`text-[14px] leading-5 ${COLORS.textSecondary} mt-1 line-clamp-2`}>{subtitleLine}</p>
-      ) : null}
-    </Link>
+      </Link>
+    </>
   )
 }
 
@@ -219,7 +269,7 @@ function DetailBottomRelatedArticleCard({ item, index }: { item: ArticleListItem
   return (
     <>
       <Link href={href} className={`group flex gap-3 text-left sm:hidden ${editorialCardLift}`}>
-        <div className={RELATED_ARTICLE_MOBILE_THUMB_CLASS}>
+        <div className={DETAIL_BOTTOM_MOBILE_THUMB_CLASS}>
           {thumbSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={thumbSrc} alt="" className={`h-full w-full object-cover ${editorialThumbHover}`} />
@@ -1002,24 +1052,48 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
           </section>
           <section className="mt-10 mb-12" aria-busy="true">
             <h2 className={`mb-[22px] font-bold text-[24px] tracking-[-0.6px] ${COLORS.text}`}>추천 아티클</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+            <div className="mt-10 flex flex-col gap-5 sm:hidden">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex animate-pulse gap-3">
+                  <div className="h-[120px] w-[160px] shrink-0 rounded-none bg-ink-100" />
+                  <div className="min-w-0 flex-1 space-y-2 py-0.5">
+                    <div className="h-[18px] w-[75%] rounded-none bg-ink-100" />
+                    <div className="h-[15px] w-full rounded-none bg-ink-100" />
+                    <div className="h-[15px] w-[83%] rounded-none bg-ink-100" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-12 hidden grid-cols-1 gap-x-6 gap-y-10 sm:grid sm:grid-cols-2 lg:grid-cols-3">
               {[0, 1, 2].map((i) => (
                 <div key={i} className="animate-pulse">
-                  <div className="aspect-[3/2] rounded-xl bg-[#e2e8f0] mb-4" />
-                  <div className="h-4 w-4/5 bg-[#e2e8f0] rounded mb-2" />
-                  <div className="h-3 w-1/2 bg-[#e2e8f0] rounded" />
+                  <div className="mb-3 aspect-[4/3] w-full bg-cream-2" />
+                  <div className="h-6 w-[88%] rounded-[3px] bg-ink-100" />
+                  <div className="mt-2 h-4 w-full rounded-[3px] bg-ink-100" />
                 </div>
               ))}
             </div>
           </section>
           <section className="mt-10 mb-12" aria-busy="true">
             <h2 className={`mb-[22px] font-bold text-[24px] tracking-[-0.6px] ${COLORS.text}`}>주간 인기 콘텐츠</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+            <div className="mt-10 flex flex-col gap-5 sm:hidden">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex animate-pulse gap-3">
+                  <div className="h-[120px] w-[160px] shrink-0 rounded-none bg-ink-100" />
+                  <div className="min-w-0 flex-1 space-y-2 py-0.5">
+                    <div className="h-[18px] w-[75%] rounded-none bg-ink-100" />
+                    <div className="h-[15px] w-full rounded-none bg-ink-100" />
+                    <div className="h-[15px] w-[83%] rounded-none bg-ink-100" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-12 hidden grid-cols-1 gap-x-6 gap-y-10 sm:grid sm:grid-cols-2 lg:grid-cols-3">
               {[0, 1, 2].map((i) => (
                 <div key={i} className="animate-pulse">
-                  <div className="aspect-[4/3] rounded-xl bg-[#e2e8f0] mb-4" />
-                  <div className="h-4 w-4/5 bg-[#e2e8f0] rounded mb-2" />
-                  <div className="h-3 w-1/2 bg-[#e2e8f0] rounded" />
+                  <div className="mb-3 aspect-[4/3] w-full bg-cream-2" />
+                  <div className="h-6 w-[88%] rounded-[3px] bg-ink-100" />
+                  <div className="mt-2 h-4 w-full rounded-[3px] bg-ink-100" />
                 </div>
               ))}
             </div>
@@ -1030,7 +1104,7 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
           {relatedArticles.length > 0 ? (
             <section className="mt-10 mb-12">
               <h2 className={`mb-[22px] font-bold text-[24px] tracking-[-0.6px] ${COLORS.text}`}>관련 아티클</h2>
-              <div className={RELATED_ARTICLE_GRID_CLASS}>
+              <div className={DETAIL_BOTTOM_CARD_GRID_CLASS}>
                 {relatedArticles.map((item, i) => (
                   <DetailBottomRelatedArticleCard key={item.id} item={item} index={i} />
                 ))}
@@ -1041,7 +1115,7 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
           {recommendedArticles.length > 0 ? (
             <section className="mt-10 mb-12">
               <h2 className={`mb-[22px] font-bold text-[24px] tracking-[-0.6px] ${COLORS.text}`}>추천 아티클</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+              <div className={DETAIL_BOTTOM_CARD_GRID_CLASS}>
                 {recommendedArticles.map((item, i) => (
                   <DetailBottomArticleCard key={item.id} item={item} index={i} />
                 ))}
@@ -1052,7 +1126,7 @@ function ArticleDetailContentInner({ id, shareExpired, fromShareLink }: ArticleD
           {weeklyCards.length > 0 ? (
             <section className="mt-10 mb-12">
               <h2 className={`mb-[22px] font-bold text-[24px] tracking-[-0.6px] ${COLORS.text}`}>주간 인기 콘텐츠</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+              <div className={DETAIL_BOTTOM_CARD_GRID_CLASS}>
                 {weeklyCards.map((item) => (
                   <DetailBottomWeeklyCard key={item.href} item={item} />
                 ))}

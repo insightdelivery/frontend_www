@@ -36,7 +36,11 @@ import { sanitizeHomepageHtml } from '@/lib/sanitizeHomepageHtml'
 import { formatArticleTagLabel, normalizeArticleTags } from '@/lib/articleTags'
 import { plainTextExcerptFromHtml } from '@/lib/plainTextExcerpt'
 import { useDetailOpenGraphMeta } from '@/components/seo/useDetailOpenGraphMeta'
-import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
+import {
+  editorialCardLift,
+  editorialCatBadge,
+  editorialThumbHover,
+} from '@/components/home/editorialClasses'
 
 /** 아티클 상세(`ArticleDetailContent`)와 동일 콘텐츠 폭 */
 const CONTAINER = 'max-w-[720px] mx-auto'
@@ -116,10 +120,14 @@ function attachmentLabel(a: VideoAttachment) {
 }
 
 const RELATED_PLACEHOLDERS = [
-  'bg-gradient-to-br from-emerald-200 to-emerald-700',
-  'bg-gradient-to-br from-violet-200 to-violet-700',
-  'bg-gradient-to-br from-amber-200 to-amber-600',
+  'bg-gradient-to-br from-stone-500 via-stone-600 to-stone-800',
+  'bg-gradient-to-br from-slate-500 via-slate-600 to-slate-800',
+  'bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900',
 ]
+const DETAIL_RECOMMEND_GRID_CLASS =
+  'mt-10 grid grid-cols-1 gap-5 sm:mt-12 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3'
+const DETAIL_RECOMMEND_MOBILE_THUMB_CLASS =
+  'relative h-[120px] w-[160px] shrink-0 overflow-hidden rounded-none bg-cream-2'
 
 export interface VideoSeminarDetailContentProps {
   type: ContentDetailType
@@ -130,6 +138,70 @@ export interface VideoSeminarDetailContentProps {
 
 function toApiContentType(t: ContentDetailType): ContentType {
   return t === 'seminar' ? 'SEMINAR' : 'VIDEO'
+}
+
+function DetailRecommendContentCard({
+  item,
+  index,
+  type,
+  categoryName,
+}: {
+  item: PublicVideoListItem
+  index: number
+  type: ContentDetailType
+  categoryName: string
+}) {
+  const thumb = resolveThumbnailUrl(item.thumbnail)
+  const gradient = RELATED_PLACEHOLDERS[index % RELATED_PLACEHOLDERS.length]
+  const subtitle = item.subtitle?.trim() || item.speaker?.trim() || ''
+  const catName = categoryName || item.category?.trim() || getListLabel(type)
+  const href = getDetailUrl(type, String(item.id))
+
+  return (
+    <>
+      <Link href={href} className={`group flex gap-3 text-left sm:hidden ${editorialCardLift}`}>
+        <div className={DETAIL_RECOMMEND_MOBILE_THUMB_CLASS}>
+          {thumb ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thumb} alt="" className={`h-full w-full object-cover ${editorialThumbHover}`} />
+          ) : (
+            <div className={`h-full w-full ${gradient} ${editorialThumbHover}`} />
+          )}
+          <span className={editorialCatBadge}>{catName}</span>
+        </div>
+        <div className="min-w-0 flex-1 self-start pt-0.5">
+          <h3 className="m-0 line-clamp-2 text-[20px] font-bold leading-snug tracking-tight text-ink-900">
+            {item.title}
+          </h3>
+          {subtitle ? (
+            <p className="mt-1.5 line-clamp-2 text-[18px] font-normal leading-relaxed text-ink-500">
+              {subtitle}
+            </p>
+          ) : null}
+        </div>
+      </Link>
+
+      <Link href={href} className={`group hidden sm:block ${editorialCardLift}`}>
+        <div className="relative mb-3 aspect-[4/3] w-full overflow-hidden rounded-none bg-cream-2">
+          {thumb ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thumb} alt="" className={`h-full w-full object-cover ${editorialThumbHover}`} />
+          ) : (
+            <div className={`h-full w-full ${gradient} ${editorialThumbHover}`} />
+          )}
+          <span className={editorialCatBadge}>{catName}</span>
+        </div>
+        <h3 className="m-0 line-clamp-2 text-[20px] font-extrabold leading-[1.35] tracking-[-0.02em] text-ink-900">
+          {item.title}
+        </h3>
+        {subtitle ? (
+          <p className="mt-2 line-clamp-2 text-[16px] leading-[1.55] text-ink-500">
+            {subtitle}
+          </p>
+        ) : null}
+      </Link>
+    </>
+  )
 }
 
 export default function VideoSeminarDetailContent({ type, id, shareExpired }: VideoSeminarDetailContentProps) {
@@ -696,30 +768,21 @@ export default function VideoSeminarDetailContent({ type, id, shareExpired }: Vi
         {related.length === 0 ? (
           <p className={`text-sm ${COLORS.textSecondary}`}>추천할 콘텐츠가 없습니다.</p>
         ) : (
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+          <div className={DETAIL_RECOMMEND_GRID_CLASS}>
             {related.map((item, i) => {
-              const thumb = resolveThumbnailUrl(item.thumbnail)
+              const categoryName = (() => {
+                const c = item.category?.trim()
+                if (!c) return ''
+                return getSysCodeName(categoryCodes, c) || c
+              })()
               return (
-                <Link key={item.id} href={getDetailUrl(type, String(item.id))} className="group block">
-                  <div className="relative mb-4 aspect-[16/9] overflow-hidden rounded-xl border border-slate-100 bg-[#f3f4f6]">
-                    {thumb ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={thumb}
-                        alt=""
-                        className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-                      />
-                    ) : (
-                      <div
-                        className={`h-full w-full ${RELATED_PLACEHOLDERS[i % RELATED_PLACEHOLDERS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-                      />
-                    )}
-                  </div>
-                  <p className="line-clamp-2 text-[16px] font-medium leading-6 text-[#202020] group-hover:underline">
-                    {item.title}
-                  </p>
-                  <p className={`mt-1 text-[14px] leading-5 ${COLORS.textSecondary}`}>{item.speaker ?? '—'}</p>
-                </Link>
+                <DetailRecommendContentCard
+                  key={item.id}
+                  item={item}
+                  index={i}
+                  type={type}
+                  categoryName={categoryName}
+                />
               )
             })}
           </div>
