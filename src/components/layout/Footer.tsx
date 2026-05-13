@@ -49,17 +49,20 @@ export default function Footer() {
   const innerMax = siteFooterInnerMaxWidthClass()
 
   return (
-    <footer className="mt-20 w-full bg-footer-dark pb-12 pt-20 text-[14px] text-white/65 max-sm:px-5">
+    <footer className="mt-0 w-full bg-footer-dark pb-12 pt-20 text-[14px] text-white/65 max-sm:px-5">
       <NewsletterModal open={openNewsletterModal} onClose={() => setOpenNewsletterModal(false)} />
       <div className={`mx-auto ${innerMax} px-0`}>
         <div className="grid grid-cols-1 gap-12 border-b border-white/10 pb-12 md:grid-cols-[2fr_1fr_1fr] md:gap-12">
           <div>
             <img
-              src="/inde_logo_bottom.png"
+              src="/inde_logo_bottom_white.png"
               alt="InDe 로고"
-              className="h-8 w-auto brightness-[1.45] saturate-110 contrast-[1.06] sm:h-10"
-              style={{ maxHeight: '40px', objectFit: 'contain' }}
+              width={167}
+              height={25}
+              className="brightness-[1.45] saturate-110 contrast-[1.06]"
+              style={{ width: '167px', height: '25px', objectFit: 'contain' }}
             />
+      
             <p className="mt-4 max-w-[36ch] text-[13px] leading-relaxed text-white/60 sm:mt-5">
               InDe는 교회에서 들은 말씀을 실제 삶으로 이어갈 수 있도록, 시의적이고도 핫한 콘텐츠로 신앙 인사이트 루틴 형성을 돕습니다.
             </p>

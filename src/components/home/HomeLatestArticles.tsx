@@ -51,7 +51,7 @@ export default function HomeLatestArticles() {
   }, [load])
 
   return (
-    <section className="pt-10 pb-20 max-sm:py-16">
+    <section className="pt-10 pb-10 max-sm:py-16">
       <div className={`flex flex-row items-start justify-between gap-4 ${editorialSectionHeadBorder}`}>
         <h2 className="m-0 min-w-0 flex-1 text-[28px] font-extrabold leading-tight tracking-[-0.025em] text-ink-900">
           최신 아티클
