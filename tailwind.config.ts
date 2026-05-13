@@ -3,7 +3,7 @@ import type { Config } from "tailwindcss"
 const config = {
   darkMode: ["class"],
   /** siteLayoutWidth.ts — 동적 className 대비 */
-  safelist: ["max-w-[900px]", "aspect-[16/9]", "aspect-3/2"],
+  safelist: ["max-w-[900px]", "max-w-[840px]", "md:grid-cols-[510px_minmax(0,1fr)]", "aspect-[16/9]", "aspect-3/2", "aspect-[4/3]"],
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
@@ -25,9 +25,33 @@ const config = {
         '3/2': '3 / 2',
       },
       fontFamily: {
-        sans: ["Pretendard", "system-ui", "-apple-system", "sans-serif"],
+        sans: [
+          '"Pretendard Variable"',
+          'Pretendard',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"Segoe UI"',
+          'Roboto',
+          'sans-serif',
+        ],
       },
       colors: {
+        /** wwwMainpagePlan — 에디토리얼 팔레트 */
+        ink: {
+          900: '#0F0F0F',
+          700: '#2A2A2A',
+          500: '#6B6B6B',
+          300: '#A8A8A8',
+          100: '#E8E5DD',
+        },
+        paper: '#FFFFFF',
+        cream: '#F7F5F1',
+        'cream-2': '#EFEBE3',
+        'accent-lime': '#D9F032',
+        'accent-lime-deep': '#B8CE25',
+        'nav-gray': '#4B5563',
+        'footer-dark': '#1A1A1A',
         // 룩엔필 브랜드 컬러 (이미지 디자인 기반)
         'neon-yellow': '#D9F032',
         'brand-yellow': '#FFDF38',

@@ -4,13 +4,17 @@ import Link from 'next/link'
 import { useSeminarHome } from '@/components/home/SeminarHomeContext'
 import { useSysCodeCategoryLabel } from '@/hooks/useSysCodeCategoryLabel'
 import { SEMINAR_CATEGORY_PARENT } from '@/lib/syscode'
-import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
+import {
+  editorialCardLift,
+  editorialCatBadge,
+  editorialSectionHeadBorder,
+  editorialThumbHover,
+} from '@/components/home/editorialClasses'
 
-/** `HomeLatestVideos`와 동일 — 재생 오버레이·카테고리 뱃지·16:9 */
 const PLACEHOLDER_GRADIENTS = [
-  'bg-gradient-to-br from-emerald-200 via-emerald-400 to-emerald-800',
-  'bg-gradient-to-br from-teal-200 via-teal-400 to-teal-800',
-  'bg-gradient-to-br from-cyan-200 via-cyan-400 to-cyan-800',
+  'bg-gradient-to-br from-emerald-800 via-emerald-900 to-neutral-950',
+  'bg-gradient-to-br from-teal-800 via-teal-900 to-neutral-950',
+  'bg-gradient-to-br from-cyan-800 via-cyan-900 to-neutral-950',
 ]
 
 export default function HomeSeminarReplay() {
@@ -18,61 +22,66 @@ export default function HomeSeminarReplay() {
   const categoryLabel = useSysCodeCategoryLabel(SEMINAR_CATEGORY_PARENT)
 
   return (
-    <section className="mt-10 flex flex-col gap-[22px]">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h2 className="font-bold text-black text-[24px] leading-[32px]">세미나 다시보기</h2>
-        </div>
-        <Link href="/seminar" className="font-medium text-[#6b7280] text-[14px] hover:text-black">
-          더보기 &gt;
+    <section className="pt-11 pb-8 max-sm:pt-10">
+      <div className={`flex flex-row items-start justify-between gap-4 ${editorialSectionHeadBorder}`}>
+        <h2 className="m-0 min-w-0 flex-1 text-[28px] font-extrabold leading-tight tracking-[-0.025em] text-ink-900">
+          세미나 다시보기
+        </h2>
+        <Link
+          href="/seminar"
+          className="group inline-flex shrink-0 items-center gap-1.5 self-start text-[14px] text-ink-500 transition-colors hover:text-ink-900"
+        >
+          더보기
+          <span aria-hidden className="transition-transform duration-200 ease-out group-hover:translate-x-0.5">
+            →
+          </span>
         </Link>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="animate-pulse rounded-[8px] border border-[#e5e7eb] bg-gray-100 aspect-[16/9] min-h-[180px]"
-            />
+            <div key={i} className="animate-pulse">
+              <div className="aspect-video w-full bg-cream-2" />
+              <div className="mt-3 h-5 w-[70%] rounded-[3px] bg-ink-100" />
+            </div>
           ))}
         </div>
       ) : replay.length === 0 ? (
-        <p className="text-sm text-[#6b7280]">다시보기로 노출할 세미나가 없습니다.</p>
+        <p className="mt-10 text-[16px] text-ink-500">다시보기로 노출할 세미나가 없습니다.</p>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {replay.map((v, i) => (
-            <Link key={v.id} href={`/seminar/detail?id=${v.id}`} className="group block">
-              <div>
-                <div className="relative aspect-[16/9] overflow-hidden rounded-[8px] bg-[#f3f4f6]">
-                  {v.thumbnail ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={v.thumbnail}
-                      alt=""
-                      className={`absolute inset-0 h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-                    />
-                  ) : (
-                    <div
-                      className={`absolute inset-0 ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-                    />
-                  )}
-                  <span className="absolute left-3 top-3 z-[10] max-w-[85%] truncate rounded-[8px] bg-[#EA90FF] px-2 py-1 text-[10px] font-bold text-black">
-                    {categoryLabel(v.category) || v.category?.trim() || '세미나'}
-                  </span>
-                  <div className="absolute inset-0 z-[1] flex items-center justify-center bg-black/20">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/50 bg-white/20 backdrop-blur-[2px] text-white">
-                      ▶
-                    </div>
-                  </div>
+            <Link key={v.id} href={`/seminar/detail?id=${v.id}`} className={`group block ${editorialCardLift}`}>
+              <div className="relative mb-3 aspect-video w-full overflow-hidden bg-ink-700">
+                {v.thumbnail ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={v.thumbnail}
+                    alt=""
+                    className={`absolute inset-0 h-full w-full object-cover ${editorialThumbHover}`}
+                  />
+                ) : (
+                  <div
+                    className={`absolute inset-0 ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${editorialThumbHover}`}
+                  />
+                )}
+                <span className={editorialCatBadge}>
+                  {categoryLabel(v.category) || v.category?.trim() || '세미나'}
+                </span>
+                <div
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent from-[60%] to-black/45"
+                  aria-hidden
+                />
+                <div
+                  className="absolute bottom-4 left-4 z-[2] grid h-10 w-10 place-items-center rounded-full bg-white/95 text-ink-900 shadow-sm"
+                  aria-hidden
+                >
+                  <span className="ml-0.5 block h-0 w-0 border-y-[7px] border-l-[11px] border-y-transparent border-l-ink-900" />
                 </div>
-                <p className="mt-3 line-clamp-2 text-[16px] font-medium leading-6 text-[#202020] group-hover:underline">
-                  {v.title}
-                </p>
-                {v.speaker ? (
-                  <p className="mt-1 text-[12px] font-normal leading-[16px] text-[#6b7280]">{v.speaker}</p>
-                ) : null}
               </div>
+              <h3 className="m-0 text-[20px] font-extrabold leading-[1.35] tracking-[-0.02em] text-ink-900">{v.title}</h3>
+              {v.speaker ? <p className="mt-2 text-[16px] leading-[1.55] text-ink-500">{v.speaker}</p> : null}
             </Link>
           ))}
         </div>

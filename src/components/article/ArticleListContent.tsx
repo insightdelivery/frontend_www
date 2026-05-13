@@ -17,18 +17,14 @@ import type { SysCodeItem } from '@/lib/syscode'
 
 /** 썸네일 없을 때 사용할 그라데이션 (인덱스로 순환) */
 const PLACEHOLDER_GRADIENTS = [
-  'bg-gradient-to-br from-emerald-200 via-emerald-400 to-emerald-700',
-  'bg-gradient-to-br from-amber-100 via-amber-200 to-amber-500',
-  'bg-gradient-to-br from-rose-200 via-rose-300 to-rose-600',
-  'bg-gradient-to-br from-sky-200 via-sky-300 to-sky-600',
-  'bg-gradient-to-br from-stone-300 via-stone-400 to-stone-600',
-  'bg-gradient-to-br from-violet-200 via-violet-400 to-violet-700',
-  'bg-gradient-to-br from-slate-300 via-slate-400 to-slate-700',
-  'bg-gradient-to-br from-teal-200 via-teal-400 to-teal-700',
-  'bg-gradient-to-br from-amber-200 to-amber-600',
-  'bg-gradient-to-br from-green-300 to-green-700',
-  'bg-gradient-to-br from-pink-200 to-pink-600',
+  'bg-gradient-to-br from-stone-500 via-stone-600 to-stone-800',
+  'bg-gradient-to-br from-slate-500 via-slate-600 to-slate-800',
+  'bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900',
 ]
+
+const ARTICLE_PAGE_SHELL_CLASS = 'mx-auto w-full max-w-[840px] max-sm:px-5 py-6 md:py-10'
+const ARTICLE_CARD_GRID_CLASS =
+  'mt-10 grid grid-cols-1 gap-5 sm:mt-12 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3'
 
 function getGradient(index: number) {
   return PLACEHOLDER_GRADIENTS[index % PLACEHOLDER_GRADIENTS.length]
@@ -84,16 +80,29 @@ export function ArticleListContent() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[900px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
+      <div className={ARTICLE_PAGE_SHELL_CLASS}>
         <h1 className="text-[28px] sm:text-[34px] md:text-[42px] font-black text-gray-900 mb-8 sm:mb-10">
           아티클
         </h1>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+        <div className="mt-10 flex flex-col gap-5 sm:hidden">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-2xl border border-gray-200 bg-gray-100 animate-pulse aspect-[3/2] min-h-[200px]"
-            />
+            <div key={i} className="flex animate-pulse gap-3">
+              <div className="h-[120px] w-[160px] shrink-0 rounded-none bg-ink-100" />
+              <div className="min-w-0 flex-1 space-y-2 py-0.5">
+                <div className="h-[18px] w-[75%] rounded-none bg-ink-100" />
+                <div className="h-[15px] w-full rounded-none bg-ink-100" />
+                <div className="h-[15px] w-[83%] rounded-none bg-ink-100" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-12 hidden grid-cols-1 gap-x-6 gap-y-10 sm:grid sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="mb-3 aspect-[4/3] w-full bg-cream-2" />
+              <div className="h-6 w-[88%] rounded-[3px] bg-ink-100" />
+              <div className="mt-2 h-4 w-full rounded-[3px] bg-ink-100" />
+            </div>
           ))}
         </div>
         <p className="mt-6 text-gray-500 text-sm">로딩 중...</p>
@@ -103,7 +112,7 @@ export function ArticleListContent() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-[900px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
+      <div className={ARTICLE_PAGE_SHELL_CLASS}>
         <h1 className="text-[28px] sm:text-[34px] md:text-[42px] font-black text-gray-900 mb-8 sm:mb-10">
           아티클
         </h1>
@@ -120,7 +129,7 @@ export function ArticleListContent() {
   }
 
   return (
-    <div className="mx-auto max-w-[900px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
+    <div className={ARTICLE_PAGE_SHELL_CLASS}>
       <div className="mb-8 sm:mb-10 flex items-center justify-between gap-3">
         <h1 className="text-[28px] sm:text-[34px] md:text-[42px] font-black text-gray-900">
           아티클
@@ -134,7 +143,7 @@ export function ArticleListContent() {
       </div>
 
       <section>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+        <div className={ARTICLE_CARD_GRID_CLASS}>
           {mainArticles.map((article, i) => (
             <ArticleCard
               key={article.id}
@@ -162,7 +171,7 @@ export function ArticleListContent() {
               지금 가장 핫한 아티클
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className={ARTICLE_CARD_GRID_CLASS}>
             {hotArticles.map((article, i) => (
               <ArticleCard
                 key={`hot-${article.id}`}
@@ -186,7 +195,7 @@ export function ArticleListContent() {
               가장 많이 공유된 아티클
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className={ARTICLE_CARD_GRID_CLASS}>
             {sharedArticles.map((article, i) => (
               <ArticleCard
                 key={article.id}
@@ -210,7 +219,7 @@ export function ArticleListContent() {
               에디터 추천 아티클
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className={ARTICLE_CARD_GRID_CLASS}>
             {editorArticles.map((article, i) => (
               <ArticleCard
                 key={`editor-${article.id}`}

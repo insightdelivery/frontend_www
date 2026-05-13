@@ -6,13 +6,90 @@ import { fetchPublicVideoList } from '@/services/video'
 import type { PublicVideoListItem } from '@/types/video'
 import { useSysCodeCategoryLabel } from '@/hooks/useSysCodeCategoryLabel'
 import { VIDEO_CATEGORY_PARENT } from '@/lib/syscode'
-import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
+import {
+  editorialCardLift,
+  editorialCatBadge,
+  editorialSectionHeadBorder,
+  editorialThumbHover,
+} from '@/components/home/editorialClasses'
 
 const PLACEHOLDER_GRADIENTS = [
-  'bg-gradient-to-br from-emerald-200 via-emerald-400 to-emerald-800',
-  'bg-gradient-to-br from-teal-200 via-teal-400 to-teal-800',
-  'bg-gradient-to-br from-cyan-200 via-cyan-400 to-cyan-800',
+  'bg-gradient-to-br from-emerald-800 via-emerald-900 to-neutral-950',
+  'bg-gradient-to-br from-teal-800 via-teal-900 to-neutral-950',
 ]
+
+/** 모바일 가로 카드 폭 — 다음 카드가 살짝 보이도록 */
+const MOBILE_CARD_WIDTH_CLASS = 'w-[min(300px,calc(100vw-4.5rem))] min-w-[240px] max-w-[300px] shrink-0 snap-start'
+
+function VideoCardBody({
+  v,
+  i,
+  cat,
+  secondLine,
+  variant,
+}: {
+  v: PublicVideoListItem
+  i: number
+  cat: string
+  secondLine: string
+  variant: 'mobile' | 'desktop'
+}) {
+  const thumb = (
+    <div
+      className={`relative aspect-video w-full overflow-hidden bg-ink-700 ${variant === 'desktop' ? 'md:rounded-none' : ''}`}
+    >
+      {v.thumbnail ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={v.thumbnail}
+          alt=""
+          className={`absolute inset-0 h-full w-full object-cover ${editorialThumbHover}`}
+        />
+      ) : (
+        <div
+          className={`absolute inset-0 ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${editorialThumbHover}`}
+        />
+      )}
+      <span className={`${editorialCatBadge} !rounded-none`}>{cat}</span>
+      <div
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent from-[60%] to-black/45"
+        aria-hidden
+      />
+      <div
+        className={`absolute z-[2] grid h-10 w-10 place-items-center rounded-none bg-white/95 text-ink-900 shadow-sm ${
+          variant === 'mobile'
+            ? 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2'
+            : 'bottom-4 left-4'
+        }`}
+        aria-hidden
+      >
+        <span className="ml-0.5 block h-0 w-0 border-y-[7px] border-l-[11px] border-y-transparent border-l-ink-900" />
+      </div>
+    </div>
+  )
+
+  if (variant === 'mobile') {
+    return (
+      <>
+        <div className="overflow-hidden">{thumb}</div>
+        <div className="bg-paper px-3 py-3">
+          <h3 className="m-0 line-clamp-2 text-[16px] font-bold leading-snug tracking-tight text-ink-900">{v.title}</h3>
+          {secondLine ? (
+            <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-ink-500">{secondLine}</p>
+          ) : null}
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <div className="mb-3">{thumb}</div>
+      <h3 className="m-0 text-[20px] font-extrabold leading-[1.35] tracking-[-0.02em] text-ink-900">{v.title}</h3>
+      {secondLine ? <p className="mt-2 text-[16px] leading-[1.55] text-ink-500">{secondLine}</p> : null}
+    </>
+  )
+}
 
 export default function HomeLatestVideos() {
   const [items, setItems] = useState<PublicVideoListItem[]>([])
@@ -24,11 +101,11 @@ export default function HomeLatestVideos() {
     try {
       const res = await fetchPublicVideoList({
         page: 1,
-        pageSize: 3,
+        pageSize: 8,
         sort: 'latest',
         contentType: 'video',
       })
-      setItems((res.videos ?? []).slice(0, 3))
+      setItems((res.videos ?? []).slice(0, 8))
     } catch {
       setItems([])
     } finally {
@@ -41,133 +118,77 @@ export default function HomeLatestVideos() {
   }, [load])
 
   return (
-    <section className="mt-10 flex flex-col gap-[22px]">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h2 className="font-bold text-black text-[24px] leading-[32px]">최신 비디오</h2>
+    <section className="pt-0 pb-12 max-sm:pt-10 max-sm:pb-16">
+      <div className={`flex flex-row items-end justify-between gap-4 ${editorialSectionHeadBorder}`}>
+        <div className="min-w-0 flex-1">
+          <span className="mb-3 inline-block text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">
+            VIDEO
+          </span>
+          <h2 className="m-0 text-[28px] font-extrabold leading-tight tracking-[-0.025em] text-ink-900">최신 비디오</h2>
         </div>
-        <Link href="/video" className="font-medium text-[#6b7280] text-[14px] hover:text-black">
-          더보기 &gt;
+        <Link
+          href="/video"
+          className="group inline-flex shrink-0 items-center gap-1.5 text-[14px] text-ink-500 transition-colors hover:text-ink-900"
+        >
+          전체 영상
+          <span aria-hidden className="transition-transform duration-200 ease-out group-hover:translate-x-0.5">
+            →
+          </span>
         </Link>
       </div>
 
       {loading ? (
         <>
-          <div className="flex gap-3 overflow-x-auto pb-2 sm:hidden -mx-4 px-4 [scrollbar-width:thin]">
-            {[0, 1, 2].map((i) => (
+          <div className="mt-10 -mx-5 flex gap-4 overflow-x-auto overflow-y-hidden px-5 pb-2 scrollbar-hide [scrollbar-width:none] snap-x snap-mandatory scroll-smooth sm:hidden [&::-webkit-scrollbar]:hidden">
+            {[0, 1, 2, 3].map((i) => (
               <div
-                key={i}
-                className="w-[min(88vw,300px)] shrink-0 snap-start overflow-hidden rounded-lg ring-1 ring-black/5"
+                key={`sk-m-${i}`}
+                className={`${MOBILE_CARD_WIDTH_CLASS} animate-pulse overflow-hidden border border-ink-100 bg-paper`}
               >
-                <div className="aspect-video animate-pulse bg-gray-200" />
-                <div className="space-y-2 bg-[#f3f4f6] p-3">
-                  <div className="h-4 w-[80%] animate-pulse rounded bg-gray-200" />
-                  <div className="h-3 w-[45%] animate-pulse rounded bg-gray-200" />
+                <div className="aspect-video w-full bg-cream-2" />
+                <div className="space-y-2 px-3 py-3">
+                  <div className="h-4 w-[85%] rounded-none bg-ink-100" />
+                  <div className="h-3 w-1/2 rounded-none bg-ink-100" />
                 </div>
               </div>
             ))}
           </div>
-          <div className="hidden grid-cols-2 gap-6 sm:grid lg:grid-cols-3">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="flex h-full min-h-0 flex-col overflow-hidden rounded-[8px] border border-[#e5e7eb] ring-1 ring-black/[0.06]"
-              >
-                <div className="aspect-[16/9] shrink-0 animate-pulse bg-gray-200" />
-                <div className="flex min-h-0 flex-1 flex-col space-y-2 bg-[#f3f4f6] p-3">
-                  <div className="h-4 w-[80%] animate-pulse rounded bg-gray-200" />
-                  <div className="h-3 w-[55%] animate-pulse rounded bg-gray-200" />
-                </div>
+          <div className="mt-12 hidden grid-cols-1 gap-6 sm:grid md:grid-cols-2">
+            {[0, 1].map((i) => (
+              <div key={`sk-d-${i}`} className="animate-pulse">
+                <div className="aspect-video w-full bg-cream-2" />
+                <div className="mt-3 h-6 w-[80%] rounded-none bg-ink-100" />
+                <div className="mt-2 h-4 w-1/2 rounded-none bg-ink-100" />
               </div>
             ))}
           </div>
         </>
       ) : items.length === 0 ? (
-        <p className="text-sm text-[#6b7280]">공개된 비디오가 없습니다.</p>
+        <p className="mt-10 text-[16px] text-ink-500">공개된 비디오가 없습니다.</p>
       ) : (
         <>
-          <div className="flex gap-3 overflow-x-auto scroll-smooth pb-2 sm:hidden -mx-4 px-4 [scrollbar-width:thin] snap-x snap-mandatory">
-            {items.map((v, i) => (
-              <Link
-                key={v.id}
-                href={`/video/detail?id=${v.id}`}
-                className="group w-[min(88vw,300px)] shrink-0 snap-start overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/[0.06]"
-              >
-                <div className="relative aspect-video overflow-hidden bg-[#f3f4f6]">
-                  {v.thumbnail ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={v.thumbnail}
-                      alt=""
-                      className={`absolute inset-0 h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-                    />
-                  ) : (
-                    <div
-                      className={`absolute inset-0 ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-                    />
-                  )}
-                  <span className="absolute left-2 top-2 z-[10] max-w-[calc(100%-1rem)] truncate rounded-md bg-[#FFDF38] px-2 py-1 text-[10px] font-bold text-black">
-                    {categoryLabel(v.category) || v.category?.trim() || '—'}
-                  </span>
-                  <div className="absolute inset-0 z-[1] flex items-center justify-center bg-black/15">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/55 bg-white/25 text-sm text-white backdrop-blur-[2px]">
-                      ▶
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-[#f3f4f6] px-3 py-3">
-                  <p className="line-clamp-2 text-[15px] font-bold leading-snug text-[#202020] group-hover:underline">
-                    {v.title}
-                  </p>
-                  {v.speaker ? (
-                    <p className="mt-1.5 text-[12px] font-normal leading-6 text-[#6b7280]">{v.speaker}</p>
-                  ) : null}
-                </div>
-              </Link>
-            ))}
-          </div>
-          <div className="hidden grid-cols-2 gap-6 sm:grid lg:grid-cols-3">
+          <div className="mt-10 -mx-5 flex gap-4 overflow-x-auto overflow-y-hidden px-5 pb-2 scrollbar-hide [scrollbar-width:none] snap-x snap-mandatory scroll-smooth sm:hidden [&::-webkit-scrollbar]:hidden">
             {items.map((v, i) => {
-              const sub = (v.subtitle || '').trim()
-              const secondLine = sub || (v.speaker || '').trim()
+              const cat = categoryLabel(v.category) || v.category?.trim() || '—'
+              const secondLine = (v.subtitle || '').trim() || (v.speaker || '').trim()
               return (
                 <Link
-                  key={v.id}
+                  key={`m-${v.id}`}
                   href={`/video/detail?id=${v.id}`}
-                  className="group flex h-full min-h-0 flex-col overflow-hidden rounded-[8px] bg-white shadow-sm ring-1 ring-black/[0.06]"
+                  className={`group block overflow-hidden border border-ink-100 bg-paper shadow-sm ${MOBILE_CARD_WIDTH_CLASS} ${editorialCardLift}`}
                 >
-                  <div className="relative aspect-[16/9] shrink-0 overflow-hidden bg-[#f3f4f6]">
-                    {v.thumbnail ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={v.thumbnail}
-                        alt=""
-                        className={`absolute inset-0 h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-                      />
-                    ) : (
-                      <div
-                        className={`absolute inset-0 ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-                      />
-                    )}
-                    <span className="absolute left-3 top-3 z-[10] rounded-[8px] bg-[#FFDF38] px-2 py-1 text-[10px] font-bold text-black max-w-[85%] truncate">
-                      {categoryLabel(v.category) || v.category?.trim() || '—'}
-                    </span>
-                    <div className="absolute inset-0 z-[1] flex items-center justify-center bg-black/20">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/50 bg-white/20 backdrop-blur-[2px] text-white">
-                        ▶
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex min-h-0 flex-1 flex-col bg-[#f3f4f6] px-3 py-3">
-                    <p className="line-clamp-2 text-[16px] font-medium leading-snug text-[#202020] group-hover:underline md:text-[20px] md:font-bold md:text-black">
-                      {v.title}
-                    </p>
-                    {secondLine ? (
-                      <p className="mt-2 line-clamp-2 text-[12px] font-normal leading-6 text-[#6b7280] md:mt-2.5 md:text-[18px] md:leading-6 md:text-black">
-                        {secondLine}
-                      </p>
-                    ) : null}
-                  </div>
+                  <VideoCardBody v={v} i={i} cat={cat} secondLine={secondLine} variant="mobile" />
+                </Link>
+              )
+            })}
+          </div>
+          <div className="mt-12 hidden grid-cols-1 gap-6 sm:grid md:grid-cols-2">
+            {items.slice(0, 4).map((v, i) => {
+              const cat = categoryLabel(v.category) || v.category?.trim() || '—'
+              const secondLine = (v.subtitle || '').trim() || (v.speaker || '').trim()
+              return (
+                <Link key={`d-${v.id}`} href={`/video/detail?id=${v.id}`} className={`group block ${editorialCardLift}`}>
+                  <VideoCardBody v={v} i={i} cat={cat} secondLine={secondLine} variant="desktop" />
                 </Link>
               )
             })}

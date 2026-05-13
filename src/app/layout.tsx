@@ -67,8 +67,9 @@ export default function RootLayout({
     <html lang="ko">
       <head>
         <meta name="msapplication-TileImage" content="/favicon-192x192.png" />
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" />
         <link
-          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
           rel="stylesheet"
         />
       </head>

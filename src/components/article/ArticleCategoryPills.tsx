@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { getSysCode, ARTICLE_CATEGORY_PARENT } from '@/lib/syscode'
 import type { SysCodeItem } from '@/lib/syscode'
 
-/** `/article` 페이지와 동일: sysCode 기반 아티클 카테고리 pill + `/article/category` 링크 */
+/** 메인·`/article` — sysCode 기반 카테고리 pill */
 export function ArticleCategoryPills() {
   const [categories, setCategories] = useState<SysCodeItem[]>([])
 
@@ -13,21 +13,23 @@ export function ArticleCategoryPills() {
     void getSysCode(ARTICLE_CATEGORY_PARENT).then((list) => setCategories(list ?? []))
   }, [])
 
+  const chipBase =
+    'inline-flex h-8 items-center rounded-full border border-ink-100 bg-paper px-[14px] text-[13px] font-semibold text-ink-700 transition-colors hover:border-ink-900 hover:text-ink-900'
+
   return (
-    <section className="mt-10 sm:mt-14">
-      <h2 className="mb-4 text-[18px] font-bold text-black sm:text-[24px]">아티클 카테고리</h2>
-      <div className="flex flex-wrap justify-center gap-2">
-        <Link
-          href="/article/category?category=all"
-          className="inline-flex rounded-full border border-gray-200 px-4 py-2.5 text-[13px] font-bold text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 sm:text-[14px]"
-        >
+    <section id="categories" className="pt-12 pb-11 max-sm:pt-10">
+      <div className="mb-3">
+        <h2 className="m-0 text-[28px] font-extrabold leading-tight tracking-[-0.025em] text-ink-900">아티클 카테고리</h2>
+      </div>
+      <div className="flex flex-wrap justify-center gap-2 border-y border-ink-100 py-4">
+        <Link href="/article/category?category=all" className={chipBase}>
           전체
         </Link>
         {categories.map((cat) => (
           <Link
             key={cat.sysCodeSid}
             href={`/article/category?category=${encodeURIComponent(cat.sysCodeSid)}`}
-            className="inline-flex rounded-full border border-gray-200 px-4 py-2.5 text-[13px] font-bold text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 sm:text-[14px]"
+            className={chipBase}
           >
             {cat.sysCodeName}
           </Link>

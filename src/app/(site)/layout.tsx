@@ -9,6 +9,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <Suspense
         fallback={
           <div className="sticky top-0 z-50">
+            <div className="h-8 bg-[#8D93FF]" aria-hidden />
             <div className="h-[52px] bg-neon-yellow" aria-hidden />
           </div>
         }

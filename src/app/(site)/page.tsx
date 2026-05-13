@@ -10,18 +10,17 @@ import { SeminarHomeProvider } from '@/components/home/SeminarHomeContext'
 import HomeSeminarReplay from '@/components/home/HomeSeminarReplay'
 import HomeUpcomingSeminars from '@/components/home/HomeUpcomingSeminars'
 import { useSeminarWwwEnabled } from '@/hooks/useSeminarWwwEnabled'
+import { SITE_HOME_RAIL_MAX_CLASS } from '@/lib/siteLayoutWidth'
 
 /**
- * 메인 페이지 (`_docsRules/frontend_www/main.md`)
- * - 히어로 → 다가오는 세미나 → 최신 아티클 → 특집 → 아티클 카테고리 → 최신 비디오 → 인기 아티클 → 세미나 다시보기
- * - `SYS26416B001` sysCodeValue `N`이면 다가오는 세미나·세미나 다시보기 미표시
+ * 메인 페이지 — `_docsRules/1_planDoc/wwwMainpagePlan.md` 에디토리얼 레일 840px
  */
 export default function Home() {
   const seminarWwwEnabled = useSeminarWwwEnabled()
 
   return (
-    <main className="bg-white text-black">
-      <div className="mx-auto max-w-[900px] px-4 sm:px-6 md:px-8 py-6 md:py-10">
+    <main className="bg-paper text-ink-900">
+      <div className={`mx-auto w-full ${SITE_HOME_RAIL_MAX_CLASS} max-sm:px-5 pb-16 md:pb-20`}>
         <HomeHeroCarousel />
 
         {seminarWwwEnabled ? (
@@ -34,7 +33,7 @@ export default function Home() {
 
             <ArticleCategoryPills />
 
-            <div className="pb-12">
+            <div className="space-y-0">
               <HomeLatestVideos />
               <HomePopularArticles />
               <HomeSeminarReplay />
@@ -48,7 +47,7 @@ export default function Home() {
 
             <ArticleCategoryPills />
 
-            <div className="pb-12">
+            <div className="space-y-0">
               <HomeLatestVideos />
               <HomePopularArticles />
             </div>

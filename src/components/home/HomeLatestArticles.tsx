@@ -7,13 +7,22 @@ import type { ArticleListItem } from '@/types/article'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
 import { getSysCode, getSysCodeName, ARTICLE_CATEGORY_PARENT } from '@/lib/syscode'
 import type { SysCodeItem } from '@/lib/syscode'
-import { CONTENT_CARD_HOVER_ZOOM_CLASS } from '@/components/article/articleBadges'
+import {
+  editorialCardLift,
+  editorialCatBadge,
+  editorialSectionHeadBorder,
+  editorialThumbHover,
+} from '@/components/home/editorialClasses'
 
 const PLACEHOLDER_GRADIENTS = [
-  'bg-gradient-to-br from-stone-400 via-stone-500 to-stone-700',
-  'bg-gradient-to-br from-sky-200 via-sky-300 to-sky-600',
-  'bg-gradient-to-br from-rose-200 via-rose-300 to-rose-600',
+  'bg-gradient-to-br from-stone-500 via-stone-600 to-stone-800',
+  'bg-gradient-to-br from-slate-500 via-slate-600 to-slate-800',
+  'bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900',
 ]
+
+/** 모바일 리스트 썸네일 — 160×120, 4:3, 직각 */
+const MOBILE_THUMB_CLASS =
+  'relative h-[120px] w-[160px] shrink-0 overflow-hidden rounded-none bg-cream-2'
 
 export default function HomeLatestArticles() {
   const [items, setItems] = useState<ArticleListItem[]>([])
@@ -41,114 +50,110 @@ export default function HomeLatestArticles() {
   }, [load])
 
   return (
-    <section className="mt-10 flex flex-col gap-[22px]">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h2 className="font-bold text-black text-[24px] leading-[32px]">최신 아티클</h2>
-        </div>
-        <Link href="/article" className="font-medium text-[#6b7280] text-[14px] hover:text-black">
-          더보기 &gt;
+    <section className="pt-10 pb-20 max-sm:py-16">
+      <div className={`flex flex-row items-start justify-between gap-4 ${editorialSectionHeadBorder}`}>
+        <h2 className="m-0 min-w-0 flex-1 text-[28px] font-extrabold leading-tight tracking-[-0.025em] text-ink-900">
+          최신 아티클
+        </h2>
+        <Link
+          href="/article"
+          className="group inline-flex shrink-0 items-center gap-1.5 self-start text-[14px] font-normal text-ink-500 transition-colors hover:text-ink-900"
+        >
+          더보기
+          <span aria-hidden className="transition-transform duration-200 ease-out group-hover:translate-x-0.5">
+            →
+          </span>
         </Link>
       </div>
 
       {loading ? (
         <>
-          <div className="flex flex-col gap-4 sm:hidden">
+          <div className="mt-10 flex flex-col gap-5 sm:hidden">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="flex gap-3">
-                <div className="h-[76px] w-[104px] shrink-0 animate-pulse rounded-lg bg-gray-200" />
+              <div key={i} className="flex animate-pulse gap-3">
+                <div className="h-[120px] w-[160px] shrink-0 rounded-none bg-ink-100" />
                 <div className="min-w-0 flex-1 space-y-2 py-0.5">
-                  <div className="h-4 w-[75%] animate-pulse rounded bg-gray-200" />
-                  <div className="h-3 w-full animate-pulse rounded bg-gray-100" />
-                  <div className="h-3 w-[83%] animate-pulse rounded bg-gray-100" />
+                  <div className="h-[18px] w-[75%] rounded-none bg-ink-100" />
+                  <div className="h-[15px] w-full rounded-none bg-ink-100" />
+                  <div className="h-[15px] w-[83%] rounded-none bg-ink-100" />
                 </div>
               </div>
             ))}
           </div>
-          <div className="hidden grid-cols-2 gap-6 sm:grid lg:grid-cols-3">
+          <div className="mt-12 hidden grid-cols-1 gap-x-6 gap-y-10 sm:grid sm:grid-cols-2 lg:grid-cols-3">
             {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="animate-pulse rounded-[8px] border border-[#e5e7eb] bg-gray-100 aspect-[3/2] min-h-[180px]"
-              />
+              <div key={i} className="animate-pulse">
+                <div className="mb-3 aspect-[4/3] w-full bg-cream-2" />
+                <div className="h-6 w-[88%] rounded-[3px] bg-ink-100" />
+                <div className="mt-2 h-4 w-full rounded-[3px] bg-ink-100" />
+              </div>
             ))}
           </div>
         </>
       ) : items.length === 0 ? (
-        <p className="text-sm text-[#6b7280]">등록된 아티클이 없습니다.</p>
+        <p className="mt-10 text-[16px] text-ink-500">등록된 아티클이 없습니다.</p>
       ) : (
         <>
-          <div className="flex flex-col gap-5 sm:hidden">
+          <div className="mt-10 flex flex-col gap-5 sm:hidden">
             {items.map((a, i) => {
               const thumbSrc = resolveArticleThumbnailUrl(a.thumbnail)
-              const catName = getSysCodeName(categories, a.category) || '—'
               const sub = (a.subtitle || '').trim()
+              const catName = getSysCodeName(categories, a.category) || '—'
               return (
-                <Link key={a.id} href={`/article/detail?id=${a.id}`} className="group flex gap-3 text-left">
-                  <div className="relative h-[76px] w-[104px] shrink-0 overflow-hidden rounded-lg bg-[#f3f4f6]">
+                <Link
+                  key={`m-${a.id}`}
+                  href={`/article/detail?id=${a.id}`}
+                  className={`group flex gap-3 text-left ${editorialCardLift}`}
+                >
+                  <div className={MOBILE_THUMB_CLASS}>
                     {thumbSrc ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={thumbSrc}
-                        alt=""
-                        className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-                      />
+                      <img src={thumbSrc} alt="" className={`h-full w-full object-cover ${editorialThumbHover}`} />
                     ) : (
                       <div
-                        className={`h-full w-full ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
+                        className={`h-full w-full ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${editorialThumbHover}`}
                       />
                     )}
-                    <span className="absolute left-2 top-2 z-10 max-w-[calc(100%-0.5rem)] truncate rounded-md bg-[#FF9F8A] px-1.5 py-0.5 text-[9px] font-bold text-black">
-                      {catName}
-                    </span>
+                    <span className={editorialCatBadge}>{catName}</span>
                   </div>
                   <div className="min-w-0 flex-1 self-start pt-0.5">
-                    <p className="line-clamp-2 text-[15px] font-bold leading-snug text-[#202020] group-hover:underline">
+                    <h3 className="m-0 line-clamp-2 text-[20px] font-bold leading-snug tracking-tight text-ink-900">
                       {a.title}
-                    </p>
+                    </h3>
                     {sub ? (
-                      <p className="mt-1 line-clamp-2 text-[13px] font-normal leading-relaxed text-[#4b5563]">
-                        {sub}
-                      </p>
+                      <p className="mt-1.5 line-clamp-2 text-[18px] font-normal leading-relaxed text-ink-500">{sub}</p>
                     ) : null}
                   </div>
                 </Link>
               )
             })}
           </div>
-          <div className="hidden grid-cols-2 gap-6 sm:grid lg:grid-cols-3">
+          <div className="mt-12 hidden grid-cols-1 gap-x-6 gap-y-10 sm:grid sm:grid-cols-2 lg:grid-cols-3">
             {items.map((a, i) => {
               const thumbSrc = resolveArticleThumbnailUrl(a.thumbnail)
               const sub = (a.subtitle || '').trim()
+              const catName = getSysCodeName(categories, a.category) || '—'
               return (
-                <Link key={a.id} href={`/article/detail?id=${a.id}`} className="group block">
-                  <div>
-                    <div className="relative overflow-hidden rounded-[8px] bg-[#f3f4f6]">
-                      {thumbSrc ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={thumbSrc}
-                          alt=""
-                          className={`aspect-[3/2] w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-                        />
-                      ) : (
-                        <div
-                          className={`aspect-[3/2] w-full ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-                        />
-                      )}
-                      <span className="absolute left-3 top-3 z-10 rounded-[8px] bg-[#FF9F8A] px-2 py-1 font-bold text-black text-[10px]">
-                        {getSysCodeName(categories, a.category)}
-                      </span>
-                    </div>
-                    <p className="mt-3 line-clamp-2 text-[16px] font-medium leading-6 text-[#202020] group-hover:underline md:text-[20px] md:font-bold md:text-black">
-                      {a.title}
-                    </p>
-                    {sub ? (
-                      <p className="mt-1 line-clamp-2 text-[14px] font-normal leading-snug text-[#4b5563] md:text-[18px] md:text-black">
-                        {sub}
-                      </p>
-                    ) : null}
+                <Link
+                  key={`d-${a.id}`}
+                  href={`/article/detail?id=${a.id}`}
+                  className={`group block ${editorialCardLift}`}
+                >
+                  <div className="relative mb-3 aspect-[4/3] w-full overflow-hidden rounded-none bg-cream-2">
+                    {thumbSrc ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={thumbSrc} alt="" className={`h-full w-full object-cover ${editorialThumbHover}`} />
+                    ) : (
+                      <div
+                        className={`h-full w-full ${PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length]} ${editorialThumbHover}`}
+                      />
+                    )}
+                    <span className={editorialCatBadge}>{catName}</span>
                   </div>
+                  <h3 className="m-0 text-[20px] font-extrabold leading-[1.35] tracking-[-0.02em] text-ink-900">
+                    {a.title}
+                  </h3>
+                  {sub ? <p className="mt-2 text-[16px] leading-[1.55] text-ink-500">{sub}</p> : null}
                 </Link>
               )
             })}

@@ -15,13 +15,10 @@ import {
 } from '@/lib/syscode'
 import WwwPagination from '@/components/common/WwwPagination'
 import {
-  contentCardBadges,
-  sharedTopIdsFromRankingList,
-  CONTENT_CARD_BADGE_STYLES,
-  CONTENT_CARD_HOVER_ZOOM_CLASS,
-  normalizeContentCardBadges,
-} from '@/components/article/articleBadges'
-import { fetchArticleRankingShare } from '@/services/libraryRanking'
+  editorialCardLift,
+  editorialCatBadge,
+  editorialThumbHover,
+} from '@/components/home/editorialClasses'
 
 const PAGE_SIZE = 12
 
@@ -42,24 +39,115 @@ function resolveThumbnailUrl(url: string | null | undefined): string | null {
   return u
 }
 
-function formatDurationSec(sec: number | undefined | null): string {
-  if (sec == null || !Number.isFinite(sec) || sec < 0) return ''
-  const m = Math.floor(sec / 60)
-  const s = Math.floor(sec % 60)
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
-
 const PLACEHOLDER_GRADIENTS = [
-  'bg-gradient-to-br from-sky-200 via-sky-400 to-sky-700',
-  'bg-gradient-to-br from-emerald-200 via-emerald-400 to-emerald-700',
-  'bg-gradient-to-br from-violet-200 via-violet-400 to-violet-700',
+  'bg-gradient-to-br from-stone-500 via-stone-600 to-stone-800',
+  'bg-gradient-to-br from-slate-500 via-slate-600 to-slate-800',
+  'bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900',
 ]
+
+const PAGE_SHELL_CLASS = 'mx-auto w-full max-w-[840px] max-sm:px-5 py-6 md:py-10'
+const CARD_GRID_CLASS =
+  'mt-10 grid grid-cols-1 gap-5 sm:mt-12 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3'
+const MOBILE_THUMB_CLASS =
+  'relative h-[120px] w-[160px] shrink-0 overflow-hidden rounded-none bg-cream-2'
 
 function pillClass(active: boolean) {
   return [
     'rounded-full px-4 py-2 text-[13px] font-bold transition-colors',
     active ? 'bg-black text-white' : 'border border-gray-200 bg-white text-black hover:bg-gray-50',
   ].join(' ')
+}
+
+function PublicVideoSeminarCard({
+  row,
+  index,
+  detailPathPrefix,
+  categoryName,
+}: {
+  row: PublicVideoListItem
+  index: number
+  detailPathPrefix: string
+  categoryName: string
+}) {
+  const thumb = resolveThumbnailUrl(row.thumbnail)
+  const gradient = PLACEHOLDER_GRADIENTS[index % PLACEHOLDER_GRADIENTS.length]
+  const subtitle = row.subtitle?.trim() ?? ''
+  const catName = categoryName || row.category?.trim() || '—'
+  const href = `${detailPathPrefix}?id=${row.id}`
+
+  return (
+    <>
+      <Link href={href} className={`group flex gap-3 text-left sm:hidden ${editorialCardLift}`}>
+        <div className={MOBILE_THUMB_CLASS}>
+          {thumb ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thumb} alt="" className={`h-full w-full object-cover ${editorialThumbHover}`} />
+          ) : (
+            <div className={`h-full w-full ${gradient} ${editorialThumbHover}`} />
+          )}
+          <span className={editorialCatBadge}>{catName}</span>
+        </div>
+        <div className="min-w-0 flex-1 self-start pt-0.5">
+          <h3 className="m-0 line-clamp-2 text-[20px] font-bold leading-snug tracking-tight text-ink-900">
+            {row.title}
+          </h3>
+          {subtitle ? (
+            <p className="mt-1.5 line-clamp-2 text-[18px] font-normal leading-relaxed text-ink-500">
+              {subtitle}
+            </p>
+          ) : null}
+        </div>
+      </Link>
+
+      <Link href={href} className={`group hidden sm:block ${editorialCardLift}`}>
+        <div className="relative mb-3 aspect-[4/3] w-full overflow-hidden rounded-none bg-cream-2">
+          {thumb ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thumb} alt="" className={`h-full w-full object-cover ${editorialThumbHover}`} />
+          ) : (
+            <div className={`h-full w-full ${gradient} ${editorialThumbHover}`} />
+          )}
+          <span className={editorialCatBadge}>{catName}</span>
+        </div>
+        <h3 className="m-0 line-clamp-2 text-[20px] font-extrabold leading-[1.35] tracking-[-0.02em] text-ink-900">
+          {row.title}
+        </h3>
+        {subtitle ? (
+          <p className="mt-2 line-clamp-2 text-[16px] leading-[1.55] text-ink-500">
+            {subtitle}
+          </p>
+        ) : null}
+      </Link>
+    </>
+  )
+}
+
+function CardSkeletonGrid() {
+  return (
+    <>
+      <div className="mt-10 flex flex-col gap-5 sm:hidden">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="flex animate-pulse gap-3">
+            <div className="h-[120px] w-[160px] shrink-0 rounded-none bg-ink-100" />
+            <div className="min-w-0 flex-1 space-y-2 py-0.5">
+              <div className="h-[18px] w-[75%] rounded-none bg-ink-100" />
+              <div className="h-[15px] w-full rounded-none bg-ink-100" />
+              <div className="h-[15px] w-[83%] rounded-none bg-ink-100" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-12 hidden grid-cols-1 gap-x-6 gap-y-10 sm:grid sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="animate-pulse">
+            <div className="mb-3 aspect-[4/3] w-full bg-cream-2" />
+            <div className="h-6 w-[88%] rounded-[3px] bg-ink-100" />
+            <div className="mt-2 h-4 w-full rounded-[3px] bg-ink-100" />
+          </div>
+        ))}
+      </div>
+    </>
+  )
 }
 
 export interface PublicVideoSeminarListPageProps {
@@ -90,8 +178,6 @@ export default function PublicVideoSeminarListPage({
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [seenCategories, setSeenCategories] = useState<string[]>([])
   const [categoryCodes, setCategoryCodes] = useState<SysCodeItem[]>([])
-  /** list.md BEST — 당일 공유 랭킹 상위 contentCode 집합 */
-  const [shareTopIds, setShareTopIds] = useState<Set<string>>(() => new Set())
 
   const categoryParent = useMemo(
     () => (listContentType === 'seminar' ? SEMINAR_CATEGORY_PARENT : VIDEO_CATEGORY_PARENT),
@@ -101,21 +187,6 @@ export default function PublicVideoSeminarListPage({
   useEffect(() => {
     void getSysCode(categoryParent).then(setCategoryCodes)
   }, [categoryParent])
-
-  useEffect(() => {
-    const ct = listContentType === 'video' ? ('VIDEO' as const) : ('SEMINAR' as const)
-    let cancelled = false
-    fetchArticleRankingShare(ct)
-      .then((res) => {
-        if (!cancelled) setShareTopIds(sharedTopIdsFromRankingList(res.list))
-      })
-      .catch(() => {
-        if (!cancelled) setShareTopIds(new Set())
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [listContentType])
 
   const categoryLabel = useCallback(
     (sid: string | undefined | null) => {
@@ -165,7 +236,7 @@ export default function PublicVideoSeminarListPage({
 
   return (
     <main className="bg-white text-black">
-      <div className="mx-auto max-w-[900px] px-4 py-6 sm:px-6 md:px-8 md:py-10">
+      <div className={PAGE_SHELL_CLASS}>
         <header className="mb-8 sm:mb-10">
           <h1 className="text-[40px] font-bold leading-tight tracking-tight text-black">{pageTitle}</h1>
           {pageSubtitle ? (
@@ -228,65 +299,23 @@ export default function PublicVideoSeminarListPage({
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-sm text-gray-500">Loading...</div>
+          <CardSkeletonGrid />
         ) : error ? (
           <div className="py-16 text-center text-sm text-gray-600">{error}</div>
         ) : items.length === 0 ? (
           <div className="py-16 text-center text-sm text-gray-600">{emptyListMessage}</div>
         ) : (
           <section>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+            <div className={CARD_GRID_CLASS}>
               {items.map((row, idx) => {
-                const thumb = resolveThumbnailUrl(row.thumbnail)
-                const durStr = formatDurationSec(row.videoStreamInfo?.duration ?? null)
-                const badges = normalizeContentCardBadges(
-                  contentCardBadges(row.createdAt, row.id, shareTopIds),
-                )
                 return (
-                  <Link key={row.id} href={`${detailPathPrefix}?id=${row.id}`} className="group block">
-                    <div className="relative">
-                      <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-gray-200 bg-[#f3f4f6] shadow-sm">
-                        {thumb ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={thumb}
-                            alt=""
-                            className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-                          />
-                        ) : (
-                          <div
-                            className={`h-full w-full ${PLACEHOLDER_GRADIENTS[idx % PLACEHOLDER_GRADIENTS.length]} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-                          />
-                        )}
-                      </div>
-                      {badges.length > 0 ? (
-                        <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
-                          {badges.map((b) => (
-                            <span
-                              key={b}
-                              className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold ${
-                                b === 'NEW' ? 'bg-[#fde048] text-black' : CONTENT_CARD_BADGE_STYLES[b]
-                              }`}
-                            >
-                              {b}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-                      {durStr ? (
-                        <span className="absolute bottom-3 right-3 z-10 rounded bg-black/70 px-2 py-0.5 text-[11px] text-white">
-                          {durStr}
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-2 text-[11px] uppercase text-gray-500 sm:text-[12px]">
-                      {categoryLabel(row.category) || row.category?.trim() || '—'} · {row.speaker ?? '—'}
-                    </p>
-                    <p className="mt-0.5 text-[16px] font-medium leading-snug text-[#202020] line-clamp-2 transition-colors group-hover:opacity-80">
-                      {row.title}
-                    </p>
-                    <p className="mt-1 line-clamp-2 text-[12px] text-gray-600 sm:text-[13px]">{row.subtitle ?? ''}</p>
-                  </Link>
+                  <PublicVideoSeminarCard
+                    key={row.id}
+                    row={row}
+                    index={idx}
+                    detailPathPrefix={detailPathPrefix}
+                    categoryName={categoryLabel(row.category)}
+                  />
                 )
               })}
             </div>

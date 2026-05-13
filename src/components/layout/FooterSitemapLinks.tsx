@@ -8,6 +8,8 @@ type Props = {
   recruitHref: string
   partnershipHref: string
   layout?: FooterSitemapLinksLayout
+  /** 다크 푸터(홈 에디토리얼) vs 기본 라이트 */
+  tone?: 'light' | 'dark'
   /** GNB 등 — 링크 클릭 후 드로어 닫기 */
   onNavigate?: () => void
   /** 있으면 「뉴스레터 신청」을 1:1 문의 아래에 표시 (newsLetterModelPlan.md §1-1) */
@@ -23,19 +25,24 @@ export default function FooterSitemapLinks({
   recruitHref,
   partnershipHref,
   layout = 'footer',
+  tone = 'light',
   onNavigate,
   onNewsletterClick,
 }: Props) {
   const col =
     layout === 'footer' ? 'min-w-0 md:col-span-1' : 'min-w-0'
-  const titleClass =
-    layout === 'gnbDrawer'
+  const isDark = tone === 'dark'
+  const titleClass = isDark
+    ? 'mb-3 text-[13px] font-bold uppercase tracking-[0.06em] text-white'
+    : layout === 'gnbDrawer'
       ? 'text-[12px] font-extrabold text-gray-800'
       : 'text-[12px] font-extrabold text-gray-700'
-  const linkClass =
-    layout === 'gnbDrawer'
+  const linkClass = isDark
+    ? 'text-[13px] text-white/60 transition-colors hover:text-white'
+    : layout === 'gnbDrawer'
       ? 'text-[13px] font-medium text-gray-700 transition-opacity hover:opacity-70'
       : 'text-[12px] text-gray-600 hover:text-gray-900 transition-colors'
+  const mutedClass = isDark ? 'text-[13px] text-white/35' : layout === 'gnbDrawer' ? 'text-[13px] text-gray-400' : 'text-gray-400'
 
   return (
     <>
@@ -59,7 +66,7 @@ export default function FooterSitemapLinks({
                 인재채용
               </a>
             ) : (
-              <span className={layout === 'gnbDrawer' ? 'text-[13px] text-gray-400' : 'text-gray-400'}>인재채용</span>
+              <span className={mutedClass}>인재채용</span>
             )}
           </li>
           <li>
@@ -74,7 +81,7 @@ export default function FooterSitemapLinks({
                 광고 및 협업 문의
               </a>
             ) : (
-              <span className={layout === 'gnbDrawer' ? 'text-[13px] text-gray-400' : 'text-gray-400'}>
+              <span className={mutedClass}>
                 광고 및 협업 문의
               </span>
             )}

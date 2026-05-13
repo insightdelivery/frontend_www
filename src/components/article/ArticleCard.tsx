@@ -3,9 +3,11 @@
 import Link from 'next/link'
 import { resolveArticleThumbnailUrl } from '@/lib/articleThumbnailUrl'
 import {
-  CONTENT_CARD_BADGE_STYLES,
-  CONTENT_CARD_HOVER_ZOOM_CLASS,
-  normalizeContentCardBadges,
+  editorialCardLift,
+  editorialCatBadge,
+  editorialThumbHover,
+} from '@/components/home/editorialClasses'
+import {
   type ArticleCardBadge,
 } from '@/components/article/articleBadges'
 
@@ -27,12 +29,11 @@ export interface ArticleCardProps {
 
 const DEFAULT_GRADIENT = 'bg-gradient-to-br from-gray-200 via-gray-300 to-gray-500'
 
-/** 제목 위 카테고리 라벨 통일 스타일 (list.md §3.2) */
-const CATEGORY_LABEL_CLASS =
-  'inline-flex items-center rounded-[6px] px-3 py-1.5 text-[12px] font-bold text-white font-sans bg-[#8D93FF]'
+const MOBILE_THUMB_CLASS =
+  'relative h-[120px] w-[160px] shrink-0 overflow-hidden rounded-none bg-cream-2'
 
 export function getCategoryPillClass(_name: string): string {
-  return CATEGORY_LABEL_CLASS
+  return editorialCatBadge
 }
 
 export function ArticleCard({
@@ -40,50 +41,56 @@ export function ArticleCard({
   title,
   subtitle,
   categoryName = '카테고리',
-  badges,
   thumbnail,
   imageGradient = DEFAULT_GRADIENT,
 }: ArticleCardProps) {
   const gradient = imageGradient || DEFAULT_GRADIENT
   const sub = typeof subtitle === 'string' ? subtitle.trim() : ''
-  const badgeList = normalizeContentCardBadges(badges)
   const thumbSrc = resolveArticleThumbnailUrl(thumbnail ?? null)
+  const catName = categoryName.trim() || '—'
+  const href = `/article/detail?id=${encodeURIComponent(id)}`
 
   return (
-    <Link href={`/article/detail?id=${encodeURIComponent(id)}`} className="block group">
-      <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div className="relative aspect-[3/2] w-full overflow-hidden">
+    <>
+      <Link href={href} className={`group flex gap-3 text-left sm:hidden ${editorialCardLift}`}>
+        <div className={MOBILE_THUMB_CLASS}>
           {thumbSrc ? (
-            <img
-              src={thumbSrc}
-              alt=""
-              className={`h-full w-full object-cover ${CONTENT_CARD_HOVER_ZOOM_CLASS}`}
-            />
+            <img src={thumbSrc} alt="" className={`h-full w-full object-cover ${editorialThumbHover}`} />
           ) : (
-            <div className={`h-full w-full ${gradient} ${CONTENT_CARD_HOVER_ZOOM_CLASS}`} />
+            <div className={`h-full w-full ${gradient} ${editorialThumbHover}`} />
           )}
+          <span className={editorialCatBadge}>{catName}</span>
         </div>
-        {badgeList.length > 0 ? (
-          <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
-            {badgeList.map((b) => (
-              <span
-                key={b}
-                className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold ${CONTENT_CARD_BADGE_STYLES[b]}`}
-              >
-                {b}
-              </span>
-            ))}
-          </div>
+        <div className="min-w-0 flex-1 self-start pt-0.5">
+          <h3 className="m-0 line-clamp-2 text-[20px] font-bold leading-snug tracking-tight text-ink-900">
+            {title}
+          </h3>
+          {sub ? (
+            <p className="mt-1.5 line-clamp-2 text-[18px] font-normal leading-relaxed text-ink-500">
+              {sub}
+            </p>
+          ) : null}
+        </div>
+      </Link>
+
+      <Link href={href} className={`group hidden sm:block ${editorialCardLift}`}>
+        <div className="relative mb-3 aspect-[4/3] w-full overflow-hidden rounded-none bg-cream-2">
+          {thumbSrc ? (
+            <img src={thumbSrc} alt="" className={`h-full w-full object-cover ${editorialThumbHover}`} />
+          ) : (
+            <div className={`h-full w-full ${gradient} ${editorialThumbHover}`} />
+          )}
+          <span className={editorialCatBadge}>{catName}</span>
+        </div>
+        <h3 className="m-0 line-clamp-2 text-[20px] font-extrabold leading-[1.35] tracking-[-0.02em] text-ink-900">
+          {title}
+        </h3>
+        {sub ? (
+          <p className="mt-2 line-clamp-2 text-[16px] leading-[1.55] text-ink-500">
+            {sub}
+          </p>
         ) : null}
-      </div>
-      <p className="mt-2 text-[15px] sm:text-[17px] font-extrabold leading-snug line-clamp-2 group-hover:text-gray-600 transition-colors">
-        {title}
-      </p>
-      {sub ? (
-        <p className="mt-0.5 text-[12px] sm:text-[13px] text-gray-500 leading-snug line-clamp-2">
-          {sub}
-        </p>
-      ) : null}
-    </Link>
+      </Link>
+    </>
   )
 }

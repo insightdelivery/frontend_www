@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { fetchHeroDisplayEvents } from '@/services/displayEvent'
@@ -12,8 +12,32 @@ import { getApiBaseURL } from '@/lib/axios'
 const SLIDE_HOLD_MS = 5000
 const SLIDE_TRANSITION_MS = 550
 
+/** 히어로 이미지 항상 4:3 — 데스크톱 좌열 510px 너비에 맞춤, 모바일은 전체 너비 4:3 */
+const HERO_BANNER_GRID_CLASS =
+  'grid w-full grid-cols-1 grid-rows-[auto_auto] overflow-hidden md:grid-cols-[510px_minmax(0,1fr)] md:grid-rows-1 md:items-stretch'
+
+const HERO_IMAGE_CELL_CLASS = 'relative w-full aspect-[4/3] shrink-0 overflow-hidden bg-cream-2'
+
 const BADGE_CLASS =
-  'inline-block rounded-md bg-[#e1f800] px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-black md:text-xs'
+  'inline-block bg-accent-lime px-[9px] py-[5px] text-[11px] font-bold uppercase tracking-[0.1em] text-ink-900'
+
+const HERO_MOBILE_MQ = '(max-width: 767px)'
+
+function subscribeHeroMobileLayout(callback: () => void) {
+  if (typeof window === 'undefined') return () => {}
+  const mq = window.matchMedia(HERO_MOBILE_MQ)
+  mq.addEventListener('change', callback)
+  return () => mq.removeEventListener('change', callback)
+}
+
+function getHeroMobileLayoutSnapshot() {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia(HERO_MOBILE_MQ).matches
+}
+
+function getHeroMobileLayoutServerSnapshot() {
+  return false
+}
 
 /** 백엔드 상대 경로(/media/…)는 API 베이스를 붙임 */
 function resolveHeroImageUrl(url: string | null | undefined): string | null {
@@ -82,10 +106,12 @@ function useContainerWidth<T extends HTMLElement>(enabled: boolean) {
 type SplitSlideShellProps = {
   slide: DisplayEventHeroItem
   cellWidth?: number
+  /** 모바일: 모든 슬라이드 텍스트 영역 세로를 최대 높이에 맞출 때(px). 데스크톱에서는 무시 */
+  mobileTextUniformMinPx?: number
 }
 
-/** Director's Pick: 좌 이미지 + 우 연회색 텍스트 패널 (wwwMainPage §2.1 / 참고 시안) */
-function HeroSplitSlideShell({ slide, cellWidth }: SplitSlideShellProps) {
+/** Director's Pick — 좌 4:3 + 우 cream (wwwMainpagePlan / 프로토타입) */
+function HeroSplitSlideShell({ slide, cellWidth, mobileTextUniformMinPx }: SplitSlideShellProps) {
   const title = slide.title || '제목 없음'
   const subtitle = (slide.subtitle || '').trim()
   const badge = slide.badgeText?.trim() || ''
@@ -94,31 +120,37 @@ function HeroSplitSlideShell({ slide, cellWidth }: SplitSlideShellProps) {
 
   const body = (
     <div
-      className="flex min-h-[220px] w-full flex-col bg-[#f2f2f2] md:min-h-[280px] md:max-h-[min(70vh,520px)] md:flex-row md:items-stretch"
+      className={HERO_BANNER_GRID_CLASS}
       style={cellWidth ? { width: cellWidth } : undefined}
     >
-      <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-neutral-900 md:aspect-auto md:h-auto md:min-h-0 md:w-[58%]">
+      <div className={HERO_IMAGE_CELL_CLASS}>
         {bg ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={bg}
             alt=""
-            className="h-full w-full object-cover md:absolute md:inset-0 md:min-h-full"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-[600ms] [transition-timing-function:cubic-bezier(.2,.6,.2,1)] group-hover:scale-[1.03]"
           />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-600 via-gray-800 to-gray-950" />
+          <div className="absolute inset-0 bg-gradient-to-br from-neutral-700 via-neutral-800 to-neutral-950" />
         )}
       </div>
-      <div className="flex min-h-0 flex-1 flex-col justify-between px-5 py-5 md:w-[42%] md:px-7 md:py-7">
+      <div
+        data-hero-text-panel
+        className="flex min-h-0 shrink-0 flex-col justify-center overflow-y-auto bg-cream px-6 py-5 md:h-full md:min-h-0 md:px-8 md:py-8"
+        style={
+          mobileTextUniformMinPx != null && mobileTextUniformMinPx > 0
+            ? { minHeight: mobileTextUniformMinPx }
+            : undefined
+        }
+      >
         <div>
           {badge ? <span className={BADGE_CLASS}>{badge}</span> : null}
-          <h2 className="mt-3 text-[22px] font-bold leading-snug tracking-tight text-black md:mt-4 md:text-[28px] md:leading-tight">
+          <h2 className="mt-4 text-[clamp(1.625rem,3.6vw,2.25rem)] font-black leading-tight tracking-[-0.03em] text-ink-900">
             {title}
           </h2>
           {subtitle ? (
-            <p className="mt-2 line-clamp-3 text-sm font-medium leading-relaxed text-black/80 md:mt-3 md:text-[15px]">
-              {subtitle}
-            </p>
+            <p className="mt-3 text-[15px] leading-relaxed text-ink-500">{subtitle}</p>
           ) : null}
         </div>
       </div>
@@ -129,7 +161,7 @@ function HeroSplitSlideShell({ slide, cellWidth }: SplitSlideShellProps) {
     return (
       <Link
         href={href.path}
-        className="block shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e1f800]"
+        className="group block shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-lime"
         style={cellWidth ? { width: cellWidth } : undefined}
         aria-label={title}
       >
@@ -143,7 +175,7 @@ function HeroSplitSlideShell({ slide, cellWidth }: SplitSlideShellProps) {
         href={href.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e1f800]"
+        className="group block shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-lime"
         style={cellWidth ? { width: cellWidth } : undefined}
         aria-label={title}
       >
@@ -152,7 +184,7 @@ function HeroSplitSlideShell({ slide, cellWidth }: SplitSlideShellProps) {
     )
   }
   return (
-    <div className="block shrink-0" style={cellWidth ? { width: cellWidth } : undefined}>
+    <div className="group block shrink-0" style={cellWidth ? { width: cellWidth } : undefined}>
       {body}
     </div>
   )
@@ -173,7 +205,7 @@ function HeroDots({
   return (
     <div
       className="inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 shadow-sm"
-      style={{ backgroundColor: 'rgba(38,38,38,0.30)' }} // #262626 is neutral-800
+      style={{ backgroundColor: 'rgba(15,15,15,0.08)' }}
     >
       {slides.map((s, i) => (
         <button
@@ -182,7 +214,7 @@ function HeroDots({
           aria-label={`배너 ${i + 1}로 이동`}
           aria-current={i === cur ? 'true' : undefined}
           className={`h-1.5 w-1.5 rounded-full transition-colors ${
-            i === cur ? 'bg-white' : 'bg-white/35 hover:bg-white/60'
+            i === cur ? 'bg-ink-900' : 'bg-ink-900/30 hover:bg-ink-900/55'
           }`}
           onClick={(e) => {
             e.preventDefault()
@@ -195,35 +227,33 @@ function HeroDots({
   )
 }
 
-function StaticHero() {
+function StaticHero({ variant = 'home' }: { variant?: 'home' | 'inner' }) {
+  const pad = variant === 'home' ? 'pt-12 pb-6' : 'mb-8 sm:mb-10'
   return (
-    <section className="mb-8 overflow-hidden rounded-xl bg-[#f2f2f2] shadow-sm ring-1 ring-black/5">
-      <div className="flex min-h-[220px] w-full flex-col md:min-h-[300px] md:max-h-[min(70vh,520px)] md:flex-row">
-        <div className="relative aspect-video w-full shrink-0 bg-gradient-to-br from-slate-600 to-slate-900 md:aspect-auto md:h-auto md:w-[58%]">
-          <div className="absolute inset-0 flex items-end justify-start p-6 md:p-10">
-            <span className="font-serif text-3xl font-light tracking-wide text-white/90 md:text-4xl">inde</span>
-          </div>
+    <section className={pad}>
+      <div className={HERO_BANNER_GRID_CLASS}>
+        <div className={HERO_IMAGE_CELL_CLASS}>
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-slate-900" />
         </div>
-        <div className="flex flex-1 flex-col justify-between px-5 py-5 md:w-[42%] md:px-7 md:py-7">
-          <div>
-            <span className={BADGE_CLASS}>Director&apos;s Pick</span>
-            <h2 className="mt-3 text-[22px] font-bold leading-snug text-black md:mt-4 md:text-[28px]">
-              소망의 시작, 파격적이고 명료한 복음이 바꾸는 당신의 일상
-            </h2>
-            <p className="mt-2 line-clamp-3 text-sm font-medium text-black/80 md:mt-3 md:text-[15px]">
-              디렉터 추천 콘텐츠 — 아티클, 비디오 등 엄선된 콘텐츠를 만나보세요.
-            </p>
-          </div>
+        <div className="flex min-h-0 shrink-0 flex-col justify-center overflow-y-auto bg-cream px-6 py-5 md:h-full md:min-h-0 md:px-8 md:py-8">
+          <span className={BADGE_CLASS}>Director&apos;s Pick</span>
+          <h2 className="mt-4 text-[clamp(1.625rem,3.6vw,2.25rem)] font-black leading-tight tracking-[-0.03em] text-ink-900">
+            소망의 시작, 파격적이고 명료한 복음이 바꾸는 당신의 일상
+          </h2>
+          <p className="mt-3 text-[15px] leading-relaxed text-ink-500">
+            디렉터 추천 콘텐츠 — 아티클, 비디오 등 엄선된 콘텐츠를 만나보세요.
+          </p>
         </div>
       </div>
     </section>
   )
 }
 
-function ReducedMotionHero({ slides }: { slides: DisplayEventHeroItem[] }) {
+function ReducedMotionHero({ slides, variant = 'home' }: { slides: DisplayEventHeroItem[]; variant?: 'home' | 'inner' }) {
   const slide = slides[0]!
+  const pad = variant === 'home' ? 'pt-12 pb-6' : 'mb-8 sm:mb-10'
   return (
-    <section className="mb-8 overflow-hidden rounded-xl bg-[#f2f2f2] shadow-sm ring-1 ring-black/5">
+    <section className={pad}>
       <HeroSplitSlideShell slide={slide} />
     </section>
   )
@@ -249,6 +279,55 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
     !loading && resolvedEventTypeCode != null && slides.length > 0 && !prefersReducedMotion
 
   const { ref: containerRef, width: containerW } = useContainerWidth<HTMLDivElement>(measureEnabled)
+
+  const isHeroMobileLayout = useSyncExternalStore(
+    subscribeHeroMobileLayout,
+    getHeroMobileLayoutSnapshot,
+    getHeroMobileLayoutServerSnapshot,
+  )
+  const [mobileHeroTextMinPx, setMobileHeroTextMinPx] = useState(0)
+
+  useLayoutEffect(() => {
+    if (!isHeroMobileLayout || !measureEnabled || slides.length === 0) {
+      setMobileHeroTextMinPx(0)
+      return
+    }
+    setMobileHeroTextMinPx(0)
+  }, [slides, isHeroMobileLayout, measureEnabled])
+
+  useLayoutEffect(() => {
+    if (!isHeroMobileLayout) {
+      return
+    }
+    if (!measureEnabled || slides.length === 0) {
+      return
+    }
+    const root = containerRef.current
+    if (!root || !containerW) return
+
+    const measure = () => {
+      const panels = root.querySelectorAll<HTMLElement>('[data-hero-text-panel]')
+      if (!panels.length) return
+      let max = 0
+      panels.forEach((p) => {
+        max = Math.max(max, p.getBoundingClientRect().height)
+      })
+      const next = Math.ceil(max)
+      setMobileHeroTextMinPx((prev) => (prev === next ? prev : next))
+    }
+
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(measure)
+    })
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(measure)
+    })
+    ro.observe(root)
+    return () => {
+      cancelAnimationFrame(id)
+      ro.disconnect()
+    }
+  }, [isHeroMobileLayout, measureEnabled, containerW, slides])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -379,42 +458,37 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
   )
 
   const splitLoading = (
-    <div className="flex min-h-[200px] w-full animate-pulse flex-col md:min-h-[260px] md:flex-row">
-      <div className="aspect-video w-full bg-neutral-300 md:w-[58%] md:max-w-[58%]" />
-      <div className="flex flex-1 flex-col gap-3 p-5 md:w-[42%] md:p-7">
-        <div className="h-5 w-24 rounded-md bg-neutral-300" />
-        <div className="h-8 w-full max-w-md rounded-md bg-neutral-200" />
-        <div className="h-4 w-full rounded-md bg-neutral-200" />
-        <div className="h-4 w-[85%] rounded-md bg-neutral-200" />
+    <div className={`${HERO_BANNER_GRID_CLASS} animate-pulse`}>
+      <div className={HERO_IMAGE_CELL_CLASS} />
+      <div className="flex min-h-0 shrink-0 flex-col gap-3 overflow-hidden bg-cream px-6 py-5 md:h-full md:px-8 md:py-8">
+        <div className="h-5 w-24 rounded-[3px] bg-ink-100" />
+        <div className="h-8 w-full max-w-md rounded-[3px] bg-ink-100" />
+        <div className="h-4 w-full rounded-[3px] bg-ink-100" />
+        <div className="h-4 w-[85%] rounded-[3px] bg-ink-100" />
       </div>
     </div>
   )
 
+  const sectionPad = variant === 'home' ? 'pt-12 pb-6' : 'mb-8 sm:mb-10'
+
   if (loading) {
-    if (variant === 'inner') {
-      return (
-        <section className="mb-8 overflow-hidden rounded-xl bg-[#f2f2f2] sm:mb-10">
-          {splitLoading}
-        </section>
-      )
-    }
-    return (
-      <section className="mb-8 overflow-hidden rounded-xl bg-[#f2f2f2] ring-1 ring-black/5">{splitLoading}</section>
-    )
+    return <section className={sectionPad}>{splitLoading}</section>
   }
 
   if (!resolvedEventTypeCode) {
-    return <StaticHero />
+    return <StaticHero variant={variant} />
   }
 
   if (slides.length === 0) {
     return (
-      <section className="mb-8 overflow-hidden rounded-xl bg-[#f2f2f2] ring-1 ring-black/5">
-        <div className="flex min-h-[200px] flex-col md:flex-row">
-          <div className="flex aspect-video w-full items-center justify-center bg-neutral-100 md:w-[58%]">
-            <span className="px-4 text-center text-sm text-neutral-500">등록된 Hero 배너가 없습니다.</span>
+      <section className={sectionPad}>
+        <div className={HERO_BANNER_GRID_CLASS}>
+          <div className={HERO_IMAGE_CELL_CLASS}>
+            <div className="absolute inset-0 flex items-center justify-center bg-cream-2">
+              <span className="px-4 text-center text-sm text-ink-500">등록된 Hero 배너가 없습니다.</span>
+            </div>
           </div>
-          <div className="flex flex-1 items-center border-t border-neutral-200/80 p-5 text-xs text-neutral-500 md:border-t-0 md:border-l md:w-[42%]">
+          <div className="flex min-h-0 shrink-0 items-center overflow-y-auto border-t border-ink-100 bg-cream px-6 py-5 text-xs text-ink-500 md:h-full md:border-t-0 md:border-l md:border-ink-100">
             eventTypeCode: {resolvedEventTypeCode}
           </div>
         </div>
@@ -423,20 +497,24 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
   }
 
   if (prefersReducedMotion) {
-    return <ReducedMotionHero slides={slides} />
+    return <ReducedMotionHero slides={slides} variant={variant} />
   }
 
   const chevronBtn =
-    'z-[6] flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black/45 text-white shadow-md backdrop-blur-[2px] opacity-0 pointer-events-none transition-[opacity,background-color] duration-200 group-hover:pointer-events-auto group-hover:opacity-100 hover:bg-black/60 focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e1f800] md:h-12 md:w-12'
+    'z-[6] flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ink-100 bg-paper text-ink-900 shadow-[0_4px_16px_rgba(0,0,0,0.12)] opacity-0 pointer-events-none transition-[opacity,background-color,color,border-color] duration-200 group-hover:pointer-events-auto group-hover:opacity-100 hover:border-ink-900 hover:bg-ink-900 hover:text-white focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-lime md:h-11 md:w-11'
 
   if (slides.length === 1) {
     return (
-      <section className="mb-8 overflow-hidden rounded-xl bg-[#f2f2f2] shadow-sm ring-1 ring-black/5">
-        <div ref={containerRef} className="relative w-full overflow-hidden">
+      <section className={sectionPad}>
+        <div ref={containerRef} className="group relative w-full overflow-hidden">
           {containerW > 0 ? (
-            <HeroSplitSlideShell slide={slides[0]!} cellWidth={containerW} />
+            <HeroSplitSlideShell
+              slide={slides[0]!}
+              cellWidth={containerW}
+              mobileTextUniformMinPx={isHeroMobileLayout ? mobileHeroTextMinPx : undefined}
+            />
           ) : (
-            <div className="min-h-[220px] w-full bg-neutral-200 md:min-h-[280px]" aria-hidden />
+            <div className="w-full aspect-[4/3] bg-cream-2" aria-hidden />
           )}
         </div>
       </section>
@@ -446,10 +524,10 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
   const translatePx = containerW > 0 ? activeIndex * containerW : 0
 
   return (
-    <section className="mb-8 rounded-xl bg-[#f2f2f2] shadow-sm ring-1 ring-black/5">
+    <section className={sectionPad}>
       <div
         ref={containerRef}
-        className="group relative w-full overflow-hidden rounded-xl"
+        className="group relative w-full overflow-hidden"
         onMouseEnter={() => setAutoplayPaused(true)}
         onMouseLeave={() => setAutoplayPaused(false)}
       >
@@ -466,35 +544,40 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
               onTransitionEnd={handleTrackTransitionEnd}
             >
               {trackSlides.map((slide, i) => (
-                <HeroSplitSlideShell key={`${slide.displayEventId}-${i}`} slide={slide} cellWidth={containerW} />
+                <HeroSplitSlideShell
+                  key={`${slide.displayEventId}-${i}`}
+                  slide={slide}
+                  cellWidth={containerW}
+                  mobileTextUniformMinPx={isHeroMobileLayout ? mobileHeroTextMinPx : undefined}
+                />
               ))}
             </div>
             <button
               type="button"
               aria-label="이전 이벤트"
-              className={`${chevronBtn} absolute left-2 top-1/3 -translate-y-1/2 md:left-5 md:top-1/2`}
+              className={`${chevronBtn} absolute left-2 top-1/2 -translate-y-1/2 md:left-4`}
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
                 goToPrev()
               }}
             >
-              <ChevronLeft className="h-6 w-6 md:h-7 md:w-7" strokeWidth={2.25} aria-hidden />
+              <ChevronLeft className="h-4 w-4 md:h-[18px] md:w-[18px]" strokeWidth={2.25} aria-hidden />
             </button>
             <button
               type="button"
               aria-label="다음 이벤트"
-              className={`${chevronBtn} absolute right-2 top-1/3 -translate-y-1/2 md:left-auto md:right-8 md:top-1/2`}
+              className={`${chevronBtn} absolute right-2 top-1/2 -translate-y-1/2 md:right-4`}
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
                 goToNext()
               }}
             >
-              <ChevronRight className="h-6 w-6 md:h-7 md:w-7" strokeWidth={2.25} aria-hidden />
+              <ChevronRight className="h-4 w-4 md:h-[18px] md:w-[18px]" strokeWidth={2.25} aria-hidden />
             </button>
-            <div className="pointer-events-none absolute inset-0 flex items-end justify-end pb-4 pr-4 md:pb-6 md:pr-8">
-              <div className="pointer-events-auto w-[min(100%,42%)] max-w-[320px]">
+            <div className="pointer-events-none absolute inset-0 flex items-end justify-end pb-4 pr-4 md:pb-5 md:pr-6">
+              <div className="pointer-events-auto max-w-[min(100%,320px)]">
                 <div className="flex justify-end">
                   <HeroDots
                     slides={slides}
@@ -507,7 +590,7 @@ export default function HomeHeroCarousel({ forcedEventTypeCode, variant = 'home'
             </div>
           </>
         ) : (
-          <div className="min-h-[220px] w-full bg-neutral-200 md:min-h-[280px]" aria-hidden />
+          <div className="w-full aspect-[4/3] bg-cream-2" aria-hidden />
         )}
       </div>
     </section>

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { NoticeListItem } from '@/types/board'
+import { SITE_SHELL_MAX_CLASS } from '@/lib/siteLayoutWidth'
 
 const noticeHref = (id: number) => `/notice?id=${id}`
 
@@ -14,7 +15,7 @@ export type MainBarProps = {
  * GNB 상단 바 — wwwLayoutPlan.md
  * 항상 높이 32px 유지 (공지 없어도 레이아웃 시프트 없음)
  */
-export default function MainBar({ notice, shellMaxClass = 'max-w-[900px]' }: MainBarProps) {
+export default function MainBar({ notice, shellMaxClass = SITE_SHELL_MAX_CLASS }: MainBarProps) {
   const href = notice ? noticeHref(notice.id) : undefined
 
   return (
