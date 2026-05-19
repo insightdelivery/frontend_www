@@ -24,7 +24,7 @@ const PLACEHOLDER_GRADIENTS = [
 
 const ARTICLE_PAGE_SHELL_CLASS = 'mx-auto w-full max-w-[840px] max-sm:px-5 py-6 md:py-10'
 const ARTICLE_CARD_GRID_CLASS =
-  'mt-0 grid grid-cols-1 gap-5 sm:mt-0 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3'
+  'mt-10 grid grid-cols-1 gap-5 sm:mt-12 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3'
 
 function getGradient(index: number) {
   return PLACEHOLDER_GRADIENTS[index % PLACEHOLDER_GRADIENTS.length]

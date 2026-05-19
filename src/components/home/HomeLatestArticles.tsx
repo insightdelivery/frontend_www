@@ -11,6 +11,7 @@ import type { SysCodeItem } from '@/lib/syscode'
 import {
   editorialCardLift,
   editorialCatBadge,
+  editorialSectionHeadBorder,
   editorialThumbHover,
 } from '@/components/home/editorialClasses'
 
@@ -50,8 +51,8 @@ export default function HomeLatestArticles() {
   }, [load])
 
   return (
-    <section className="pt-10 pb-10 max-sm:py-16">
-      <div className="mb-6 flex flex-row items-start justify-between gap-4 border-b border-[#E8E5DD] pb-4">
+    <section className="pt-10 pb-20 max-sm:py-16">
+      <div className={`flex flex-row items-start justify-between gap-4 ${editorialSectionHeadBorder}`}>
         <h2 className="m-0 min-w-0 flex-1 text-[28px] font-extrabold leading-tight tracking-[-0.025em] text-ink-900">
           최신 아티클
         </h2>
@@ -68,7 +69,7 @@ export default function HomeLatestArticles() {
 
       {loading ? (
         <>
-          <div className="flex flex-col gap-5 sm:hidden">
+          <div className="mt-10 flex flex-col gap-5 sm:hidden">
             {[0, 1, 2].map((i) => (
               <div key={i} className="flex animate-pulse gap-3">
                 <div className="h-[120px] w-[160px] shrink-0 rounded-none bg-ink-100" />
@@ -80,7 +81,7 @@ export default function HomeLatestArticles() {
               </div>
             ))}
           </div>
-          <div className="hidden grid-cols-1 gap-x-6 gap-y-10 sm:grid sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 hidden grid-cols-1 gap-x-6 gap-y-10 sm:grid sm:grid-cols-2 lg:grid-cols-3">
             {[0, 1, 2].map((i) => (
               <div key={i} className="animate-pulse">
                 <div className="mb-3 aspect-[4/3] w-full bg-cream-2" />
@@ -94,7 +95,7 @@ export default function HomeLatestArticles() {
         <p className="mt-10 text-[16px] text-ink-500">등록된 아티클이 없습니다.</p>
       ) : (
         <>
-          <div className="flex flex-col gap-5 sm:hidden">
+          <div className="mt-10 flex flex-col gap-5 sm:hidden">
             {items.map((a, i) => {
               const thumbSrc = resolveArticleThumbnailUrl(a.thumbnail)
               const sub = (a.subtitle || '').trim()
@@ -128,7 +129,7 @@ export default function HomeLatestArticles() {
               )
             })}
           </div>
-          <div className="hidden grid-cols-1 gap-x-6 gap-y-10 sm:grid sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 hidden grid-cols-1 gap-x-6 gap-y-10 sm:grid sm:grid-cols-2 lg:grid-cols-3">
             {items.map((a, i) => {
               const thumbSrc = resolveArticleThumbnailUrl(a.thumbnail)
               const sub = (a.subtitle || '').trim()

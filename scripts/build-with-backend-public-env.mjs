@@ -1,7 +1,7 @@
 /**
  * Build frontend_www with public env values sourced from backend env.
  *
- * Static export embeds NEXT_PUBLIC_* values at build time. This wrapper lets the
+ * Next.js embeds NEXT_PUBLIC_* values at build time. This wrapper lets the
  * backend deployment env be the source for public frontend config without
  * reading unrelated backend secrets into the browser bundle.
  */
@@ -115,7 +115,6 @@ function run(command, args) {
 function main() {
   loadBackendPublicEnv()
   run(process.execPath, [path.join(projectDir, 'node_modules', 'next', 'dist', 'bin', 'next'), 'build', '--webpack'])
-  run(process.execPath, [path.join(projectDir, 'scripts', 'postbuild-static-html-dual.mjs')])
 }
 
 main()

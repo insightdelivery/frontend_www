@@ -50,8 +50,8 @@ function upsertHeadElement(
 }
 
 /**
- * 정적 export(`output: 'export'`) — 콘텐츠 로드 후 기본 OG·Twitter 메타를 **갱신**.
- * (JS 미실행 크롤러는 여전히 빌드 시 기본 HTML만 본다.)
+ * 클라이언트 내 라우팅 시 콘텐츠 로드 후 OG·Twitter 메타 갱신.
+ * 초기 HTML OG는 `generateMetadata`(SSR)가 담당한다.
  */
 export function useDetailOpenGraphMeta(params: {
   active: boolean

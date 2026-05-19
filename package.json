@@ -7,7 +7,7 @@
     "dev": "next dev -p 3001",
     "dev:clean": "node -e \"try{require('fs').rmSync('.next',{recursive:true,force:true})}catch(e){}\" && next dev -p 3001",
     "build": "node scripts/build-with-backend-public-env.mjs",
-    "build:raw": "next build --webpack && node scripts/postbuild-static-html-dual.mjs",
+    "build:raw": "next build --webpack",
     "start": "next start -p 3001",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "figma:export": "node scripts/export-figma-images.mjs"

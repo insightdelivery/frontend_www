@@ -14,7 +14,7 @@ export default function MypageShell({ children }: { children: React.ReactNode })
   const router = useRouter()
   const { status } = useAuth()
 
-  /** `output: 'export'` 정적 빌드에서는 middleware 사용 불가 → 서버 리다이렉트 대신 클라이언트 가드 */
+  /** 마이페이지 인증 — 클라이언트 가드 (미로그인 시 로그인으로 이동) */
   useEffect(() => {
     if (status !== 'unauthenticated') return
     if (typeof window === 'undefined') return
