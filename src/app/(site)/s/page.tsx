@@ -1,29 +1,34 @@
-'use client'
-
-/**
- * `/s?code=` — 정적 export·단일 HTML에 유리한 진입점
- */
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
-import ShortShareRedirectClient from '@/components/share/ShortShareRedirectClient'
+import { buildShortShareMetadata } from '@/lib/seo/buildDetailMetadata'
+import ShortSharePageClient from './ShortSharePageClient'
 
-function ShortFromQueryInner() {
-  const searchParams = useSearchParams()
-  const code =
-    (searchParams.get('code') ?? searchParams.get('c') ?? '').trim()
-  return <ShortShareRedirectClient code={code} />
+type PageProps = {
+  searchParams: Promise<{
+    code?: string
+    c?: string
+  }>
 }
 
-export default function ShortShareQueryPage() {
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const sp = await searchParams
+  const code = (sp.code ?? sp.c ?? '').trim()
+  return buildShortShareMetadata(code)
+}
+
+export default async function ShortShareQueryPage({ searchParams }: PageProps) {
+  const sp = await searchParams
+  const code = (sp.code ?? sp.c ?? '').trim()
+
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen flex items-center justify-center bg-white px-4">
+        <main className="flex min-h-screen items-center justify-center bg-white px-4">
           <p className="text-[16px] text-[#64748b]">이동 중…</p>
         </main>
       }
     >
-      <ShortFromQueryInner />
+      <ShortSharePageClient code={code} />
     </Suspense>
   )
 }

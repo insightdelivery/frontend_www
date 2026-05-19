@@ -2,7 +2,7 @@
 
 /**
  * short 링크 resolve 후 아티클 상세로 이동 — contentShareLinkCopy.md §6
- * `/s?code=` (정적 export 표준). `/s/{code}` 는 middleware → 쿼리로 변환.
+ * `/s?code=` — 브라우저는 visit 후 상세로 이동. OG는 서버 `generateMetadata`가 처리.
  */
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'

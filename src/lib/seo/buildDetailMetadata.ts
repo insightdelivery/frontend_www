@@ -119,6 +119,74 @@ export async function buildVideoDetailMetadata(idParam: string | undefined): Pro
   }
 }
 
+interface ShareResolveResult {
+  contentType: string
+  contentId: number
+  expired: boolean
+}
+
+/** `/s?code=` 공유 링크 — short code resolve 후 콘텐츠 OG (og:url은 공유 URL 유지) */
+export async function buildShortShareMetadata(codeParam: string | undefined): Promise<Metadata> {
+  const code = codeParam?.trim()
+  if (!code) {
+    return { title: 'InDe' }
+  }
+
+  const shortCanonicalPath = `/s?code=${encodeURIComponent(code)}`
+
+  try {
+    const resolved = await serverFetchPublicJson<ShareResolveResult>(
+      `/api/library/content-share/resolve?shortCode=${encodeURIComponent(code)}`,
+    )
+    const ct = (resolved.contentType || '').toUpperCase()
+    const id = resolved.contentId
+    if (!id) {
+      return { title: 'InDe' }
+    }
+
+    if (ct === 'ARTICLE') {
+      const article = await serverFetchPublicJson<ArticleDetail>(`/api/articles/${id}`)
+      const description =
+        (article.subtitle ?? '').trim() || plainTextExcerpt(article.content, 180)
+      return buildMetadata({
+        title: article.title,
+        description,
+        imageUrl: article.thumbnail,
+        canonicalPath: shortCanonicalPath,
+        ogType: 'article',
+      })
+    }
+
+    if (ct === 'VIDEO') {
+      const video = await serverFetchPublicJson<PublicVideoDetail>(`/api/videos/${id}`)
+      const description = (video.subtitle ?? '').trim() || plainTextExcerpt(video.body, 180)
+      return buildMetadata({
+        title: video.title,
+        description,
+        imageUrl: video.thumbnail,
+        canonicalPath: shortCanonicalPath,
+        ogType: 'website',
+      })
+    }
+
+    if (ct === 'SEMINAR') {
+      const seminar = await serverFetchPublicJson<PublicVideoDetail>(`/api/videos/${id}`)
+      const description = (seminar.subtitle ?? '').trim() || plainTextExcerpt(seminar.body, 180)
+      return buildMetadata({
+        title: seminar.title,
+        description,
+        imageUrl: seminar.thumbnail,
+        canonicalPath: shortCanonicalPath,
+        ogType: 'website',
+      })
+    }
+
+    return { title: 'InDe' }
+  } catch {
+    return { title: 'InDe' }
+  }
+}
+
 export async function buildSeminarDetailMetadata(idParam: string | undefined): Promise<Metadata> {
   const id = parsePositiveId(idParam)
   if (!id) {
