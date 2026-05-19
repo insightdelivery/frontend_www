@@ -19,7 +19,7 @@
 ## 2. 배포·Middleware
 
 - 이 프로젝트는 **Next.js SSR** (`next build` + `next start`) 로 운영한다. 정적 `out/` HTML 배포는 사용하지 않는다.
-- **운영**: Node 프로세스(`npm run start`, 포트 3001) + nginx reverse proxy 권장.
+- **운영**: Node 프로세스(`npm run start`, 포트 3000) + nginx reverse proxy 권장.
 - **인증·마이페이지 보호**: 현재는 클라이언트 가드(`useAuth`, `MypageShell` 등). Middleware 도입 가능하나 기존 클라이언트 가드와 중복되지 않게 설계할 것.
 - **OG**: 아티클·비디오·세미나 상세는 서버 `generateMetadata`가 초기 HTML에 메타를 넣는다. 클라이언트 이동 시 `useDetailOpenGraphMeta`가 보조 갱신.
 
